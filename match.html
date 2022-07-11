@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match</title>
+  <script type="text/javascript" src="http://gosspublic.alicdn.com/aliyun-oss-sdk-6.17.0.min.js"></script>
+  <script type="text/javascript" src="res/helper.js"></script>
+  <script type="text/javascript" src="res/storage.js"></script>
+  <script type="text/javascript" src="res/storage-localstorage.js"></script>
+  <script type="text/javascript" src="res/sync.js"></script>
+  <script type="text/javascript" src="res/sync-aliyun.js"></script>
+  <script type="text/javascript" src="res/app.js"></script>
+  <link rel="stylesheet" href="res/style.css">
+  <style>
+    
+  </style>
+</head>
+<body>
+  <div class="score"></div>
+  <div class="match">
+    <div class="person leftA">
+      <div class="name"></div>
+      <button class="goalBtn">GOAL</button>
+      <button class="lossBtn">LOSS</button>
+    </div>
+    <div class="person leftB">
+      <div class="name"></div>
+      <button class="goalBtn">GOAL</button>
+      <button class="lossBtn">LOSS</button>
+    </div>
+    <div class="person rightA">
+      <div class="name"></div>
+      <button class="goalBtn">GOAL</button>
+      <button class="lossBtn">LOSS</button>
+    </div>
+    <div class="person rightB">
+      <div class="name"></div>
+      <button class="goalBtn">GOAL</button>
+      <button class="lossBtn">LOSS</button>
+    </div>
+  </div>
+  <script>
+    class MatchController {
+      match = new Match();
+      aGroup = [];
+      bGroup = [];
+      get aScore() {
+        return this.match.scores.filter(i => this.aGroup.indexOf(i.kill) >= 0).length
+      }
+      get bScore() {
+        return this.match.scores.filter(i => this.bGroup.indexOf(i.kill) >= 0).length
+      }
+      constructor(aGroup, bGroup) {
+        this.aGroup = aGroup;
+        this.bGroup = bGroup;
+      }
+      start(aGroup, bGroup) {
+        this.aGroup = aGroup;
+        this.bGroup = bGroup;
+      }
+      goal(person) {
+        let assistGroup = this.aGroup.indexOf(person) >= 0? this.aGroup: this.bGroup;
+        let assist = assistGroup.filter(i => i != person)[0];
+        this.match.scores.push(new GameScore(person, null, assist))
+      }
+      loss(person) {
+        this.match.scores.push(new GameScore(null, person))
+      }
+      end() {
+
+      }
+    }
+
+    let matchCtrl = new MatchController(["wei", "kin"], ["cheng", "gui"]);
+    window.matchCtrl = matchCtrl;
+    
+    function updateScore() {
+      $sel(".score").innerHTML = `${matchCtrl.aScore} : ${matchCtrl.bScore}`
+    }
+    $sel("div.leftA .goalBtn").addEventListener("click", () => {
+      matchCtrl.goal(matchCtrl.aGroup[0]);
+      updateScore();
+    })
+    $sel("div.leftB .goalBtn").addEventListener("click", () => {
+      matchCtrl.goal(matchCtrl.aGroup[1]);
+      updateScore();
+    })
+    $sel("div.rightA .goalBtn").addEventListener("click", () => {
+      matchCtrl.goal(matchCtrl.bGroup[0]);
+      updateScore();
+    })
+    $sel("div.rightB .goalBtn").addEventListener("click", () => {
+      matchCtrl.goal(matchCtrl.bGroup[1]);
+      updateScore();
+    })
+
+    updateScore();
+
+  </script>
+</body>
+</html>

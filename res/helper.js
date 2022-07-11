@@ -1,0 +1,1 @@
+let $sel = document.querySelector.bind(document);
