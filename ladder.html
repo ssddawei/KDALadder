@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ladder</title>
+  <script type="text/javascript" src="http://gosspublic.alicdn.com/aliyun-oss-sdk-6.17.0.min.js"></script>
+  <script type="text/javascript" src="res/helper.js"></script>
+  <script type="text/javascript" src="res/algorithm.js"></script>
+  <script type="text/javascript" src="res/storage.js"></script>
+  <script type="text/javascript" src="res/storage-localstorage.js"></script>
+  <script type="text/javascript" src="res/sync.js"></script>
+  <script type="text/javascript" src="res/sync-aliyun.js"></script>
+  <script type="text/javascript" src="res/app.js"></script>
+  <link rel="stylesheet" href="res/style.css">
+  <style>
+    .matches {
+      display: flex
+    }
+    .matches .item {
+      margin: 5px;
+      padding: 5px;
+    }
+    .matches .item .title {
+      color: gray
+    }
+    .matches .item .score {
+      color: red
+    }
+  </style>
+</head>
+<body>
+  <h1> KDA 天梯排名 </h1>
+  <script id="LadderItem" type="text/template">
+    <div class="item">
+      <div class="name">{{name}}</div>
+      <div class="score">{{score}}</div>
+    </div>
+  </script>
+  <div class="ladder">
+  </div>
+  <h1> 比赛记录 </h1>
+  <script id="MatchItem" type="text/template">
+    <div class="item">
+      <div class="title">{{title}}</div>
+      <div class="teamA">
+        <div class="person1">{{person1}}</div>
+        <div class="person2">{{person2}}</div>
+      </div>
+      <div class="score">{{score}}</div>
+      <div class="teamB">
+        <div class="person1">{{person3}}</div>
+        <div class="person2">{{person4}}</div>
+      </div>
+    </div>
+  </script>
+  <div class="matches">
+
+  </div>
+  
+
+  <script>
+    class LadderController {
+      storage = new LocalStorage();
+      syncData = new AliyunSyncData(this.storage);
+      get persons() {
+
+      }
+      get ladder() {
+
+      }
+      constructor() {
+        
+      }
+      async sync() {
+        await this.syncData.sync();
+      }
+    }
+
+    let ladderCtrl = new LadderController();
+
+    function refreshUI() {
+      var tmpl;
+
+      // ladder 
+      tmpl = $sel("#LadderItem").innerHTML;
+
+      $sel("div.ladder").innerHTML = ladderCtrl.storage.ladder.map(i => {
+        let item = tmpl.replace("{{name}}", i.person)
+          .replace("{{score}}", `${i.score.toFixed(1)} ${i.kill}-${i.death}-${i.assist} ${(i.win/(i.win+i.loss)*100).toFixed(1)}%(${i.win}/${i.loss})`);
+        return item;
+      }).join("");
+
+      // match
+      tmpl = $sel("#MatchItem").innerHTML;
+
+      $sel("div.matches").innerHTML = ladderCtrl.storage.matches.map(i => {
+        let matchCtrl = new MatchController(i);
+        let item = tmpl.replace("{{score}}", `${matchCtrl.aScore}:${matchCtrl.bScore}`)
+          .replace("{{title}}", `${$timeString(new Date(i.beginTime))}`)
+          .replace("{{person1}}", `${i.personGroup[0]} ${matchCtrl.kda(i.personGroup[0]).score.toFixed(1)}`)
+          .replace("{{person2}}", `${i.personGroup[1]} ${matchCtrl.kda(i.personGroup[1]).score.toFixed(1)}`)
+          .replace("{{person3}}", `${i.personGroup[2]} ${matchCtrl.kda(i.personGroup[2]).score.toFixed(1)}`)
+          .replace("{{person4}}", `${i.personGroup[3]} ${matchCtrl.kda(i.personGroup[3]).score.toFixed(1)}`)
+        return item;
+      }).join("");
+
+    }
+
+    ladderCtrl.sync().then(refreshUI);
+  </script>
+</body>
+</html>

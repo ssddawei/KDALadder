@@ -13,19 +13,17 @@
 
 # 数据结构 
 ladder
-{
-  ladder: [
-    {
-      person: someone,
-      K: number,
-      D: number,
-      A: number,
-      win: number,
-      loss: number,
-      score: number,
-    }
-  ]
-}
+[
+  {
+    person: someone,
+    K: number,
+    D: number,
+    A: number,
+    win: number,
+    loss: number,
+    score: number,
+  }
+]
 
 data
 {

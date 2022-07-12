@@ -1,13 +1,17 @@
 // include storage.js
-let SysLocalStoratge = window.LocalStorage;
+let SysLocalStorage = window.localStorage;
 
 class LocalStorage extends Storage {
+  constructor() {
+    super();
+    this.load();
+  }
   load() {
-    this.ladder = JSON.parse(SysLocalStoratge.getItem("ladder"));
-    this.matches = JSON.parse(SysLocalStoratge.getItem("matches"));
+    this.ladder = JSON.parse(SysLocalStorage.getItem("ladder")) || [];
+    this.matches = JSON.parse(SysLocalStorage.getItem("matches")) || [];
   }
   save() {
-    SysLocalStoratge.setItem("ladder", JSON.stringify(this.ladder));
-    SysLocalStoratge.setItem("matches", JSON.stringify(this.matches));
+    SysLocalStorage.setItem("ladder", JSON.stringify(this.ladder));
+    SysLocalStorage.setItem("matches", JSON.stringify(this.matches));
   }
 }

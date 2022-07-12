@@ -7,6 +7,7 @@
   <title>Match</title>
   <script type="text/javascript" src="http://gosspublic.alicdn.com/aliyun-oss-sdk-6.17.0.min.js"></script>
   <script type="text/javascript" src="res/helper.js"></script>
+  <script type="text/javascript" src="res/algorithm.js"></script>
   <script type="text/javascript" src="res/storage.js"></script>
   <script type="text/javascript" src="res/storage-localstorage.js"></script>
   <script type="text/javascript" src="res/sync.js"></script>
@@ -14,89 +15,121 @@
   <script type="text/javascript" src="res/app.js"></script>
   <link rel="stylesheet" href="res/style.css">
   <style>
-    
+    .match {
+      display: flex
+    }
+    .person {
+      display: flex;
+      flex-direction: column;
+    }
+    .person button {
+      display: block
+    }
   </style>
 </head>
 <body>
   <div class="score"></div>
   <div class="match">
-    <div class="person leftA">
+    <div class="person aGroup1">
       <div class="name"></div>
+      <div class="kda"></div>
       <button class="goalBtn">GOAL</button>
       <button class="lossBtn">LOSS</button>
     </div>
-    <div class="person leftB">
+    <div class="person aGroup2">
       <div class="name"></div>
+      <div class="kda"></div>
       <button class="goalBtn">GOAL</button>
       <button class="lossBtn">LOSS</button>
     </div>
-    <div class="person rightA">
+    <div class="person bGroup1">
       <div class="name"></div>
+      <div class="kda"></div>
       <button class="goalBtn">GOAL</button>
       <button class="lossBtn">LOSS</button>
     </div>
-    <div class="person rightB">
+    <div class="person bGroup2">
       <div class="name"></div>
+      <div class="kda"></div>
       <button class="goalBtn">GOAL</button>
       <button class="lossBtn">LOSS</button>
     </div>
   </div>
+  <button class="revertBtn">撤销</button>
+  <button class="endBtn">结束</button>
   <script>
-    class MatchController {
-      match = new Match();
-      aGroup = [];
-      bGroup = [];
-      get aScore() {
-        return this.match.scores.filter(i => this.aGroup.indexOf(i.kill) >= 0).length
-      }
-      get bScore() {
-        return this.match.scores.filter(i => this.bGroup.indexOf(i.kill) >= 0).length
-      }
-      constructor(aGroup, bGroup) {
-        this.aGroup = aGroup;
-        this.bGroup = bGroup;
-      }
-      start(aGroup, bGroup) {
-        this.aGroup = aGroup;
-        this.bGroup = bGroup;
-      }
-      goal(person) {
-        let assistGroup = this.aGroup.indexOf(person) >= 0? this.aGroup: this.bGroup;
-        let assist = assistGroup.filter(i => i != person)[0];
-        this.match.scores.push(new GameScore(person, null, assist))
-      }
-      loss(person) {
-        this.match.scores.push(new GameScore(null, person))
-      }
-      end() {
-
-      }
-    }
-
     let matchCtrl = new MatchController(["wei", "kin"], ["cheng", "gui"]);
     window.matchCtrl = matchCtrl;
     
-    function updateScore() {
+    function refreshUI() {
+
+      // name
+      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0];
+      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1];
+      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0];
+      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1];
+      
+      // match score
       $sel(".score").innerHTML = `${matchCtrl.aScore} : ${matchCtrl.bScore}`
+
+      // kda
+      let applyKDA = (person, target) => {
+        let kda = matchCtrl.kda(person);
+        $sel(target).innerHTML = `${kda.kill}-${kda.death}-${kda.assist}`;
+      }
+      
+      applyKDA(matchCtrl.aGroup[0], ".aGroup1 .kda");
+      applyKDA(matchCtrl.aGroup[1], ".aGroup2 .kda");
+      applyKDA(matchCtrl.bGroup[0], ".bGroup1 .kda");
+      applyKDA(matchCtrl.bGroup[1], ".bGroup2 .kda");
+
     }
-    $sel("div.leftA .goalBtn").addEventListener("click", () => {
+    
+    $sel("div.aGroup1 .goalBtn").addEventListener("click", () => {
       matchCtrl.goal(matchCtrl.aGroup[0]);
-      updateScore();
+      refreshUI();
     })
-    $sel("div.leftB .goalBtn").addEventListener("click", () => {
+    $sel("div.aGroup2 .goalBtn").addEventListener("click", () => {
       matchCtrl.goal(matchCtrl.aGroup[1]);
-      updateScore();
+      refreshUI();
     })
-    $sel("div.rightA .goalBtn").addEventListener("click", () => {
+    $sel("div.bGroup1 .goalBtn").addEventListener("click", () => {
       matchCtrl.goal(matchCtrl.bGroup[0]);
-      updateScore();
+      refreshUI();
     })
-    $sel("div.rightB .goalBtn").addEventListener("click", () => {
+    $sel("div.bGroup2 .goalBtn").addEventListener("click", () => {
       matchCtrl.goal(matchCtrl.bGroup[1]);
-      updateScore();
+      refreshUI();
     })
 
-    updateScore();
+    $sel("div.aGroup1 .lossBtn").addEventListener("click", () => {
+      matchCtrl.loss(matchCtrl.aGroup[0]);
+      refreshUI();
+    })
+    $sel("div.aGroup2 .lossBtn").addEventListener("click", () => {
+      matchCtrl.loss(matchCtrl.aGroup[1]);
+      refreshUI();
+    })
+    $sel("div.bGroup1 .lossBtn").addEventListener("click", () => {
+      matchCtrl.loss(matchCtrl.bGroup[0]);
+      refreshUI();
+    })
+    $sel("div.bGroup2 .lossBtn").addEventListener("click", () => {
+      matchCtrl.loss(matchCtrl.bGroup[1]);
+      refreshUI();
+    })
+
+    $sel(".revertBtn").addEventListener("click", () => {
+      matchCtrl.revert();
+      refreshUI();
+    })
+
+    $sel(".endBtn").addEventListener("click", () => {
+      matchCtrl.end();
+      refreshUI();
+    })
+
+    refreshUI();
 
   </script>
 </body>

@@ -18,8 +18,8 @@ class GameScore extends Score {
 }
 
 class MatchScore extends Score {
-  win;
-  loss;
+  win = [];
+  loss = [];
   constructor(W, L, TS) {
     super(TS)
     this.win = W;
@@ -31,8 +31,10 @@ class Match {
   scores = [];
   beginTime;
   endTime;
-  constructor(beginTime) {
+  personGroup = [];
+  constructor(beginTime, personGroup) {
     this.beginTime = beginTime || Date.now();
+    this.personGroup = personGroup || [];
   }
   end(endTime) {
     this.endTime = endTime;
