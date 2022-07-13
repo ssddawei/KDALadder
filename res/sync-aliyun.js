@@ -11,13 +11,24 @@ class AliyunSyncData extends SyncData {
     let keys = keyString.split("/");
     if(keys.length != 2)return false;
 
-    this.key = Object.assign({}, CONFIG.AliyunOSSKey, {
+    let key = Object.assign({}, CONFIG.AliyunOSSKey, {
       accessKeyId: keys[0],
       accessKeySecret: keys[1],
     });
 
-    window.localStorage.setItem("key", this.key);
+    window.localStorage.setItem("key", JSON.stringify(key));
     return true;
+  }
+  get lastMatchIndex() {
+    return this.matchIndex.filter(i=>i!=ALG.StorageIndex()).slice(-1)[0];
+  }
+  get lastStorage() {
+    let currentStorage = this.storages[ALG.StorageIndex()]
+    if(currentStorage.matches.length) {
+      return currentStorage;
+    } else  {
+      return this.storages[this.lastMatchIndex] || currentStorage;
+    }
   }
   async sync(idx = ALG.StorageIndex()) {
 
@@ -27,13 +38,14 @@ class AliyunSyncData extends SyncData {
 
     const store = this.key && new OSS(this.key);
 
+    this.matchIndex = await $fetch(CONFIG.DataUrl.matches) || [];
+
     //
     // sync matches
     //
     let storage = this.storages[idx];
     if(!storage) {
-      console.error("no storage to sync")
-      return;
+      storage = this.storages[idx] = new LocalStorage(idx);
     }
 
     let upstreamName = `data-${idx}.json`;
@@ -52,6 +64,11 @@ class AliyunSyncData extends SyncData {
 
     // save to upstream
     store && await store.put(upstreamName, new OSS.Buffer(JSON.stringify(upstream)));
+    if(store && this.matchIndex.slice(-1)[0] != idx) {
+      this.matchIndex.push(idx);
+      this.matchIndex = Array.from(new Set(this.matchIndex)).sort((a,b)=>new Date(a)-new Date(b));
+      await store.put("matches.json", new OSS.Buffer(JSON.stringify(this.matchIndex)));
+    }
 
     // apply to local
     storage.matches = upstream.matches;
@@ -81,7 +98,7 @@ class AliyunSyncData extends SyncData {
     upstream.matchTotalTimeSec = (+upstream.matchTotalTimeSec||0) + (+storage.ladder.matchTotalTimeSec||0);
 
     // save to upstream
-    store && await store.put(upstreamName, new OSS.Buffer(JSON.stringify(upstream)));
+    store && await store.put("ladder.json", new OSS.Buffer(JSON.stringify(upstream)));
 
     if(this.totalLadder) {
       // apply to local

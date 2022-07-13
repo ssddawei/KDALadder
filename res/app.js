@@ -2,7 +2,7 @@
 class MatchController {
   match = new Match();
   get ready() {
-    return !!this.match.personGroup.filter(i=>i).length
+    return !!(this.match.personGroup.filter(i=>i).length == 4)
   }
   get aGroup() {
     return this.match.personGroup.slice(0,2);

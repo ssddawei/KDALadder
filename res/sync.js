@@ -9,10 +9,9 @@ class SyncData {
 
   */
   storages = {};
-  totalLadder = {};
-  constructor(storage, totalLadder) {
-    this.storages[ALG.StorageIndex()] = storage;
-    this.totalLadder = totalLadder;
+  totalLadder = new LocalStorage("total");
+  matchIndex = [];
+  constructor() {
   }
   sync(idx) {}
 }

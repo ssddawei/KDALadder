@@ -63,20 +63,27 @@
 
   <script>
     class LadderController {
-      storage = new LocalStorage();
-      totalLadder = new LocalStorage("total");
-      syncData = new AliyunSyncData(this.storage, this.totalLadder);
+      syncData = new AliyunSyncData();
       get persons() {
 
       }
       get ladder() {
 
       }
+      get storage() {
+        return this.syncData.lastStorage
+      }
+      get totalLadder() {
+        return this.syncData.totalLadder;
+      }
       constructor() {
         
       }
       async sync() {
         await this.syncData.sync();
+        if(!this.storage.matches.length && this.syncData.lastMatchIndex) {
+          await this.syncData.sync(this.syncData.lastMatchIndex);
+        }
       }
     }
 

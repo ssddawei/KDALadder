@@ -7,7 +7,7 @@ class LocalStorage extends Storage {
     this.load();
   }
   load() {
-    this.ladder = JSON.parse(SysLocalStorage.getItem(`ladder-${this.index}`)) || [];
+    this.ladder = JSON.parse(SysLocalStorage.getItem(`ladder-${this.index}`)) || new Ladder();
     this.matches = JSON.parse(SysLocalStorage.getItem(`matches-${this.index}`)) || [];
   }
   save() {

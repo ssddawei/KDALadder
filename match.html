@@ -190,9 +190,13 @@
 
     $sel(".endBtn").addEventListener("click", () => {
       let beginTime = matchCtrl.match.beginTime;
-      let storageIndex = matchCtrl.end();
-      if(storageIndex)
-        location.href = `match-result.html?${storageIndex}-${beginTime}`
+      try{
+        let storageIndex = matchCtrl.end();
+        if(storageIndex)
+          location.href = `match-result.html?${storageIndex}-${beginTime}`
+      } catch(e) {
+        alert("sync error " + e)
+      }
     })
 
     class PersonChooser {
