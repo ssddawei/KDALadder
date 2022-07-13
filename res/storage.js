@@ -29,9 +29,17 @@ class MatchScore extends Score {
 
 class Match {
   scores = [];
-  beginTime;
-  endTime;
+  beginTime = 0;
+  endTime = 0;
   personGroup = [];
+  get endTime2() {
+    if(this.endTime) {
+      return this.endTime;
+    } else {
+      let lastScore = this.scores.slice(-1)[0];
+      return lastScore && lastScore.timestamp; 
+    }
+  }
   constructor(beginTime, personGroup) {
     this.beginTime = beginTime || Date.now();
     this.personGroup = personGroup || [];
@@ -41,9 +49,23 @@ class Match {
   }
 }
 
-class Storage {
+class Ladder {
+  beginTime = 0;
+  endTime = 0;
+  matchCount = 0;
+  matchTotalTimeSec = 0;
   ladder = [];
+}
+
+class Storage {
+  index = ALG.StorageIndex(); 
+  ladder = new Ladder();
   matches = [];
+  constructor(index) {
+    if(index != undefined)
+      this.index = index;
+  }
   load(){};
   save(){};
+  delete(){};
 }

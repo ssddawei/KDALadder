@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match</title>
+  <script type="text/javascript" src="http://gosspublic.alicdn.com/aliyun-oss-sdk-6.17.0.min.js"></script>
+  <script type="text/javascript" src="res/config.js"></script>
+  <script type="text/javascript" src="res/helper.js"></script>
+  <script type="text/javascript" src="res/algorithm.js"></script>
+  <script type="text/javascript" src="res/storage.js"></script>
+  <script type="text/javascript" src="res/storage-localstorage.js"></script>
+  <script type="text/javascript" src="res/sync.js"></script>
+  <script type="text/javascript" src="res/sync-aliyun.js"></script>
+  <script type="text/javascript" src="res/app.js"></script>
+  <link rel="stylesheet" href="res/style.css">
+  <style>
+    .result {
+      display: flex;
+      flex-direction: row;
+      min-height: 100px;
+    }
+    .result .person .item {
+      min-width: 10px;
+      height: 25%;
+      display: flex;
+      justify-content: right;
+      align-items: center;
+    }
+    .result .score {
+      display: flex;
+      flex-direction: row;
+    }
+    .result .score .item {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      width: 30px;
+    }
+    .result .score .item .unit {
+      flex: 0 0 30px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+  </style>
+</head>
+<body>
+  <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
+  <h5>
+    比赛记录
+    <small class="beginTime"></small>
+    <span class="score">
+      比分 
+      <span class="aScore"></span>
+      -
+      <span class="bScore"></span>
+    </span>
+  </h5>
+  <div class="result">
+    <div class="person">
+      <div class="item p1"></div>
+      <div class="item p2"></div>
+      <div class="item p3"></div>
+      <div class="item p4"></div>
+    </div>
+    <script id="ScoreItem" type="text/template">
+      <div class="item">
+        <div class="unit item1">{{p1}}</div>
+        <div class="unit item2">{{p2}}</div>
+        <div class="unit item3">{{p3}}</div>
+        <div class="unit item4">{{p4}}</div>
+      </div>
+    </script>
+    <div class="score">
+    </div>
+  </div>
+  <script>
+
+    class MatchResultController {
+      index;
+      beginTime;
+      matchCtrl;
+      constructor() {
+        let query = location.search.slice(1);
+        let splitIdx = query.lastIndexOf("-");
+        this.index = query.slice(0, splitIdx);
+        this.beginTime = query.slice(splitIdx+1);
+
+        let storage = new LocalStorage(this.index);
+        let match = storage.matches.filter(i => i.beginTime == this.beginTime)[0];
+        this.matchCtrl = new MatchController(match)
+      }
+    }
+
+    let ctrl = new MatchResultController();
+    
+    console.log(ctrl.matchCtrl)
+
+    function refreshUI() {
+      $sel(".beginTime").innerHTML = new Date(ctrl.matchCtrl.match.beginTime).toLocaleString();
+      $sel(".aScore").innerHTML = ctrl.matchCtrl.aScore;
+      $sel(".bScore").innerHTML = ctrl.matchCtrl.bScore;
+
+      $sel(".result .person .p1").innerHTML = ctrl.matchCtrl.aGroup[0];
+      $sel(".result .person .p2").innerHTML = ctrl.matchCtrl.aGroup[1];
+      $sel(".result .person .p3").innerHTML = ctrl.matchCtrl.bGroup[0];
+      $sel(".result .person .p4").innerHTML = ctrl.matchCtrl.bGroup[1];
+
+      let ScoreItem = $sel("#ScoreItem").innerHTML;
+      function mark(score, person) {
+        return score.kill == person && "O" ||
+          score.death == person && "X" ||
+          score.assist == person && "-" || 
+          score.win && score.win.indexOf(person)>=0 && "W" || 
+          score.loss &&  score.loss.indexOf(person)>=0 && "L" || 
+          "";
+      }
+      $sel(".result .score").innerHTML = ctrl.matchCtrl.match.scores.map(i => {
+        let item = ScoreItem.replace("{{p1}}", mark(i, ctrl.matchCtrl.aGroup[0]))
+          .replace("{{p2}}", mark(i, ctrl.matchCtrl.aGroup[1]))
+          .replace("{{p3}}", mark(i, ctrl.matchCtrl.bGroup[0]))
+          .replace("{{p4}}", mark(i, ctrl.matchCtrl.bGroup[1]))
+        return item;
+      }).join("") + 
+        ScoreItem.replace("{{p1}}", $kdaString(ctrl.matchCtrl.kda(ctrl.matchCtrl.aGroup[0])))
+            .replace("{{p2}}", $kdaString(ctrl.matchCtrl.kda(ctrl.matchCtrl.aGroup[1])))
+            .replace("{{p3}}", $kdaString(ctrl.matchCtrl.kda(ctrl.matchCtrl.bGroup[0])))
+            .replace("{{p4}}", $kdaString(ctrl.matchCtrl.kda(ctrl.matchCtrl.bGroup[1])))
+    }
+
+    refreshUI();
+
+  </script>
+</body>
+</html>

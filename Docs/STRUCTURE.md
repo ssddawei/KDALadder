@@ -13,17 +13,23 @@
 
 # 数据结构 
 ladder
-[
-  {
-    person: someone,
-    K: number,
-    D: number,
-    A: number,
-    win: number,
-    loss: number,
-    score: number,
-  }
-]
+{
+  beginTime: datetime,
+  endTime: datetime,
+  matchCount: number,
+  matchTotalTimeSec: number,
+  ladder: [
+    {
+      person: someone,
+      K: number,
+      D: number,
+      A: number,
+      win: number,
+      loss: number,
+      score: number,
+    }
+  ]
+}
 
 data
 {
@@ -45,5 +51,6 @@ data
         }
       ]
     }
-  ]
+  ],
+  ladder: ladder
 }

@@ -2,16 +2,20 @@
 let SysLocalStorage = window.localStorage;
 
 class LocalStorage extends Storage {
-  constructor() {
-    super();
+  constructor(index) {
+    super(index);
     this.load();
   }
   load() {
-    this.ladder = JSON.parse(SysLocalStorage.getItem("ladder")) || [];
-    this.matches = JSON.parse(SysLocalStorage.getItem("matches")) || [];
+    this.ladder = JSON.parse(SysLocalStorage.getItem(`ladder-${this.index}`)) || [];
+    this.matches = JSON.parse(SysLocalStorage.getItem(`matches-${this.index}`)) || [];
   }
   save() {
-    SysLocalStorage.setItem("ladder", JSON.stringify(this.ladder));
-    SysLocalStorage.setItem("matches", JSON.stringify(this.matches));
+    SysLocalStorage.setItem(`ladder-${this.index}`, JSON.stringify(this.ladder));
+    SysLocalStorage.setItem(`matches-${this.index}`, JSON.stringify(this.matches));
+  }
+  delete() {
+    SysLocalStorage.removeItem(`ladder-${this.index}`);
+    SysLocalStorage.removeItem(`matches-${this.index}`);
   }
 }

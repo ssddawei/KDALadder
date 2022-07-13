@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ladder</title>
   <script type="text/javascript" src="http://gosspublic.alicdn.com/aliyun-oss-sdk-6.17.0.min.js"></script>
+  <script type="text/javascript" src="res/config.js"></script>
   <script type="text/javascript" src="res/helper.js"></script>
   <script type="text/javascript" src="res/algorithm.js"></script>
   <script type="text/javascript" src="res/storage.js"></script>
@@ -42,7 +43,7 @@
   </div>
   <h1> 比赛记录 </h1>
   <script id="MatchItem" type="text/template">
-    <div class="item">
+    <div class="item" onclick="location.href='match-result.html?{{index}}-{{beginTime}}'">
       <div class="title">{{title}}</div>
       <div class="teamA">
         <div class="person1">{{person1}}</div>
@@ -58,12 +59,13 @@
   <div class="matches">
 
   </div>
-  
+  <button class="newMatchBtn" onclick="location.href='match.html'">Start</button>
 
   <script>
     class LadderController {
       storage = new LocalStorage();
-      syncData = new AliyunSyncData(this.storage);
+      totalLadder = new LocalStorage("total");
+      syncData = new AliyunSyncData(this.storage, this.totalLadder);
       get persons() {
 
       }
@@ -86,9 +88,9 @@
       // ladder 
       tmpl = $sel("#LadderItem").innerHTML;
 
-      $sel("div.ladder").innerHTML = ladderCtrl.storage.ladder.map(i => {
+      $sel("div.ladder").innerHTML = ladderCtrl.totalLadder.ladder.ladder.map(i => {
         let item = tmpl.replace("{{name}}", i.person)
-          .replace("{{score}}", `${i.score.toFixed(1)} ${i.kill}-${i.death}-${i.assist} ${(i.win/(i.win+i.loss)*100).toFixed(1)}%(${i.win}/${i.loss})`);
+          .replace("{{score}}", $kdaString(i, true));
         return item;
       }).join("");
 
@@ -98,6 +100,8 @@
       $sel("div.matches").innerHTML = ladderCtrl.storage.matches.map(i => {
         let matchCtrl = new MatchController(i);
         let item = tmpl.replace("{{score}}", `${matchCtrl.aScore}:${matchCtrl.bScore}`)
+          .replace("{{index}}", `${ladderCtrl.storage.index}`)
+          .replace("{{beginTime}}", `${i.beginTime}`)
           .replace("{{title}}", `${$timeString(new Date(i.beginTime))}`)
           .replace("{{person1}}", `${i.personGroup[0]} ${matchCtrl.kda(i.personGroup[0]).score.toFixed(1)}`)
           .replace("{{person2}}", `${i.personGroup[1]} ${matchCtrl.kda(i.personGroup[1]).score.toFixed(1)}`)

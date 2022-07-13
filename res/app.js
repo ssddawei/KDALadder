@@ -1,8 +1,15 @@
 
 class MatchController {
   match = new Match();
-  aGroup = [];
-  bGroup = [];
+  get ready() {
+    return !!this.match.personGroup.filter(i=>i).length
+  }
+  get aGroup() {
+    return this.match.personGroup.slice(0,2);
+  }
+  get bGroup() {
+    return this.match.personGroup.slice(2,4);
+  }
   get aScore() {
     return this.match.scores.filter(i => this.aGroup.indexOf(i.kill) >= 0).length +
       this.match.scores.filter(i => this.bGroup.indexOf(i.death) >= 0).length
@@ -11,20 +18,12 @@ class MatchController {
     return this.match.scores.filter(i => this.bGroup.indexOf(i.kill) >= 0).length +
       this.match.scores.filter(i => this.aGroup.indexOf(i.death) >= 0).length
   }
-  constructor(aGroupOrMatch, bGroup) {
+  constructor(aGroupOrMatch = [], bGroup = []) {
     if(aGroupOrMatch instanceof Match || aGroupOrMatch.scores) {
       this.match = aGroupOrMatch;
-      this.aGroup = this.match.personGroup.slice(0,2);
-      this.bGroup = this.match.personGroup.slice(2,4);
     } else {
-      this.aGroup = aGroupOrMatch;
-      this.bGroup = bGroup;
       this.match.personGroup = [...aGroupOrMatch, ...bGroup];
     }
-  }
-  start(aGroup, bGroup) {
-    this.aGroup = aGroup;
-    this.bGroup = bGroup;
   }
   goal(person) {
     let assistGroup = this.aGroup.indexOf(person) >= 0? this.aGroup: this.bGroup;
@@ -49,7 +48,54 @@ class MatchController {
     kda.score = ALG.PersonScore(kda);
     return kda;
   }
+  static LadderEvolve(ladder, person, kda) {
+    let item = ladder.filter(i => i.person == person)[0];
+    if(!item) {
+      ladder.push(item = { 
+        person
+      });
+    }
+    item.kill = (+item.kill || 0) + (+kda.kill || 0);
+    item.death = (+item.death || 0) + (+kda.death || 0);
+    item.assist = (+item.assist || 0) + (+kda.assist || 0);
+    item.win = (+item.win || 0) + (+kda.win || 0);
+    item.loss = (+item.loss || 0) + (+kda.loss || 0);
+    item.score = ALG.PersonScore(item);
+    ladder.sort((a,b) => b.score - a.score)
+  }
+  save() {
+    let storage = new LocalStorage("current");
+    storage.matches[0] = (this.match);
+    storage.save();
+  }
+  load() {
+    let storage = new LocalStorage("current");
+    storage.load();
+    if(storage.matches.length) {
+      this.match = storage.matches[0];
+    }
+  }
   end() {
+
+    if(!this.ready) return;
+
+    let storage = new LocalStorage();
+    let sync = new AliyunSyncData(storage);
+
+    // check sync key
+    if(!sync.key) {
+      let key = prompt("同步到云端，请输入密钥");
+      if(!key) {
+        if(!confirm("不保存到云端，确认？")){
+          return;
+        }
+      } else {
+        if(!sync.saveKey(key)){
+          alert("密钥格式错误");
+          return;
+        }
+      }
+    }
 
     // add win/loss score
     if( this.aScore > this.bScore ) {
@@ -59,39 +105,28 @@ class MatchController {
     }
     
     // save to local
-    let storage = new LocalStorage();
     storage.matches.push(this.match);
 
-    // update to local ladder
-    let updateLadderPerson = (person) => {
-      let kda = this.kda(person);
-      let item = storage.ladder.filter(i => i.person == person)[0];
-      if(!item) {
-        storage.ladder.push(item = { 
-          person
-        });
-      }
-      item.kill = (+item.kill || 0) + (+kda.kill || 0);
-      item.death = (+item.death || 0) + (+kda.death || 0);
-      item.assist = (+item.assist || 0) + (+kda.assist || 0);
-      item.win = (+item.win || 0) + (+kda.win || 0);
-      item.loss = (+item.loss || 0) + (+kda.loss || 0);
-    }
+    storage.ladder.beginTime = storage.matches[0].beginTime;
+    storage.ladder.endTime = this.match.endTime2;
+    storage.ladder.matchCount = (+storage.ladder.matchCount||0) + 1;
+    storage.ladder.matchTotalTimeSec = (+storage.ladder.matchTotalTimeSec||0) + ((this.match.endTime2 - this.match.beginTime)/1000).toFixed(0);
     
-    updateLadderPerson(this.aGroup[0])
-    updateLadderPerson(this.aGroup[1])
-    updateLadderPerson(this.bGroup[0])
-    updateLadderPerson(this.bGroup[1])
-
-    storage.ladder.forEach(i => {
-      i.score = ALG.PersonScore(i);
-    })
-    storage.ladder = storage.ladder.sort((a,b) => b.score - a.score)
+    // update to local ladder
+    MatchController.LadderEvolve(storage.ladder.ladder, this.aGroup[0], this.kda(this.aGroup[0]));
+    MatchController.LadderEvolve(storage.ladder.ladder, this.aGroup[1], this.kda(this.aGroup[1]));
+    MatchController.LadderEvolve(storage.ladder.ladder, this.bGroup[0], this.kda(this.bGroup[0]));
+    MatchController.LadderEvolve(storage.ladder.ladder, this.bGroup[1], this.kda(this.bGroup[1]));
 
     storage.save();
 
     // sync
-    new AliyunSyncData(storage).sync();
+    sync.sync();
 
+    new LocalStorage("current").delete();
+
+    this.match = new Match();
+
+    return storage.index;
   }
 }

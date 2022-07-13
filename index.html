@@ -5,35 +5,11 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KDALadder</title>
-  <script type="text/javascript" src="http://gosspublic.alicdn.com/aliyun-oss-sdk-6.17.0.min.js"></script>
 </head>
 <body>
   <h1> KDALadder </h1>
   <script type="text/javascript">
-    (async ()=>{
-      const store = new OSS({
-        region: 'oss-cn-guangzhou',
-        accessKeyId: 'LTAI5tAxkvizwCkYfVBnzx92',
-        accessKeySecret: 'QkpBi19GzIv3Vp6QPrrHsRHjU1DgpR',
-        bucket: 'kdaladder',
-      });
-
-      // let ret = await store.put(
-      //   "data.json",
-      //   new OSS.Buffer(["test"])
-      // ).then((ret)=>{
-      //   console.log(ret);
-      // });
-
-      console.log('object get: %j', await store.get("test").catch(e=>{
-    throw "error2"
-        window.e = e;
-        console.log(e)
-        return null
-      }));
-
-      console.log('objects: %j', await store.list());
-    })()
+    location.href="ladder.html"
   </script>
 </body>
 </html>

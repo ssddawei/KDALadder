@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Match</title>
   <script type="text/javascript" src="http://gosspublic.alicdn.com/aliyun-oss-sdk-6.17.0.min.js"></script>
+  <script type="text/javascript" src="res/config.js"></script>
   <script type="text/javascript" src="res/helper.js"></script>
   <script type="text/javascript" src="res/algorithm.js"></script>
   <script type="text/javascript" src="res/storage.js"></script>
@@ -18,6 +19,10 @@
     .match {
       display: flex
     }
+    .match.started .person .name {
+      pointer-events:none;
+    }
+
     .person {
       display: flex;
       flex-direction: column;
@@ -25,11 +30,52 @@
     .person button {
       display: block
     }
+    .personList {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255,255,255,0.6);
+      display: flex;
+      flex-direction: column;
+      justify-items: center;
+      align-items: center;
+      display: none;
+    }
+    .personList .item {
+      margin: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      background: #222;
+      color: white;
+    }
+    .notready button {
+      pointer-events:none;
+      opacity: 0.3;
+    }
   </style>
 </head>
 <body>
+  <script id="PersonListItem" type="text/template">
+    <div class="item" data-person="{{name}}">
+      <div class="name">{{name}}</div>
+      <div class="kda">{{kda}}</div>
+    </div>
+  </script>
+  <div class="personList">
+    <div class="list"></div>
+    <div class="item newItemBtn">
+      <div class="name">新增</div>
+    </div>
+    <div class="item cancelBtn">
+      <div class="name">取消</div>
+    </div>
+  </div>
+  
+  <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
   <div class="score"></div>
-  <div class="match">
+  <div class="match notready">
     <div class="person aGroup1">
       <div class="name"></div>
       <div class="kda"></div>
@@ -58,16 +104,23 @@
   <button class="revertBtn">撤销</button>
   <button class="endBtn">结束</button>
   <script>
-    let matchCtrl = new MatchController(["wei", "kin"], ["cheng", "gui"]);
+    let matchCtrl = new MatchController();
     window.matchCtrl = matchCtrl;
     
     function refreshUI() {
 
+      matchCtrl.ready?
+        $sel("div.match").classList.remove("notready"): 
+        $sel("div.match").classList.add("notready");
+      (matchCtrl.aScore > 0 || matchCtrl.bScore > 0)?
+        $sel("div.match").classList.add("started"):
+        $sel("div.match").classList.remove("started");
+
       // name
-      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0];
-      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1];
-      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0];
-      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1];
+      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "(empty)";
+      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "(empty)";
+      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "(empty)";
+      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(empty)";
       
       // match score
       $sel(".score").innerHTML = `${matchCtrl.aScore} : ${matchCtrl.bScore}`
@@ -83,8 +136,19 @@
       applyKDA(matchCtrl.bGroup[0], ".bGroup1 .kda");
       applyKDA(matchCtrl.bGroup[1], ".bGroup2 .kda");
 
+      matchCtrl.save();
     }
     
+    function refreshUI_PersonList() {
+      let totalLadder = new LocalStorage("total");
+      let tpl = $sel("#PersonListItem").innerHTML;
+      $sel("div.personList > .list").innerHTML = totalLadder.ladder.ladder.map(p => {
+        let item = tpl.replaceAll("{{name}}", p.person)
+          .replace("{{kda}}", `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`)
+        return item;
+      }).join("");
+    }
+
     $sel("div.aGroup1 .goalBtn").addEventListener("click", () => {
       matchCtrl.goal(matchCtrl.aGroup[0]);
       refreshUI();
@@ -125,10 +189,70 @@
     })
 
     $sel(".endBtn").addEventListener("click", () => {
-      matchCtrl.end();
+      let beginTime = matchCtrl.match.beginTime;
+      let storageIndex = matchCtrl.end();
+      if(storageIndex)
+        location.href = `match-result.html?${storageIndex}-${beginTime}`
+    })
+
+    class PersonChooser {
+      chooseCallback;
+      constructor() {
+        $sel("div.personList").addEventListener("click", (e) => {
+          console.log(window.e = e)
+          let person = e.path.filter(i => i.dataset && i.dataset["person"])[0];
+          this.selectPerson(person && person.dataset["person"]);
+        })
+        $sel("div.personList .newItemBtn").addEventListener("click", () => {
+          let newPerson = prompt("输入新成员名字");
+          this.selectPerson(newPerson);
+        })
+        $sel("div.personList .cancelBtn").addEventListener("click", () => {
+          this.cancel();
+        });
+      }
+      selectPerson(person) {
+        this.chooseCallback && this.chooseCallback(person);
+        $sel(".personList").style.display = "none"
+      }
+      cancel() {
+        this.chooseCallback && this.chooseCallback();
+        $sel(".personList").style.display = "none"
+      }
+      async choose() {
+        refreshUI_PersonList();
+        $sel(".personList").style.display = "block"
+
+        return await new Promise(done => {
+          this.chooseCallback = done;
+        })
+      };
+    }
+    
+    let personChooser = new PersonChooser();
+
+    $sel("div.aGroup1 .name").addEventListener("click", async function(){
+      let person = await personChooser.choose();
+      person && (matchCtrl.match.personGroup[0] = person);
+      refreshUI();
+    })
+    $sel("div.aGroup2 .name").addEventListener("click", async function(){
+      let person = await personChooser.choose();
+      person && (matchCtrl.match.personGroup[1] = person);
+      refreshUI();
+    })
+    $sel("div.bGroup1 .name").addEventListener("click", async function(){
+      let person = await personChooser.choose();
+      person && (matchCtrl.match.personGroup[2] = person);
+      refreshUI();
+    })
+    $sel("div.bGroup2 .name").addEventListener("click", async function(){
+      let person = await personChooser.choose();
+      person && (matchCtrl.match.personGroup[3] = person);
       refreshUI();
     })
 
+    matchCtrl.load();
     refreshUI();
 
   </script>
