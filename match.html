@@ -221,8 +221,7 @@
     class PersonChooser {
       chooseCallback;
       constructor() {
-        $sel("div.personList").addEventListener("click", (e) => {
-          console.log(window.e = e)
+        $sel("div.personList .list").addEventListener("click", (e) => {
           let person = e.path.filter(i => i.dataset && i.dataset["person"])[0];
           this.selectPerson(person && person.dataset["person"]);
         })
