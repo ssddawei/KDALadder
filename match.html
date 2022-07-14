@@ -30,33 +30,13 @@
     .person button {
       display: block
     }
-    .personList {
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(255,255,255,0.6);
-      display: flex;
-      flex-direction: column;
-      justify-items: center;
-      align-items: center;
-      display: none;
-    }
-    .personList .item {
-      margin: 10px;
-      padding: 10px;
-      border-radius: 10px;
-      background: #222;
-      color: white;
-    }
     .notready button {
       pointer-events:none;
       opacity: 0.3;
     }
   </style>
 </head>
-<body>
+<body class="match">
   <script id="PersonListItem" type="text/template">
     <div class="item" data-person="{{name}}">
       <div class="name">{{name}}</div>
@@ -73,42 +53,62 @@
     </div>
   </div>
   
-  <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
-  <div class="score"></div>
+  <div class="menu">
+    <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
+    <button class="endBtn">结束</button>
+    <button class="revertBtn">撤销</button>
+    <button onclick="document.body.requestFullscreen();">全屏</button>
+  </div>
+  <button class="menuBtn">M<small>enu</small></button>
+
+  <div class="score">
+    <div class="aScore"></div>
+    <div class="bScore"></div>
+    <div class="time"></div>
+  </div>
   <div class="match notready">
     <div class="person aGroup1">
       <div class="name"></div>
       <div class="kda"></div>
-      <button class="goalBtn">GOAL</button>
-      <button class="lossBtn">LOSS</button>
+      <button class="goalBtn">O</button>
+      <button class="lossBtn">X</button>
     </div>
     <div class="person aGroup2">
       <div class="name"></div>
       <div class="kda"></div>
-      <button class="goalBtn">GOAL</button>
-      <button class="lossBtn">LOSS</button>
+      <button class="goalBtn">O</button>
+      <button class="lossBtn">X</button>
     </div>
     <div class="person bGroup1">
       <div class="name"></div>
       <div class="kda"></div>
-      <button class="goalBtn">GOAL</button>
-      <button class="lossBtn">LOSS</button>
+      <button class="goalBtn">O</button>
+      <button class="lossBtn">X</button>
     </div>
     <div class="person bGroup2">
       <div class="name"></div>
       <div class="kda"></div>
-      <button class="goalBtn">GOAL</button>
-      <button class="lossBtn">LOSS</button>
+      <button class="goalBtn">O</button>
+      <button class="lossBtn">X</button>
     </div>
   </div>
-  <button class="revertBtn">撤销</button>
-  <button class="endBtn">结束</button>
   <script>
     let matchCtrl = new MatchController();
-    window.matchCtrl = matchCtrl;
+    let timeTmr;
     
     function refreshUI() {
 
+      if(!timeTmr && matchCtrl.match.scores.length) {
+
+        matchCtrl.match.beginTime = Date.now();
+
+        timeTmr = setInterval(()=>{
+          let span = Math.floor((Date.now() - matchCtrl.match.beginTime)/1000);
+          let minutes = Math.floor(span / 60);
+          let seconds = span % 60;
+          $sel("div.time").innerHTML = `${minutes}:${seconds}`;
+        }, 1000);
+      }
       matchCtrl.ready?
         $sel("div.match").classList.remove("notready"): 
         $sel("div.match").classList.add("notready");
@@ -123,12 +123,27 @@
       $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(empty)";
       
       // match score
-      $sel(".score").innerHTML = `${matchCtrl.aScore} : ${matchCtrl.bScore}`
+      if($sel(".aScore").innerHTML != matchCtrl.aScore)
+      {// active animate
+        $sel(".aScore").classList.add("puff-out-center-3");
+        $sel(".aScore").style.animation = 'none';
+        $sel(".aScore").offsetHeight; /* trigger reflow */
+        $sel(".aScore").style.animation = ''; 
+        $sel(".aScore").innerHTML = `${matchCtrl.aScore}`
+      }
+      if($sel(".bScore").innerHTML != matchCtrl.bScore)
+      {// active animate
+        $sel(".bScore").classList.add("puff-out-center-3");
+        $sel(".bScore").style.animation = 'none';
+        $sel(".bScore").offsetHeight; /* trigger reflow */
+        $sel(".bScore").style.animation = ''; 
+        $sel(".bScore").innerHTML = `${matchCtrl.bScore}`
+      }
 
       // kda
       let applyKDA = (person, target) => {
         let kda = matchCtrl.kda(person);
-        $sel(target).innerHTML = `${kda.kill}-${kda.death}-${kda.assist}`;
+        $sel(target).innerHTML = `${kda.kill} / ${kda.death} / ${kda.assist}`;
       }
       
       applyKDA(matchCtrl.aGroup[0], ".aGroup1 .kda");
@@ -185,17 +200,21 @@
 
     $sel(".revertBtn").addEventListener("click", () => {
       matchCtrl.revert();
+      if(!matchCtrl.match.scores.length && timeTmr) {
+        clearInterval(timeTmr)
+        timeTmr = null;
+      }
       refreshUI();
     })
 
-    $sel(".endBtn").addEventListener("click", () => {
+    $sel(".endBtn").addEventListener("click", async () => {
       let beginTime = matchCtrl.match.beginTime;
       try{
-        let storageIndex = matchCtrl.end();
+        let storageIndex = await matchCtrl.end();
         if(storageIndex)
           location.href = `match-result.html?${storageIndex}-${beginTime}`
       } catch(e) {
-        alert("sync error " + e)
+        $alert("sync error " + e)
       }
     })
 
@@ -207,8 +226,8 @@
           let person = e.path.filter(i => i.dataset && i.dataset["person"])[0];
           this.selectPerson(person && person.dataset["person"]);
         })
-        $sel("div.personList .newItemBtn").addEventListener("click", () => {
-          let newPerson = prompt("输入新成员名字");
+        $sel("div.personList .newItemBtn").addEventListener("click", async () => {
+          let newPerson = await $prompt("输入新成员名字");
           this.selectPerson(newPerson);
         })
         $sel("div.personList .cancelBtn").addEventListener("click", () => {
@@ -217,15 +236,15 @@
       }
       selectPerson(person) {
         this.chooseCallback && this.chooseCallback(person);
-        $sel(".personList").style.display = "none"
+        $sel(".personList").classList.remove("show")
       }
       cancel() {
         this.chooseCallback && this.chooseCallback();
-        $sel(".personList").style.display = "none"
+        $sel(".personList").classList.remove("show")
       }
       async choose() {
         refreshUI_PersonList();
-        $sel(".personList").style.display = "block"
+        $sel(".personList").classList.add("show")
 
         return await new Promise(done => {
           this.chooseCallback = done;
@@ -255,6 +274,8 @@
       person && (matchCtrl.match.personGroup[3] = person);
       refreshUI();
     })
+
+    let menu = new Menu();
 
     matchCtrl.load();
     refreshUI();

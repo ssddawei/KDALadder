@@ -39,25 +39,30 @@
       width: 30px;
     }
     .result .score .item .unit {
-      flex: 0 0 30px;
       display: flex;
       justify-content: center;
       align-items: center;
     }
   </style>
 </head>
-<body>
-  <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
-  <h5>
-    比赛记录
-    <small class="beginTime"></small>
+<body class="result">
+  <div class="menu">
+    <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
+    <button class="newMatchBtn" onclick="location.href='match.html'">新赛事</button>
+  </div>
+
+  <button class="menuBtn">M<small>enu</small></button>
+  <h1>
+    # 比赛记录
+  </h1>
+  <div class="title">
+    <span class="beginTime"></span>
     <span class="score">
-      比分 
       <span class="aScore"></span>
-      -
+       : 
       <span class="bScore"></span>
     </span>
-  </h5>
+  </div>
   <div class="result">
     <div class="person">
       <div class="item p1"></div>
@@ -65,8 +70,15 @@
       <div class="item p3"></div>
       <div class="item p4"></div>
     </div>
+    <div class="person kda">
+      <div class="item p1"></div>
+      <div class="item p2"></div>
+      <div class="item p3"></div>
+      <div class="item p4"></div>
+    </div>
     <script id="ScoreItem" type="text/template">
       <div class="item">
+        <div class="scoreLine {{group}}" style="width:{{scoreLine}}%;margin-left:{{scoreLine2}}%;height:{{scoreLine}}%;"></div>
         <div class="unit item1">{{p1}}</div>
         <div class="unit item2">{{p2}}</div>
         <div class="unit item3">{{p3}}</div>
@@ -96,17 +108,20 @@
 
     let ctrl = new MatchResultController();
     
-    console.log(ctrl.matchCtrl)
-
     function refreshUI() {
       $sel(".beginTime").innerHTML = new Date(ctrl.matchCtrl.match.beginTime).toLocaleString();
-      $sel(".aScore").innerHTML = ctrl.matchCtrl.aScore;
-      $sel(".bScore").innerHTML = ctrl.matchCtrl.bScore;
+      $sel(".aScore").innerHTML = ctrl.matchCtrl.aScore ;
+      $sel(".bScore").innerHTML = ctrl.matchCtrl.bScore ;
 
       $sel(".result .person .p1").innerHTML = ctrl.matchCtrl.aGroup[0];
       $sel(".result .person .p2").innerHTML = ctrl.matchCtrl.aGroup[1];
       $sel(".result .person .p3").innerHTML = ctrl.matchCtrl.bGroup[0];
       $sel(".result .person .p4").innerHTML = ctrl.matchCtrl.bGroup[1];
+
+      $sel(".result .kda .p1").innerHTML = $kdaString(ctrl.matchCtrl.kda(0));
+      $sel(".result .kda .p2").innerHTML = $kdaString(ctrl.matchCtrl.kda(1));
+      $sel(".result .kda .p3").innerHTML = $kdaString(ctrl.matchCtrl.kda(2));
+      $sel(".result .kda .p4").innerHTML = $kdaString(ctrl.matchCtrl.kda(3));
 
       let ScoreItem = $sel("#ScoreItem").innerHTML;
       function mark(score, person) {
@@ -117,19 +132,38 @@
           score.loss &&  score.loss.indexOf(person)>=0 && "L" || 
           "";
       }
-      $sel(".result .score").innerHTML = ctrl.matchCtrl.match.scores.map(i => {
+      let aScore = 0, bScore = 0;
+      let maxScoreSpan = 0;
+      ctrl.matchCtrl.match.scores.forEach(i => {
+        let aScore = ctrl.matchCtrl.match.personGroup.slice(0,2).indexOf(i.kill) >= 0 ||
+          ctrl.matchCtrl.match.personGroup.slice(2,4).indexOf(i.death) >= 0;
+        let bScore = ctrl.matchCtrl.match.personGroup.slice(0,2).indexOf(i.death) >= 0 ||
+          ctrl.matchCtrl.match.personGroup.slice(2,4).indexOf(i.kill) >= 0;
+        let span = aScore - bScore;
+        if(Math.abs(maxScoreSpan + span) > Math.abs(maxScoreSpan))
+          maxScoreSpan += span;
+      });
+      $sel("div.result .score").innerHTML = ctrl.matchCtrl.match.scores.map(i => {
+        aScore += ctrl.matchCtrl.match.personGroup.slice(0,2).indexOf(i.kill) >= 0 ||
+          ctrl.matchCtrl.match.personGroup.slice(2,4).indexOf(i.death) >= 0;
+        bScore += ctrl.matchCtrl.match.personGroup.slice(0,2).indexOf(i.death) >= 0 ||
+          ctrl.matchCtrl.match.personGroup.slice(2,4).indexOf(i.kill) >= 0;
+
+        let span = Math.floor(Math.abs(aScore - bScore)/Math.abs(maxScoreSpan) * 60);
+        let group = aScore > bScore? "groupA" : "groupB";
+
         let item = ScoreItem.replace("{{p1}}", mark(i, ctrl.matchCtrl.aGroup[0]))
           .replace("{{p2}}", mark(i, ctrl.matchCtrl.aGroup[1]))
           .replace("{{p3}}", mark(i, ctrl.matchCtrl.bGroup[0]))
           .replace("{{p4}}", mark(i, ctrl.matchCtrl.bGroup[1]))
+          .replaceAll("{{group}}", group)
+          .replaceAll("{{scoreLine}}", span)
+          .replaceAll("{{scoreLine2}}", span * (group == "groupB"? 1: -1))
         return item;
-      }).join("") + 
-        ScoreItem.replace("{{p1}}", $kdaString(ctrl.matchCtrl.kda(ctrl.matchCtrl.aGroup[0])))
-            .replace("{{p2}}", $kdaString(ctrl.matchCtrl.kda(ctrl.matchCtrl.aGroup[1])))
-            .replace("{{p3}}", $kdaString(ctrl.matchCtrl.kda(ctrl.matchCtrl.bGroup[0])))
-            .replace("{{p4}}", $kdaString(ctrl.matchCtrl.kda(ctrl.matchCtrl.bGroup[1])))
+      }).join("")
     }
 
+    let menu = new Menu();
     refreshUI();
 
   </script>

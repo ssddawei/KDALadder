@@ -37,6 +37,9 @@ class MatchController {
     this.match.scores.length && this.match.scores.length --;
   }
   kda(person) {
+    if(+person < 4) {
+      person = this.match.personGroup[+person];
+    }
     let kill = this.match.scores.filter(i => i.kill == person).length;
     let death = this.match.scores.filter(i => i.death == person).length;
     let assist = this.match.scores.filter(i => i.assist == person).length;
@@ -75,7 +78,7 @@ class MatchController {
       this.match = storage.matches[0];
     }
   }
-  end() {
+  async end() {
 
     if(!this.ready) return;
 
@@ -84,14 +87,14 @@ class MatchController {
 
     // check sync key
     if(!sync.key) {
-      let key = prompt("同步到云端，请输入密钥");
+      let key = await $prompt("同步到云端，请输入密钥");
       if(!key) {
-        if(!confirm("不保存到云端，确认？")){
+        if(!await $confirm("不保存到云端，确认？")){
           return;
         }
       } else {
         if(!sync.saveKey(key)){
-          alert("密钥格式错误");
+          await $alert("密钥格式错误");
           return;
         }
       }
@@ -130,3 +133,22 @@ class MatchController {
     return storage.index;
   }
 }
+
+class Menu {
+  constructor() {
+    $sel(".menuBtn").addEventListener("click", ()=>{
+      $sel(".menu").classList.add("show");
+    })
+    $sel(".menu").addEventListener("click", ()=>{
+      $sel(".menu").classList.remove("show");
+    })
+    let btn = $sel(".menuBtn");
+    let menu = $sel(".menu");
+    document.addEventListener("click", function(e){
+      if(e.path.filter(i=>i==btn||i==menu).length == 0){
+        $sel(".menu").classList.remove("show");
+      }
+    })
+  }
+}
+

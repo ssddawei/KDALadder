@@ -31,36 +31,45 @@
     }
   </style>
 </head>
-<body>
-  <h1> KDA 天梯排名 </h1>
-  <script id="LadderItem" type="text/template">
-    <div class="item">
-      <div class="name">{{name}}</div>
-      <div class="score">{{score}}</div>
-    </div>
-  </script>
-  <div class="ladder">
-  </div>
-  <h1> 比赛记录 </h1>
-  <script id="MatchItem" type="text/template">
-    <div class="item" onclick="location.href='match-result.html?{{index}}-{{beginTime}}'">
-      <div class="title">{{title}}</div>
-      <div class="teamA">
-        <div class="person1">{{person1}}</div>
-        <div class="person2">{{person2}}</div>
-      </div>
-      <div class="score">{{score}}</div>
-      <div class="teamB">
-        <div class="person1">{{person3}}</div>
-        <div class="person2">{{person4}}</div>
-      </div>
-    </div>
-  </script>
-  <div class="matches">
+<body class="ladder">
 
+  <div class="menu">
+    <button class="newMatchBtn" onclick="location.href='match.html'">新赛事</button>
   </div>
-  <button class="newMatchBtn" onclick="location.href='match.html'">Start</button>
 
+  <button class="menuBtn">M<small>enu</small></button>
+
+  <div class="box">
+    <h1># KDA 天梯排名</h1>
+    <script id="LadderItem" type="text/template">
+      <div class="item">
+        <div class="name">{{name}}</div>
+        <div class="score" style="width:{{width}}%"><span>{{score}}</span></div>
+      </div>
+    </script>
+    <div class="ladder">
+    </div>
+  </div>
+  <div class="box">
+    <h1> # 赛事记录 </h1>
+    <script id="MatchItem" type="text/template">
+      <div class="item" onclick="location.href='match-result.html?{{index}}-{{beginTime}}'">
+        <div class="title">{{title}}</div>
+        <div class="teamA">
+          <div class="person1">{{person1}}</div>
+          <div class="person2">{{person2}}</div>
+        </div>
+        <div class="score">{{score}}</div>
+        <div class="teamB">
+          <div class="person1">{{person3}}</div>
+          <div class="person2">{{person4}}</div>
+        </div>
+      </div>
+    </script>
+    <div class="matches">
+
+    </div>
+  </div>
   <script>
     class LadderController {
       syncData = new AliyunSyncData();
@@ -95,9 +104,12 @@
       // ladder 
       tmpl = $sel("#LadderItem").innerHTML;
 
+      let maxScore = ladderCtrl.totalLadder.ladder.ladder[0].score;
       $sel("div.ladder").innerHTML = ladderCtrl.totalLadder.ladder.ladder.map(i => {
+        let width = Math.floor(i.score / maxScore * 100 * 0.7);
         let item = tmpl.replace("{{name}}", i.person)
-          .replace("{{score}}", $kdaString(i, true));
+          .replaceAll("{{score}}", $kdaString(i, true))
+          .replace("{{width}}", width)
         return item;
       }).join("");
 
@@ -119,6 +131,7 @@
 
     }
 
+    let menu = new Menu();
     ladderCtrl.sync().then(refreshUI);
   </script>
 </body>
