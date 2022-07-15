@@ -65,10 +65,22 @@
   </div>
   <div class="result">
     <div class="person">
-      <div class="item p1"></div>
-      <div class="item p2"></div>
-      <div class="item p3"></div>
-      <div class="item p4"></div>
+      <div class="item p1">
+        <img class="mvp" src="res/mvp.svg" />
+        <img class="loser" src="res/loser.svg" />
+        <div class="name"></div></div>
+      <div class="item p2">
+        <img class="mvp" src="res/mvp.svg" />
+        <img class="loser" src="res/loser.svg" />
+        <div class="name"></div></div>
+      <div class="item p3">
+        <img class="mvp" src="res/mvp.svg" />
+        <img class="loser" src="res/loser.svg" />
+        <div class="name"></div></div>
+      <div class="item p4">
+        <img class="mvp" src="res/mvp.svg" />
+        <img class="loser" src="res/loser.svg" />
+        <div class="name"></div></div>
     </div>
     <div class="person kda">
       <div class="item p1"></div>
@@ -113,16 +125,33 @@
       $sel(".aScore").innerHTML = ctrl.matchCtrl.aScore ;
       $sel(".bScore").innerHTML = ctrl.matchCtrl.bScore ;
 
-      $sel(".result .person .p1").innerHTML = ctrl.matchCtrl.aGroup[0];
-      $sel(".result .person .p2").innerHTML = ctrl.matchCtrl.aGroup[1];
-      $sel(".result .person .p3").innerHTML = ctrl.matchCtrl.bGroup[0];
-      $sel(".result .person .p4").innerHTML = ctrl.matchCtrl.bGroup[1];
+      $sel(".result .person .p1 .name").innerHTML = ctrl.matchCtrl.aGroup[0];
+      $sel(".result .person .p2 .name").innerHTML = ctrl.matchCtrl.aGroup[1];
+      $sel(".result .person .p3 .name").innerHTML = ctrl.matchCtrl.bGroup[0];
+      $sel(".result .person .p4 .name").innerHTML = ctrl.matchCtrl.bGroup[1];
 
       $sel(".result .kda .p1").innerHTML = $kdaString(ctrl.matchCtrl.kda(0));
       $sel(".result .kda .p2").innerHTML = $kdaString(ctrl.matchCtrl.kda(1));
       $sel(".result .kda .p3").innerHTML = $kdaString(ctrl.matchCtrl.kda(2));
       $sel(".result .kda .p4").innerHTML = $kdaString(ctrl.matchCtrl.kda(3));
 
+      //mvp
+      let mvp = ctrl.matchCtrl.mvp();
+      let loser = ctrl.matchCtrl.loser();
+      
+      $sels("div.result .person .item").forEach(i => i.classList.remove("mvp"))
+      $sels("div.result .person .item").forEach(i => i.classList.remove("loser"))
+
+      let personToTarget = (person) => {
+        let idx = ctrl.matchCtrl.match.personGroup.map((i,idx)=>i==person? idx: null)
+          .filter(i=>i!==null)[0];
+        return [".p1", ".p2", ".p3", ".p4"][idx];
+      }
+      
+      $sel(personToTarget(mvp)).classList.add("mvp");
+      $sel(personToTarget(loser)).classList.add("loser");
+
+      //score
       let ScoreItem = $sel("#ScoreItem").innerHTML;
       function mark(score, person) {
         return score.kill == person && "O" ||

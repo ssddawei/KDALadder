@@ -96,7 +96,7 @@ button:active,button:after,button:before {
   align-items: center;
 }
 .prompt .dialog {
-  width: 8rem;
+  width: 7rem;
   /* height: 6rem; */
   background: white;
   border-radius: 0.2rem;
@@ -109,7 +109,8 @@ button:active,button:after,button:before {
   animation: dialog-ani 0.8s both;
 }
 .prompt .dialog .title{
-  font-size: 0.7rem;
+  font-size: 0.5rem;
+  width: 100%;
   color: black
 }
 .prompt .dialog input{
@@ -320,7 +321,24 @@ body.match .match .person {
   background: rgba(255,255,255,0.2);
   background: rgba(255,255,255,0);
   border-radius: 0.1rem;
+  position: relative;
 }
+body.match .match .person .mvp {
+  position: absolute;
+  width: 0.8rem;
+  top: -0.1rem;
+  display: none;
+}
+body.match .match .person .loser {
+  position: absolute;
+  width: 1rem;
+  top: -0.1rem;
+  display: none;
+}
+body.match .match .person.mvp .mvp, body.match .match .person.loser .loser {
+  display: block;
+}
+
 body.match .match .person .name {
   text-align: center;
   font-size: 0.6rem;
@@ -563,7 +581,25 @@ body.result div.result .person .item{
   flex-direction: row;
   justify-content: center;
   align-items: center;
+  position: relative;
 }
+
+body.result div.result .person .item .mvp {
+  position: absolute;
+  width: 0.8rem;
+  top: -0.4rem;
+  display: none;
+}
+body.result div.result .person .item .loser {
+  position: absolute;
+  width: 1rem;
+  top: -0.3rem;
+  display: none;
+}
+body.result div.result .person .item.mvp .mvp, body.result div.result .person .item.loser .loser {
+  display: block;
+}
+
 body.result div.result .kda .item{
   font-size: 0.3rem;
   color: #aaa;

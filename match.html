@@ -68,24 +68,32 @@
   </div>
   <div class="match notready">
     <div class="person aGroup1">
+      <img class="mvp" src="res/mvp.svg" />
+      <img class="loser" src="res/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
     <div class="person aGroup2">
+      <img class="mvp" src="res/mvp.svg" />
+      <img class="loser" src="res/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
     <div class="person bGroup1">
+      <img class="mvp" src="res/mvp.svg" />
+      <img class="loser" src="res/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
     <div class="person bGroup2">
+      <img class="mvp" src="res/mvp.svg" />
+      <img class="loser" src="res/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
       <button class="goalBtn">O</button>
@@ -151,6 +159,25 @@
       applyKDA(matchCtrl.bGroup[0], ".bGroup1 .kda");
       applyKDA(matchCtrl.bGroup[1], ".bGroup2 .kda");
 
+      // mvp
+      let mvp = matchCtrl.mvp();
+      let loser = matchCtrl.loser();
+      
+      $sels("div.match .person").forEach(i => i.classList.remove("mvp"))
+      $sels("div.match .person").forEach(i => i.classList.remove("loser"))
+
+      let personToTarget = (person) => {
+        let idx = matchCtrl.match.personGroup.map((i,idx)=>i==person? idx: null)
+          .filter(i=>i!==null)[0];
+        return [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"][idx];
+      }
+      
+      if(matchCtrl.started) {
+        $sel(personToTarget(mvp)).classList.add("mvp");
+        $sel(personToTarget(loser)).classList.add("loser");
+      }
+
+
       matchCtrl.save();
     }
     
@@ -199,6 +226,10 @@
     })
 
     $sel(".revertBtn").addEventListener("click", () => {
+      if(!matchCtrl.match.scores.length){
+        $alert("对不起，办不到。");
+        return;
+      }
       matchCtrl.revert();
       if(!matchCtrl.match.scores.length && timeTmr) {
         clearInterval(timeTmr)
@@ -208,6 +239,10 @@
     })
 
     $sel(".endBtn").addEventListener("click", async () => {
+      if(!matchCtrl.started){
+        $alert("比赛都没开始，结束你个头。");
+        return;
+      }
       let beginTime = matchCtrl.match.beginTime;
       try{
         let storageIndex = await matchCtrl.end();
