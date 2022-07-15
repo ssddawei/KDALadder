@@ -666,6 +666,14 @@ body.result div.result .score .item .scoreLine.groupB {
     height: 100%;
     margin-top: 0.5rem;
   }
+
+  body.result div.result .person .item .mvp {
+    top: 0.15rem;
+  }
+  body.result div.result .person .item .loser {
+    top: 0.3rem;
+  }
+
   body.result div.result .score{
     flex-direction: row;
   }
