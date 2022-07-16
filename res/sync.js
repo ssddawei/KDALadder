@@ -3,14 +3,19 @@ class SyncData {
   // example:
   /*
     {
-      "2022-7-12":Storage,
-      "2022-7-13":Storage,
+      ladder: {
+        "2022-7-12":[Ladder],
+        "2022-7-13":[Ladder],
+      }
+      data: {
+        "2022-7-12":[Match],
+        "2022-7-13":[Match],
+      }
     }
 
   */
-  storages = {};
-  totalLadder = new LocalStorage("total");
-  matchIndex = [];
+  remote = {ladder:{}, data:{}};
+  local = {ladder:{}, data:{}};
   constructor() {
   }
   sync(idx) {}

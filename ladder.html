@@ -90,9 +90,6 @@
       }
       async sync() {
         await this.syncData.sync();
-        if(!this.storage.matches.length && this.syncData.lastMatchIndex) {
-          await this.syncData.sync(this.syncData.lastMatchIndex);
-        }
       }
     }
 

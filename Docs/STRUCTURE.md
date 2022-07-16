@@ -12,7 +12,11 @@
     data-2022-07.json
 
 # 数据结构 
-ladder
+数据使用半json格式，只能添加不能修改。获取到数据后，用[]包裹后解释。
+## 季度天梯数据，1-3 4-6 7-9 10-12 分别记录
+每场比赛叠加数据进去
+```
+ladder-2022-season1.json
 {
   beginTime: datetime,
   endTime: datetime,
@@ -29,28 +33,28 @@ ladder
       score: number,
     }
   ]
-}
+},
+```
 
-data
+## 比赛记录
+每场比赛叠加数据进去
+```
+data-2022-07-21
 {
-  matches: [
+  beginTime: datetime,
+  endTime: datetime,
+  scores: [
     {
-      beginTime: datetime,
-      endTime: datetime,
-      scores: [
-        {
-          ts: datetime,
-          K: someone,
-          D: someone,
-          A: someone,
-        },
-        {
-          ts: datetime,
-          win: [someone],
-          loss: [someone],
-        }
-      ]
+      ts: datetime,
+      K: someone,
+      D: someone,
+      A: someone,
+    },
+    {
+      ts: datetime,
+      win: [someone],
+      loss: [someone],
     }
-  ],
-  ladder: ladder
-}
+  ]
+},
+```
