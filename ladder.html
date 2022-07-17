@@ -108,7 +108,7 @@
       $sel("div.ladder").innerHTML = ladderCtrl.totalLadder.ladder.ladder.map(i => {
         let width = Math.floor(i.score / maxScore * 100 * 0.7);
         let item = tmpl.replace("{{name}}", i.person)
-          .replaceAll("{{score}}", $kdaString(i, true))
+          .replace(/{{score}}/g, $kdaString(i, true))
           .replace("{{width}}", width)
         return item;
       }).join("");

@@ -185,9 +185,9 @@
           .replace("{{p2}}", mark(i, ctrl.matchCtrl.aGroup[1]))
           .replace("{{p3}}", mark(i, ctrl.matchCtrl.bGroup[0]))
           .replace("{{p4}}", mark(i, ctrl.matchCtrl.bGroup[1]))
-          .replaceAll("{{group}}", group)
-          .replaceAll("{{scoreLine}}", span)
-          .replaceAll("{{scoreLine2}}", span * (group == "groupB"? 1: -1))
+          .replace(/{{group}}/g, group)
+          .replace(/{{scoreLine}}/g, span)
+          .replace(/{{scoreLine2}}/g, span * (group == "groupB"? 1: -1))
         return item;
       }).join("")
     }

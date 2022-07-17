@@ -185,7 +185,7 @@
       let totalLadder = new LocalStorage("total");
       let tpl = $sel("#PersonListItem").innerHTML;
       $sel("div.personList > .list").innerHTML = totalLadder.ladder.ladder.map(p => {
-        let item = tpl.replaceAll("{{name}}", p.person)
+        let item = tpl.replace(/{{name}}/g, p.person)
           .replace("{{kda}}", `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`)
         return item;
       }).join("");
