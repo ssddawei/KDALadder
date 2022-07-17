@@ -44,11 +44,11 @@ class AliyunSyncData extends SyncData {
 
       Object.entries(this.local.ladder).map(async ([season,ladder]) => {
         let unsyncLadder = ladder.filter(i => {
-          return !this.remote[season].ladder.find(r => r.beginTime == i.beginTime)
+          return !this.remote[season] || !this.remote[season].ladder.find(r => r.beginTime == i.beginTime)
         });
 
         let data = JSON.stringify(unsyncLadder).slice(1, -1);
-        if(this.remote[season].ladder.length)
+        if(this.remote[season] && this.remote[season].ladder.length)
           data = "," + data;
 
         console.log("store.append", unsyncLadder);

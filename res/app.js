@@ -1,6 +1,7 @@
 
 class MatchController {
   match = new Match();
+  ladder = new Ladder();
   get ready() {
     return !!(this.match.personGroup.filter(i=>i).length == 4)
   }
@@ -95,15 +96,13 @@ class MatchController {
   }
   save() {
     let storage = new LocalStorage("current");
-    storage.matches[0] = (this.match);
+    storage.data = {"current": this.match}
     storage.save();
   }
   load() {
     let storage = new LocalStorage("current");
-    storage.load();
-    if(storage.matches.length) {
-      this.match = storage.matches[0];
-    }
+    if(storage.data.current)
+      this.match = storage.data.current;
   }
   async end() {
 
@@ -135,18 +134,22 @@ class MatchController {
     }
     
     // save to local
-    storage.matches.push(this.match);
+    (storage.data[$dateString(new Date())] = storage.data[$dateString(new Date())] || [])
+      .push(this.match);
 
-    storage.ladder.beginTime = storage.matches[0].beginTime;
-    storage.ladder.endTime = this.match.endTime2;
-    storage.ladder.matchCount = (+storage.ladder.matchCount||0) + 1;
-    storage.ladder.matchTotalTimeSec = (+storage.ladder.matchTotalTimeSec||0) + ((this.match.endTime2 - this.match.beginTime)/1000).toFixed(0);
+    this.ladder.beginTime = this.match.beginTime;
+    this.ladder.endTime = this.match.endTime2;
+    this.ladder.matchCount = (+storage.ladder.matchCount||0) + 1;
+    this.ladder.matchTotalTimeSec = (+storage.ladder.matchTotalTimeSec||0) + ((this.match.endTime2 - this.match.beginTime)/1000).toFixed(0);
     
     // update to local ladder
-    MatchController.LadderEvolve(storage.ladder.ladder, this.aGroup[0], this.kda(this.aGroup[0]));
-    MatchController.LadderEvolve(storage.ladder.ladder, this.aGroup[1], this.kda(this.aGroup[1]));
-    MatchController.LadderEvolve(storage.ladder.ladder, this.bGroup[0], this.kda(this.bGroup[0]));
-    MatchController.LadderEvolve(storage.ladder.ladder, this.bGroup[1], this.kda(this.bGroup[1]));
+    MatchController.LadderEvolve(this.ladder.ladder, this.aGroup[0], this.kda(this.aGroup[0]));
+    MatchController.LadderEvolve(this.ladder.ladder, this.aGroup[1], this.kda(this.aGroup[1]));
+    MatchController.LadderEvolve(this.ladder.ladder, this.bGroup[0], this.kda(this.bGroup[0]));
+    MatchController.LadderEvolve(this.ladder.ladder, this.bGroup[1], this.kda(this.bGroup[1]));
+
+    (storage.ladder[$seasonString(new Date())] = storage.ladder[$seasonString(new Date())] || [])
+      .push(this.ladder);
 
     storage.save();
 

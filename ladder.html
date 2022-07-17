@@ -80,10 +80,10 @@
 
       }
       get storage() {
-        return this.syncData.lastStorage
+        return this.syncData.local
       }
-      get totalLadder() {
-        return this.syncData.totalLadder;
+      get remote() {
+        return this.syncData.remote;
       }
       constructor() {
         
@@ -96,35 +96,44 @@
     let ladderCtrl = new LadderController();
 
     function refreshUI() {
+
       var tmpl;
+      let ladder = ladderCtrl.remote.ladder[$seasonString(new Date())];
+      let data = ladderCtrl.remote.data[$dateString(new Date())];
 
-      // ladder 
-      tmpl = $sel("#LadderItem").innerHTML;
+      if(ladder && ladder.length) {
 
-      let maxScore = ladderCtrl.totalLadder.ladder.ladder[0].score;
-      $sel("div.ladder").innerHTML = ladderCtrl.totalLadder.ladder.ladder.map(i => {
-        let width = Math.floor(i.score / maxScore * 100 * 0.7);
-        let item = tmpl.replace("{{name}}", i.person)
-          .replaceAll("{{score}}", $kdaString(i, true))
-          .replace("{{width}}", width)
-        return item;
-      }).join("");
+        // ladder 
+        tmpl = $sel("#LadderItem").innerHTML;
+
+        let maxScore = ladder[0].ladder[0].score;
+        $sel("div.ladder").innerHTML = ladder.ladder.map(i => {
+          let width = Math.floor(i.score / maxScore * 100 * 0.7);
+          let item = tmpl.replace("{{name}}", i.person)
+            .replaceAll("{{score}}", $kdaString(i, true))
+            .replace("{{width}}", width)
+          return item;
+        }).join("");
+
+      }
 
       // match
-      tmpl = $sel("#MatchItem").innerHTML;
+      if(data) {
+        tmpl = $sel("#MatchItem").innerHTML;
 
-      $sel("div.matches").innerHTML = ladderCtrl.storage.matches.map(i => {
-        let matchCtrl = new MatchController(i);
-        let item = tmpl.replace("{{score}}", `${matchCtrl.aScore}:${matchCtrl.bScore}`)
-          .replace("{{index}}", `${ladderCtrl.storage.index}`)
-          .replace("{{beginTime}}", `${i.beginTime}`)
-          .replace("{{title}}", `${$timeString(new Date(i.beginTime))}`)
-          .replace("{{person1}}", `${i.personGroup[0]} ${matchCtrl.kda(i.personGroup[0]).score.toFixed(1)}`)
-          .replace("{{person2}}", `${i.personGroup[1]} ${matchCtrl.kda(i.personGroup[1]).score.toFixed(1)}`)
-          .replace("{{person3}}", `${i.personGroup[2]} ${matchCtrl.kda(i.personGroup[2]).score.toFixed(1)}`)
-          .replace("{{person4}}", `${i.personGroup[3]} ${matchCtrl.kda(i.personGroup[3]).score.toFixed(1)}`)
-        return item;
-      }).join("");
+        $sel("div.matches").innerHTML = data.map(i => {
+          let matchCtrl = new MatchController(i);
+          let item = tmpl.replace("{{score}}", `${matchCtrl.aScore}:${matchCtrl.bScore}`)
+            .replace("{{index}}", `${ladderCtrl.storage.index}`)
+            .replace("{{beginTime}}", `${i.beginTime}`)
+            .replace("{{title}}", `${$timeString(new Date(i.beginTime))}`)
+            .replace("{{person1}}", `${i.personGroup[0]} ${matchCtrl.kda(i.personGroup[0]).score.toFixed(1)}`)
+            .replace("{{person2}}", `${i.personGroup[1]} ${matchCtrl.kda(i.personGroup[1]).score.toFixed(1)}`)
+            .replace("{{person3}}", `${i.personGroup[2]} ${matchCtrl.kda(i.personGroup[2]).score.toFixed(1)}`)
+            .replace("{{person4}}", `${i.personGroup[3]} ${matchCtrl.kda(i.personGroup[3]).score.toFixed(1)}`)
+          return item;
+        }).join("");
+      }
 
     }
 

@@ -4,8 +4,8 @@ class SyncData {
   /*
     {
       ladder: {
-        "2022-7-12":[Ladder],
-        "2022-7-13":[Ladder],
+        "2022-season1":[Ladder],
+        "2022-season2":[Ladder],
       }
       data: {
         "2022-7-12":[Match],
@@ -16,7 +16,8 @@ class SyncData {
   */
   remote = {ladder:{}, data:{}};
   local = {ladder:{}, data:{}};
-  constructor() {
+  constructor(storage) {
+    this.local = storage;
   }
-  sync(idx) {}
+  sync() {}
 }

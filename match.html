@@ -108,7 +108,8 @@
 
       if(!timeTmr && matchCtrl.match.scores.length) {
 
-        matchCtrl.match.beginTime = Date.now();
+        if(!matchCtrl.match.beginTime)
+          matchCtrl.match.beginTime = Date.now();
 
         timeTmr = setInterval(()=>{
           let span = Math.floor((Date.now() - matchCtrl.match.beginTime)/1000);
@@ -181,15 +182,6 @@
       matchCtrl.save();
     }
     
-    function refreshUI_PersonList() {
-      let totalLadder = new LocalStorage("total");
-      let tpl = $sel("#PersonListItem").innerHTML;
-      $sel("div.personList > .list").innerHTML = totalLadder.ladder.ladder.map(p => {
-        let item = tpl.replaceAll("{{name}}", p.person)
-          .replace("{{kda}}", `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`)
-        return item;
-      }).join("");
-    }
 
     $sel("div.aGroup1 .goalBtn").addEventListener("click", () => {
       matchCtrl.goal(matchCtrl.aGroup[0]);
@@ -268,6 +260,18 @@
           this.cancel();
         });
       }
+      refreshUI() {
+        let remote = new LocalStorage("remote");
+        let ladder = remote.ladder[$seasonString(new Date())];
+        if(ladder) {
+          let tpl = $sel("#PersonListItem").innerHTML;
+          $sel("div.personList > .list").innerHTML = remote.ladder[$seasonString(new Date())].ladder.map(p => {
+            let item = tpl.replaceAll("{{name}}", p.person)
+              .replace("{{kda}}", `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`)
+            return item;
+          }).join("");
+        }
+      }
       selectPerson(person) {
         this.chooseCallback && this.chooseCallback(person);
         $sel(".personList").classList.remove("show")
@@ -277,7 +281,7 @@
         $sel(".personList").classList.remove("show")
       }
       async choose() {
-        refreshUI_PersonList();
+        this.refreshUI();
         $sel(".personList").classList.add("show")
 
         return await new Promise(done => {
