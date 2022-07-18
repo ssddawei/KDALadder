@@ -25,7 +25,10 @@ let $fetch = async function(){
   if(response.status == 404){
     return null;
   }
-  return await response.json();
+  
+  let text = await response.text();
+  let json = '[' + text + ']';
+  return JSON.parse(json);
 }
 
 let $prompt = async function(title){

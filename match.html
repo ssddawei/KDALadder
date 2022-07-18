@@ -237,11 +237,12 @@
       }
       let beginTime = matchCtrl.match.beginTime;
       try{
-        let storageIndex = await matchCtrl.end();
-        if(storageIndex)
-          location.href = `match-result.html?${storageIndex}-${beginTime}`
+        let date = await matchCtrl.end();
+        if(date)
+          location.href = `match-result.html?${date}-${beginTime}`
       } catch(e) {
-        $alert("sync error " + e)
+        $alert("sync error " + e);
+        throw e;
       }
     })
 
@@ -316,6 +317,9 @@
     let menu = new Menu();
 
     matchCtrl.load();
+    matchCtrl.match.personGroup = ['a', 'b', 'c', 'd'];
+    matchCtrl.goal('a');
+    matchCtrl.goal('c');
     refreshUI();
 
   </script>

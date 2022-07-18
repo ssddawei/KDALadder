@@ -62,7 +62,7 @@ class Storage {
   ladder = {};
   data = {};
   constructor(prefix) {
-    this.prefix = prefix || "";
+    this.prefix = (prefix || "");
   }
   load(){};
   save(){};

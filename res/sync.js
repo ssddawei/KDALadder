@@ -16,8 +16,10 @@ class SyncData {
   */
   remote = {ladder:{}, data:{}};
   local = {ladder:{}, data:{}};
-  constructor(storage) {
+  remoteCache;
+  constructor(storage, remoteCacheStorage) {
     this.local = storage;
+    this.remoteCache = remoteCacheStorage;
   }
   sync() {}
 }

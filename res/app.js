@@ -109,7 +109,7 @@ class MatchController {
     if(!this.ready || !this.started) return;
 
     let storage = new LocalStorage();
-    let sync = new AliyunSyncData(storage);
+    let sync = new AliyunSyncData(storage, new LocalStorage("remote"));
 
     // check sync key
     if(!sync.key) {
@@ -126,6 +126,8 @@ class MatchController {
       }
     }
 
+    let now = new Date();
+
     // add win/loss score
     if( this.aScore > this.bScore ) {
       this.match.scores.push(new MatchScore(this.aGroup, this.bGroup))
@@ -134,13 +136,13 @@ class MatchController {
     }
     
     // save to local
-    (storage.data[$dateString(new Date())] = storage.data[$dateString(new Date())] || [])
+    (storage.data[$dateString(now)] = storage.data[$dateString(now)] || [])
       .push(this.match);
 
     this.ladder.beginTime = this.match.beginTime;
     this.ladder.endTime = this.match.endTime2;
     this.ladder.matchCount = (+storage.ladder.matchCount||0) + 1;
-    this.ladder.matchTotalTimeSec = (+storage.ladder.matchTotalTimeSec||0) + ((this.match.endTime2 - this.match.beginTime)/1000).toFixed(0);
+    this.ladder.matchTotalTimeSec = (+storage.ladder.matchTotalTimeSec||0) + Math.floor((this.match.endTime2 - this.match.beginTime)/1000);
     
     // update to local ladder
     MatchController.LadderEvolve(this.ladder.ladder, this.aGroup[0], this.kda(this.aGroup[0]));
@@ -148,19 +150,19 @@ class MatchController {
     MatchController.LadderEvolve(this.ladder.ladder, this.bGroup[0], this.kda(this.bGroup[0]));
     MatchController.LadderEvolve(this.ladder.ladder, this.bGroup[1], this.kda(this.bGroup[1]));
 
-    (storage.ladder[$seasonString(new Date())] = storage.ladder[$seasonString(new Date())] || [])
+    (storage.ladder[$seasonString(now)] = storage.ladder[$seasonString(now)] || [])
       .push(this.ladder);
 
     storage.save();
 
     // sync
-    sync.sync();
+    await sync.sync();
 
     new LocalStorage("current").delete();
 
     this.match = new Match();
 
-    return storage.index;
+    return $dateString(now);
   }
 }
 

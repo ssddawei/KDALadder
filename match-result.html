@@ -103,18 +103,23 @@
   <script>
 
     class MatchResultController {
-      index;
+      date;
       beginTime;
       matchCtrl;
       constructor() {
         let query = location.search.slice(1);
         let splitIdx = query.lastIndexOf("-");
-        this.index = query.slice(0, splitIdx);
+        this.date = query.slice(0, splitIdx);
         this.beginTime = query.slice(splitIdx+1);
 
-        let storage = new LocalStorage(this.index);
-        let match = storage.matches.filter(i => i.beginTime == this.beginTime)[0];
-        this.matchCtrl = new MatchController(match)
+        let storage = new LocalStorage("remote");
+        let matches = storage.data[this.date];
+        if(matches) {
+          let match = matches.filter(i => i.beginTime == this.beginTime)[0];
+          this.matchCtrl = new MatchController(match)
+        } else {
+          this.matchCtrl = new MatchController()
+        }
       }
     }
 
