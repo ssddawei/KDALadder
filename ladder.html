@@ -51,7 +51,7 @@
     </div>
   </div>
   <div class="box">
-    <h1> # 赛事记录 </h1>
+    <h1> # 赛事记录 <small class="boxDate"></small></h1>
     <script id="MatchItem" type="text/template">
       <div class="item" onclick="location.href='match-result.html?{{index}}-{{beginTime}}'">
         <div class="title">{{title}}</div>
@@ -71,42 +71,24 @@
     </div>
   </div>
   <script>
-    class LadderController {
-      syncData = new AliyunSyncData();
-      get persons() {
-
-      }
-      get ladder() {
-
-      }
-      get storage() {
-        return this.syncData.local
-      }
-      get remote() {
-        return this.syncData.remote;
-      }
-      constructor() {
-        
-      }
-      async sync() {
-        await this.syncData.sync();
-      }
-    }
 
     let ladderCtrl = new LadderController();
 
     function refreshUI() {
 
       var tmpl;
-      let ladder = ladderCtrl.remote.ladder[$seasonString(new Date())];
-      let data = ladderCtrl.remote.data[$dateString(new Date())];
+      let now = new Date();
+      let ladder = ladderCtrl.seasonLadder();
+      let data = ladderCtrl.remote.data[$dateString(now)];
 
-      if(ladder && ladder.length) {
+      $sel(".boxDate").innerHTML = $dateString(now);
+
+      if(ladder) {
 
         // ladder 
         tmpl = $sel("#LadderItem").innerHTML;
 
-        let maxScore = ladder[0].ladder[0].score;
+        let maxScore = ladder.ladder[0].score;
         $sel("div.ladder").innerHTML = ladder.ladder.map(i => {
           let width = Math.floor(i.score / maxScore * 100 * 0.7);
           let item = tmpl.replace("{{name}}", i.person)
@@ -121,10 +103,10 @@
       if(data) {
         tmpl = $sel("#MatchItem").innerHTML;
 
-        $sel("div.matches").innerHTML = data.map(i => {
+        $sel("div.matches").innerHTML = data.map((i,idx) => {
           let matchCtrl = new MatchController(i);
           let item = tmpl.replace("{{score}}", `${matchCtrl.aScore}:${matchCtrl.bScore}`)
-            .replace("{{index}}", `${ladderCtrl.storage.index}`)
+            .replace("{{index}}", $dateString(now))
             .replace("{{beginTime}}", `${i.beginTime}`)
             .replace("{{title}}", `${$timeString(new Date(i.beginTime))}`)
             .replace("{{person1}}", `${i.personGroup[0]} ${matchCtrl.kda(i.personGroup[0]).score.toFixed(1)}`)

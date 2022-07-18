@@ -263,10 +263,11 @@
       }
       refreshUI() {
         let remote = new LocalStorage("remote");
-        let ladder = remote.ladder[$seasonString(new Date())];
+        let ladder = new LadderController().seasonLadder();
+
         if(ladder) {
           let tpl = $sel("#PersonListItem").innerHTML;
-          $sel("div.personList > .list").innerHTML = remote.ladder[$seasonString(new Date())].ladder.map(p => {
+          $sel("div.personList > .list").innerHTML = ladder.ladder.map(p => {
             let item = tpl.replaceAll("{{name}}", p.person)
               .replace("{{kda}}", `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`)
             return item;
@@ -317,9 +318,9 @@
     let menu = new Menu();
 
     matchCtrl.load();
-    matchCtrl.match.personGroup = ['a', 'b', 'c', 'd'];
-    matchCtrl.goal('a');
-    matchCtrl.goal('c');
+    // matchCtrl.match.personGroup = ['a', 'b', 'c', 'd'];
+    // matchCtrl.goal('a');
+    // matchCtrl.goal('c');
     refreshUI();
 
   </script>

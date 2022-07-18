@@ -39,6 +39,11 @@ class AliyunSyncData extends SyncData {
     this.remoteCache.save();
   }
   async saveRemote() {
+
+    if(!this.local){
+      return;
+    }
+    
     if(!this.key) {
       console.warn("no key exist");
       return;

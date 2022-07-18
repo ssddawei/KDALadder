@@ -1,7 +1,6 @@
 
 class MatchController {
   match = new Match();
-  ladder = new Ladder();
   get ready() {
     return !!(this.match.personGroup.filter(i=>i).length == 4)
   }
@@ -104,6 +103,21 @@ class MatchController {
     if(storage.data.current)
       this.match = storage.data.current;
   }
+  ladder() {
+    let ladder = new Ladder();
+    ladder.beginTime = this.match.beginTime;
+    ladder.endTime = this.match.endTime2;
+    ladder.matchCount = 1;
+    ladder.matchTotalTimeSec = Math.floor((this.match.endTime2 - this.match.beginTime)/1000);
+    
+    // update to local ladder
+    MatchController.LadderEvolve(ladder.ladder, this.aGroup[0], this.kda(this.aGroup[0]));
+    MatchController.LadderEvolve(ladder.ladder, this.aGroup[1], this.kda(this.aGroup[1]));
+    MatchController.LadderEvolve(ladder.ladder, this.bGroup[0], this.kda(this.bGroup[0]));
+    MatchController.LadderEvolve(ladder.ladder, this.bGroup[1], this.kda(this.bGroup[1]));
+    
+    return ladder;
+  }
   async end() {
 
     if(!this.ready || !this.started) return;
@@ -139,19 +153,8 @@ class MatchController {
     (storage.data[$dateString(now)] = storage.data[$dateString(now)] || [])
       .push(this.match);
 
-    this.ladder.beginTime = this.match.beginTime;
-    this.ladder.endTime = this.match.endTime2;
-    this.ladder.matchCount = (+storage.ladder.matchCount||0) + 1;
-    this.ladder.matchTotalTimeSec = (+storage.ladder.matchTotalTimeSec||0) + Math.floor((this.match.endTime2 - this.match.beginTime)/1000);
-    
-    // update to local ladder
-    MatchController.LadderEvolve(this.ladder.ladder, this.aGroup[0], this.kda(this.aGroup[0]));
-    MatchController.LadderEvolve(this.ladder.ladder, this.aGroup[1], this.kda(this.aGroup[1]));
-    MatchController.LadderEvolve(this.ladder.ladder, this.bGroup[0], this.kda(this.bGroup[0]));
-    MatchController.LadderEvolve(this.ladder.ladder, this.bGroup[1], this.kda(this.bGroup[1]));
-
     (storage.ladder[$seasonString(now)] = storage.ladder[$seasonString(now)] || [])
-      .push(this.ladder);
+      .push(this.ladder());
 
     storage.save();
 
@@ -166,6 +169,36 @@ class MatchController {
   }
 }
 
+class LadderController {
+  syncData = new AliyunSyncData(null, new LocalStorage("remote"));
+
+  get storage() {
+    return this.syncData.local
+  }
+  get remote() {
+    return this.syncData.remoteCache;
+  }
+  constructor() {
+    
+  }
+  seasonLadder(season = $seasonString(new Date())) {
+    let ladder = this.remote.ladder[season];
+    
+    // sum each date' ladders of this season
+    return ladder.reduce((pre, nxt) => {
+      nxt.ladder.forEach(kda => {
+        MatchController.LadderEvolve(pre.ladder, kda.person, kda);
+      })
+      return pre;
+    }, {ladder:[]})
+  }
+  dateLadder() {
+
+  }
+  async sync() {
+    await this.syncData.sync();
+  }
+}
 class Menu {
   constructor() {
     $sel(".menuBtn").addEventListener("click", ()=>{
