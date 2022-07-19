@@ -182,11 +182,12 @@ class LadderController {
     let ladder = this.remote.ladder[season];
     if(!ladder) {
       let dateOfSession = season
-        .replace("session1", "1-1")
-        .replace("session2", "4-1")
-        .replace("session3", "7-1")
-        .replace("session4", "10-1")
-      await this.syncData.loadRemote(dateOfSession);
+        .replace("season1", "1-1")
+        .replace("season2", "4-1")
+        .replace("season3", "7-1")
+        .replace("season4", "10-1")
+      await this.syncData.loadRemote(new Date(dateOfSession));
+      ladder = this.remote.ladder[season];
     }
     
     // sum each date' ladders of this season
@@ -203,6 +204,19 @@ class LadderController {
     
     if(!ladder) {
       await this.syncData.loadRemote(new Date(date));
+      ladder = this.remote.ladder[season];
+    }
+    
+    // not found in REMOTE , and found match , calc ladder
+    if(!ladder.length && this.dateMatch(date)) {
+      let matches = await this.dateMatch(date);
+      ladder =  matches.map(match => {
+        return new MatchController(match).ladder()
+      })
+
+      // cache
+      this.syncData.remoteCache.ladder[season] = ladder;
+      this.syncData.remoteCache.save();
     }
 
     // sum each date' ladders of this season
@@ -224,6 +238,99 @@ class LadderController {
 
   async sync() {
     await this.syncData.sync();
+  }
+}
+
+/*
+  Bind ConnectWebrtc to UI
+*/
+class ConnectController {
+  conn;
+  status;
+  mode;
+  onData;
+  constructor(mode, onData) {
+    this.mode = mode; // act as "server" or "client"
+    this.onData = onData; // on data receive
+
+    $sel(".connect").addEventListener("click", async () => {
+
+      // check sync key
+      if(!new AliyunSyncData().key) {
+        let key = await $prompt("多端连接，请输入密钥");
+        if(!key) {
+          return;
+        } else {
+          if(!new AliyunSyncData().saveKey(key)){
+            await $alert("密钥格式错误");
+            return;
+          }
+        }
+      }
+
+      this.refreshUI("loading");
+      this.connect();
+    });
+  }
+  refreshUI(status) {
+    this.status = status;
+
+    $sel(".connect").classList.remove("loading");
+    $sel(".connect").classList.remove("error");
+    $sel(".connect").classList.remove("done");
+    if(typeof(this.status) == "string")
+      $sel(".connect").classList.add(this.status);
+    else if(typeof(this.status) == "object")
+      $sel(".connect").classList.add(...this.status);
+  }
+  async connect() {
+    if(this.conn){ 
+      this.conn.close();
+      this.conn = undefined;
+    }
+
+    // create ConnectWebrtc, set receiveCallback, errorCallback
+    let conn = this.conn = new ConnectWebrtc(new AliyunSyncData(), 
+      (msg) => {
+        this.refreshUI("done");
+        if(msg.indexOf("hi") == 0)return;
+        
+        let data = JSON.parse(msg);
+        this.onData && this.onData(data);
+      }, (err) => {
+        this.refreshUI(["error", "done"]);
+      });
+
+    try{
+
+      // invoke offer/answer to connect Client/Server
+      if(this.mode == "server")
+        await conn.offer();
+      else if(this.mode == "client")
+        await conn.answer();
+      else
+        throw new Error("wrong mode: " + mode)
+
+      conn.send("hi " + this.mode);
+
+    } catch(e) {
+      if(conn != this.conn) {
+        // conn released
+      }
+      else if(e && e.message == "timeout") {
+        this.refreshUI();
+      } else if(e && e.message == "canceled") {
+        // conn canceled
+      } else {
+        $alert("连接失败: " + e)
+        this.refreshUI("error");
+      }
+    }
+
+
+  }
+  send(action, data) {
+    this.status == "done" && this.conn.send(JSON.stringify({action, data}));
   }
 }
 class Menu {

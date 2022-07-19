@@ -27,7 +27,7 @@ let $fetch = async function(){
   }
   
   let text = await response.text();
-  let json = '[' + text + ']';
+  let json = text[0] == '['? text: '[' + text + ']';
   return JSON.parse(json);
 }
 

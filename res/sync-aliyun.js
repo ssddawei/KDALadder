@@ -8,6 +8,9 @@ class AliyunSyncData extends SyncData {
   static DataURL(date, relative) {
     return (relative? "": CONFIG.DataUrl) + `data-${date}.json`;
   }
+  static OtherURL(name, relative) {
+    return (relative? "": CONFIG.DataUrl) + name;
+  }
 
   get key(){
     let key = window.localStorage.getItem("key");
@@ -94,6 +97,22 @@ class AliyunSyncData extends SyncData {
     this.local.delete();
 
     return true;
+  }
+  async save(key, data) {
+
+    if(!this.key) {
+      console.warn("no key exist");
+      return;
+    }
+
+    const store = new OSS(this.key);
+
+    let res = data? await store.put(key, new OSS.Buffer(JSON.stringify(data))):
+      await store.delete(key);
+    return res;
+  }
+  async load(key) {
+    return (await $fetch(AliyunSyncData.OtherURL(key)) || [])[0];
   }
   async sync() {
 
