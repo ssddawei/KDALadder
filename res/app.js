@@ -178,11 +178,16 @@ class LadderController {
   get remote() {
     return this.syncData.remoteCache;
   }
-  constructor() {
-    
-  }
-  seasonLadder(season = $seasonString(new Date())) {
+  async seasonLadder(season = $seasonString(new Date())) {
     let ladder = this.remote.ladder[season];
+    if(!ladder) {
+      let dateOfSession = season
+        .replace("session1", "1-1")
+        .replace("session2", "4-1")
+        .replace("session3", "7-1")
+        .replace("session4", "10-1")
+      await this.syncData.loadRemote(dateOfSession);
+    }
     
     // sum each date' ladders of this season
     return ladder.reduce((pre, nxt) => {
@@ -192,9 +197,31 @@ class LadderController {
       return pre;
     }, {ladder:[]})
   }
-  dateLadder() {
+  async dateLadder(date = $dateString(new Date())) {
+    let season = $seasonString(new Date(date));
+    let ladder = this.remote.ladder[season];
+    
+    if(!ladder) {
+      await this.syncData.loadRemote(new Date(date));
+    }
 
+    // sum each date' ladders of this season
+    return ladder.reduce((pre, nxt) => {
+      if($dateString(new Date(nxt.beginTime)) == date)
+        nxt.ladder.forEach(kda => {
+          MatchController.LadderEvolve(pre.ladder, kda.person, kda);
+        })
+      return pre;
+    }, {ladder:[]})
   }
+  async dateMatch(date = $dateString(new Date())) {
+    let match = this.remote.data[date];
+    if(!match) {
+      await this.syncData.loadRemote(new Date(date));
+    }
+    return this.remote.data[date];
+  }
+
   async sync() {
     await this.syncData.sync();
   }
@@ -217,3 +244,43 @@ class Menu {
   }
 }
 
+class ListChooser {
+  chooseCallback;
+  loader;
+  constructor(loader) {
+    this.loader = loader;
+    $sel("div.dataList .list").addEventListener("click", (e) => {
+      let data = e.path.filter(i => i.dataset && i.dataset["data"])[0];
+      this.select(data && data.dataset["data"]);
+    })
+    $sel("div.dataList .cancelBtn").addEventListener("click", () => {
+      this.cancel();
+    });
+  }
+  async refreshUI() {
+    let datas = this.loader && await this.loader() || [];
+    let tpl = $sel("#DataListItem").innerHTML;
+    $sel("div.dataList > .list").innerHTML = datas.map(d => {
+      let data = d.data || d;
+      let subtitle = d.subtitle || "";
+      return tpl.replace(/{{data}}/g, data)
+        .replace("{{subtitle}}", subtitle);
+    }).join("");
+  }
+  select(date) {
+    this.chooseCallback && this.chooseCallback(date);
+    $sel(".dataList").classList.remove("show")
+  }
+  cancel() {
+    this.chooseCallback && this.chooseCallback();
+    $sel(".dataList").classList.remove("show")
+  }
+  choose() {
+    this.refreshUI();
+    $sel(".dataList").classList.add("show")
+
+    return new Promise(done => {
+      this.chooseCallback = done;
+    })
+  };
+}

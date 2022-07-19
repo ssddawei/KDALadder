@@ -37,13 +37,13 @@
   </style>
 </head>
 <body class="match">
-  <script id="PersonListItem" type="text/template">
-    <div class="item" data-person="{{name}}">
-      <div class="name">{{name}}</div>
-      <div class="kda">{{kda}}</div>
+  <script id="DataListItem" type="text/template">
+    <div class="item" data-data="{{data}}">
+      <div class="data">{{data}}</div>
+      <div class="subtitle">{{subtitle}}</div>
     </div>
   </script>
-  <div class="personList">
+  <div class="dataList">
     <div class="list"></div>
     <div class="item newItemBtn">
       <div class="name">新增</div>
@@ -244,55 +244,19 @@
         $alert("sync error " + e);
         throw e;
       }
-    })
-
-    class PersonChooser {
-      chooseCallback;
-      constructor() {
-        $sel("div.personList .list").addEventListener("click", (e) => {
-          let person = e.path.filter(i => i.dataset && i.dataset["person"])[0];
-          this.selectPerson(person && person.dataset["person"]);
-        })
-        $sel("div.personList .newItemBtn").addEventListener("click", async () => {
-          let newPerson = await $prompt("输入新成员名字");
-          this.selectPerson(newPerson);
-        })
-        $sel("div.personList .cancelBtn").addEventListener("click", () => {
-          this.cancel();
-        });
-      }
-      refreshUI() {
-        let remote = new LocalStorage("remote");
-        let ladder = new LadderController().seasonLadder();
-
-        if(ladder) {
-          let tpl = $sel("#PersonListItem").innerHTML;
-          $sel("div.personList > .list").innerHTML = ladder.ladder.map(p => {
-            let item = tpl.replaceAll("{{name}}", p.person)
-              .replace("{{kda}}", `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`)
-            return item;
-          }).join("");
-        }
-      }
-      selectPerson(person) {
-        this.chooseCallback && this.chooseCallback(person);
-        $sel(".personList").classList.remove("show")
-      }
-      cancel() {
-        this.chooseCallback && this.chooseCallback();
-        $sel(".personList").classList.remove("show")
-      }
-      async choose() {
-        this.refreshUI();
-        $sel(".personList").classList.add("show")
-
-        return await new Promise(done => {
-          this.chooseCallback = done;
-        })
-      };
-    }
+    });
     
-    let personChooser = new PersonChooser();
+    let personChooser = new ListChooser( async () => {
+      let ladder = await new LadderController().seasonLadder();
+      return ladder.ladder.map(p => ({
+        data: p.person,
+        subtitle: `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`
+      }))
+    }, true);
+    $sel("div.dataList .newItemBtn").addEventListener("click", async () => {
+      let newPerson = await $prompt("输入新成员名字");
+      personChooser.select(newPerson);
+    })
 
     $sel("div.aGroup1 .name").addEventListener("click", async function(){
       let person = await personChooser.choose();

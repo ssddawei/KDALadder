@@ -216,8 +216,8 @@ button:active,button:after,button:before {
   animation: none
 }
 
-/* personlist */
-.personList {
+/* dataList */
+.dataList {
 
   position: absolute;
   left: 0;
@@ -237,16 +237,16 @@ button:active,button:after,button:before {
   flex-direction: column;
   display: none;
 }
-.personList.show {
+.dataList.show {
   display: flex;
 }
-.personList .list {
+.dataList .list {
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
 }
-.personList .item {
+.dataList .item {
   margin-top:  0.3rem;
   padding: 0.5rem;
   border-radius:  0.5rem;
@@ -254,14 +254,14 @@ button:active,button:after,button:before {
   color: white;
   width: 7rem;
 }
-.personList .item .name {
+.dataList .item .name {
   font-size: 0.5rem;
 }
-.personList .newItemBtn {
+.dataList .newItemBtn {
   color: black;
   background: skyblue
 }
-.personList .cancelBtn {
+.dataList .cancelBtn {
   color: black;
   background: red
 }
@@ -434,6 +434,9 @@ body.ladder div.box h1 {
   line-height: 1;
   margin: 0;
   margin-top: 0.4rem;
+  text-align: center;
+}
+body.ladder div.box > small {
   text-align: center;
 }
 body.ladder div.ladder {

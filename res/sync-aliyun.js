@@ -58,34 +58,33 @@ class AliyunSyncData extends SyncData {
         let unsyncLadder = ladder.filter(i => {
           return !rLadder || !rLadder.find(r => r.beginTime == i.beginTime)
         });
-        if(unsyncLadder.length) { 
-          let data = JSON.stringify(unsyncLadder).slice(1, -1);
-          if(rLadder && rLadder.length)
-            data = "," + data;
+        if(!unsyncLadder.length) return;
+        let data = JSON.stringify(unsyncLadder).slice(1, -1);
+        if(rLadder && rLadder.length)
+          data = "," + data;
 
-          await store.append(AliyunSyncData.LadderURL(season, true), new OSS.Buffer(data), {
-            position: rLadder? JSON.stringify(rLadder).length - 2: 0
-          });
+        await store.append(AliyunSyncData.LadderURL(season, true), new OSS.Buffer(data), {
+          position: rLadder? JSON.stringify(rLadder).length - 2: 0
+        });
 
-          rLadder.splice(rLadder.length, 0, ...unsyncLadder);
-        }
+        rLadder.splice(rLadder.length, 0, ...unsyncLadder);
       }),
       ...Object.entries(this.local.data).map(async ([date,match]) => {
         let rMatch = this.remote.data[date];
         let unsyncData = match.filter(i => {
           return !rMatch || !rMatch.find(r => r.beginTime == i.beginTime)
         });
-        if(unsyncData.length) { 
-          let data = JSON.stringify(unsyncData).slice(1, -1);
-          if(rMatch && rMatch.length)
-            data = "," + data;
+        if(!unsyncData.length) return;
+        let data = JSON.stringify(unsyncData).slice(1, -1);
+        if(rMatch && rMatch.length)
+          data = "," + data;
 
-          await store.append(AliyunSyncData.DataURL(date, true), new OSS.Buffer(data), {
-            position: rMatch? JSON.stringify(rMatch).length - 2: 0
-          });
+        await store.append(AliyunSyncData.DataURL(date, true), new OSS.Buffer(data), {
+          position: rMatch? JSON.stringify(rMatch).length - 2: 0
+        });
 
-          rMatch.splice(rMatch.length, 0, ...unsyncData);
-        }
+        rMatch.splice(rMatch.length, 0, ...unsyncData);
+        
       }),
 
     ]);
