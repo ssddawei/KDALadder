@@ -37,7 +37,7 @@
     }
   </style>
 </head>
-<body class="match">
+<body class="board">
   <script id="DataListItem" type="text/template">
     <div class="item" data-data="{{data}}">
       <div class="data">{{data}}</div>
@@ -54,22 +54,21 @@
     </div>
   </div>
   
-  <div class="connect">
-    <img src="res/sync.svg" />
-  </div>
   <div class="menu">
     <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
     <button class="endBtn">结束</button>
     <button class="revertBtn">撤销</button>
-    <button onclick="location.href='board.html'">看板</button>
     <button onclick="document.body.requestFullscreen();">全屏</button>
   </div>
   <button class="menuBtn">M<small>enu</small></button>
 
+  <div class="connect">
+    <img src="res/sync.svg" />
+  </div>
   <div class="score">
     <div class="aScore">/</div>
     <div class="bScore">/</div>
-    <div class="time"></div>
+    <div class="time" style="display:none"></div>
   </div>
   <div class="match notready">
     <div class="person aGroup1">
@@ -106,9 +105,10 @@
     </div>
   </div>
   <script>
+
     let timeTmr;
     let matchCtrl = new MatchController();
-    let connectCtrl = new ConnectController("client", (data) => {
+    let connectCtrl = new ConnectController("server", (data) => {
       switch(data.action) {
         case "match": {
           matchCtrl.match = data.data;
@@ -117,8 +117,8 @@
         }
       }
     })
-    
-    // sync match to server by ConnectController
+
+    // sync match to client by ConnectController
     function connectSync() {
       connectCtrl.send("match", matchCtrl.match);
     }
@@ -171,7 +171,7 @@
       // kda
       let applyKDA = (person, target) => {
         let kda = matchCtrl.kda(person);
-        $sel(target).innerHTML = `${kda.kill} / ${kda.death} / ${kda.assist}`;
+        $sel(target).innerHTML = `${kda.kill}<small>/</small>${kda.death}<small>/${kda.assist}</small>`;
       }
       
       applyKDA(matchCtrl.aGroup[0], ".aGroup1 .kda");

@@ -58,12 +58,11 @@ class Ladder {
 }
 
 class Storage {
-  index = ALG.StorageIndex(); 
-  ladder = new Ladder();
-  matches = [];
-  constructor(index) {
-    if(index != undefined)
-      this.index = index;
+  prefix = "";
+  ladder = {};
+  data = {};
+  constructor(prefix) {
+    this.prefix = (prefix || "");
   }
   load(){};
   save(){};

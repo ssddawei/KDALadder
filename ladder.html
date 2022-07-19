@@ -33,14 +33,28 @@
 </head>
 <body class="ladder">
 
+  <script id="DataListItem" type="text/template">
+    <div class="item" data-data="{{data}}">
+      <div class="data">{{data}}</div>
+      <div class="subtitle">{{subtitle}}</div>
+    </div>
+  </script>
+  <div class="dataList">
+    <div class="list"></div>
+    <div class="item cancelBtn">
+      <div class="name">取消</div>
+    </div>
+  </div>
+
   <div class="menu">
     <button class="newMatchBtn" onclick="location.href='match.html'">新赛事</button>
   </div>
 
   <button class="menuBtn">M<small>enu</small></button>
 
-  <div class="box">
+  <div class="box ladderBox">
     <h1># KDA 天梯排名</h1>
+    <small>2022-season1</small>
     <script id="LadderItem" type="text/template">
       <div class="item">
         <div class="name">{{name}}</div>
@@ -50,8 +64,8 @@
     <div class="ladder">
     </div>
   </div>
-  <div class="box">
-    <h1> # 赛事记录 </h1>
+  <div class="box matchBox">
+    <h1> # 赛事记录 <small class="boxDate"></small></h1>
     <script id="MatchItem" type="text/template">
       <div class="item" onclick="location.href='match-result.html?{{index}}-{{beginTime}}'">
         <div class="title">{{title}}</div>
@@ -71,65 +85,94 @@
     </div>
   </div>
   <script>
-    class LadderController {
-      syncData = new AliyunSyncData();
-      get persons() {
-
-      }
-      get ladder() {
-
-      }
-      get storage() {
-        return this.syncData.lastStorage
-      }
-      get totalLadder() {
-        return this.syncData.totalLadder;
-      }
-      constructor() {
-        
-      }
-      async sync() {
-        await this.syncData.sync();
-        if(!this.storage.matches.length && this.syncData.lastMatchIndex) {
-          await this.syncData.sync(this.syncData.lastMatchIndex);
-        }
-      }
-    }
 
     let ladderCtrl = new LadderController();
+    let matchDate = $dateString(new Date());
+    let ladderDate = $seasonString(new Date());
 
-    function refreshUI() {
+    async function refreshUI() {
+
       var tmpl;
+      let ladder = ladderDate.indexOf("season") >= 0? 
+        await ladderCtrl.seasonLadder(ladderDate): 
+        await ladderCtrl.dateLadder(ladderDate);
 
-      // ladder 
-      tmpl = $sel("#LadderItem").innerHTML;
+      let data = await ladderCtrl.dateMatch(matchDate);
 
-      let maxScore = ladderCtrl.totalLadder.ladder.ladder[0].score;
-      $sel("div.ladder").innerHTML = ladderCtrl.totalLadder.ladder.ladder.map(i => {
-        let width = Math.floor(i.score / maxScore * 100 * 0.7);
-        let item = tmpl.replace("{{name}}", i.person)
-          .replace(/{{score}}/g, $kdaString(i, true))
-          .replace("{{width}}", width)
-        return item;
-      }).join("");
+      $sel(".boxDate").innerHTML = matchDate;
+      $sel(".ladderBox > small").innerHTML = ladderDate;
+
+      if(ladder) {
+
+        // ladder 
+        tmpl = $sel("#LadderItem").innerHTML;
+
+        let maxScore = ladder.ladder[0].score;
+        $sel("div.ladder").innerHTML = ladder.ladder.map(i => {
+          let width = Math.floor(i.score / maxScore * 100 * 0.7);
+          let item = tmpl.replace("{{name}}", i.person)
+            .replace(/{{score}}/g, $kdaString(i, true))
+            .replace("{{width}}", width)
+          return item;
+        }).join("");
+
+      }
 
       // match
-      tmpl = $sel("#MatchItem").innerHTML;
+      if(data) {
+        tmpl = $sel("#MatchItem").innerHTML;
 
-      $sel("div.matches").innerHTML = ladderCtrl.storage.matches.map(i => {
-        let matchCtrl = new MatchController(i);
-        let item = tmpl.replace("{{score}}", `${matchCtrl.aScore}:${matchCtrl.bScore}`)
-          .replace("{{index}}", `${ladderCtrl.storage.index}`)
-          .replace("{{beginTime}}", `${i.beginTime}`)
-          .replace("{{title}}", `${$timeString(new Date(i.beginTime))}`)
-          .replace("{{person1}}", `${i.personGroup[0]} ${matchCtrl.kda(i.personGroup[0]).score.toFixed(1)}`)
-          .replace("{{person2}}", `${i.personGroup[1]} ${matchCtrl.kda(i.personGroup[1]).score.toFixed(1)}`)
-          .replace("{{person3}}", `${i.personGroup[2]} ${matchCtrl.kda(i.personGroup[2]).score.toFixed(1)}`)
-          .replace("{{person4}}", `${i.personGroup[3]} ${matchCtrl.kda(i.personGroup[3]).score.toFixed(1)}`)
-        return item;
-      }).join("");
+        $sel("div.matches").innerHTML = data.map((i,idx) => {
+          let matchCtrl = new MatchController(i);
+          let item = tmpl.replace("{{score}}", `${matchCtrl.aScore}:${matchCtrl.bScore}`)
+            .replace("{{index}}",  $dateString(new Date(i.beginTime)))
+            .replace("{{beginTime}}", `${i.beginTime}`)
+            .replace("{{title}}",  $timeString(new Date(i.beginTime)))
+            .replace("{{person1}}", `${i.personGroup[0]} ${matchCtrl.kda(i.personGroup[0]).score.toFixed(1)}`)
+            .replace("{{person2}}", `${i.personGroup[1]} ${matchCtrl.kda(i.personGroup[1]).score.toFixed(1)}`)
+            .replace("{{person3}}", `${i.personGroup[2]} ${matchCtrl.kda(i.personGroup[2]).score.toFixed(1)}`)
+            .replace("{{person4}}", `${i.personGroup[3]} ${matchCtrl.kda(i.personGroup[3]).score.toFixed(1)}`)
+          return item;
+        }).join("");
+      }
 
     }
+
+
+    let matchChooser = new ListChooser(() => {
+      let remote = new LocalStorage("remote");
+      let allDates = Array.from(
+        new Set(
+          Object.values(remote.ladder).reduce((pre,nxt) => pre.concat(nxt), []) // all ladders
+            .map(i => $dateString(new Date(i.beginTime))) // map to dateString
+            .concat($dateString(new Date()))
+        )
+      );
+      return allDates;
+    });
+
+    let ladderChooser = new ListChooser(() => {
+      let remote = new LocalStorage("remote");
+      let allDates = Array.from(
+        new Set(
+          Object.values(remote.ladder).reduce((pre,nxt) => pre.concat(nxt), []) // all ladders
+            .map(i => $dateString(new Date(i.beginTime))) // map to dateString
+            .concat($dateString(new Date()))  // add today
+            .concat(Object.keys(remote.ladder)) // add seasonString
+            .concat($seasonString(new Date()))  // add current season
+        )
+      ).sort((a,b)=>b.localeCompare(a));
+      return allDates;
+    });
+
+    $sel(".matchBox > h1").addEventListener("click", async ()=>{
+      matchDate = await matchChooser.choose() || matchDate;
+      refreshUI();
+    });
+    $sel(".ladderBox > h1").addEventListener("click", async ()=>{
+      ladderDate = await ladderChooser.choose() || ladderDate;
+      refreshUI();
+    });
 
     let menu = new Menu();
     ladderCtrl.sync().then(refreshUI);

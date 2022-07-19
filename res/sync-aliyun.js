@@ -1,6 +1,17 @@
 // include sync.js
 // include aliyunsdk
+// ali-sdk: https://github.com/ali-sdk/ali-oss
 class AliyunSyncData extends SyncData {
+  static LadderURL(season, relative) {
+    return (relative? "": CONFIG.DataUrl) + `ladder-${season}.json`;
+  }
+  static DataURL(date, relative) {
+    return (relative? "": CONFIG.DataUrl) + `data-${date}.json`;
+  }
+  static OtherURL(name, relative) {
+    return (relative? "": CONFIG.DataUrl) + name;
+  }
+
   get key(){
     let key = window.localStorage.getItem("key");
     if(key){
@@ -19,94 +30,102 @@ class AliyunSyncData extends SyncData {
     window.localStorage.setItem("key", JSON.stringify(key));
     return true;
   }
-  get lastMatchIndex() {
-    return this.matchIndex.filter(i=>i!=ALG.StorageIndex()).slice(-1)[0];
+  async loadRemote(date) {
+    let seasonStr = $seasonString(date);
+    let dateStr = $dateString(date);
+    this.remote.ladder[seasonStr] = await $fetch(AliyunSyncData.LadderURL(seasonStr)) || [];
+    this.remote.data[dateStr] = await $fetch(AliyunSyncData.DataURL(dateStr)) || [];
+
+    // cache
+    Object.assign(this.remoteCache.ladder, this.remote.ladder);
+    Object.assign(this.remoteCache.data, this.remote.data);
+    this.remoteCache.save();
   }
-  get lastStorage() {
-    let currentStorage = this.storages[ALG.StorageIndex()]
-    if(currentStorage.matches.length) {
-      return currentStorage;
-    } else  {
-      return this.storages[this.lastMatchIndex] || currentStorage;
+  async saveRemote() {
+
+    if(!this.local){
+      return;
     }
+    
+    if(!this.key) {
+      console.warn("no key exist");
+      return;
+    }
+
+    const store = new OSS(this.key);
+
+    await Promise.all([
+
+      ...Object.entries(this.local.ladder).map(async ([season,ladder]) => {
+        let rLadder = this.remote.ladder[season];
+        let unsyncLadder = ladder.filter(i => {
+          return !rLadder || !rLadder.find(r => r.beginTime == i.beginTime)
+        });
+        if(!unsyncLadder.length) return;
+        let data = JSON.stringify(unsyncLadder).slice(1, -1);
+        if(rLadder && rLadder.length)
+          data = "," + data;
+
+        await store.append(AliyunSyncData.LadderURL(season, true), new OSS.Buffer(data), {
+          position: rLadder? JSON.stringify(rLadder).length - 2: 0
+        });
+
+        rLadder.splice(rLadder.length, 0, ...unsyncLadder);
+      }),
+      ...Object.entries(this.local.data).map(async ([date,match]) => {
+        let rMatch = this.remote.data[date];
+        let unsyncData = match.filter(i => {
+          return !rMatch || !rMatch.find(r => r.beginTime == i.beginTime)
+        });
+        if(!unsyncData.length) return;
+        let data = JSON.stringify(unsyncData).slice(1, -1);
+        if(rMatch && rMatch.length)
+          data = "," + data;
+
+        await store.append(AliyunSyncData.DataURL(date, true), new OSS.Buffer(data), {
+          position: rMatch? JSON.stringify(rMatch).length - 2: 0
+        });
+
+        rMatch.splice(rMatch.length, 0, ...unsyncData);
+        
+      }),
+
+    ]);
+
+    this.remoteCache.save();
+
+    this.local.delete();
+
+    return true;
   }
-  async sync(idx = ALG.StorageIndex()) {
+  async save(key, data) {
+
+    if(!this.key) {
+      console.warn("no key exist");
+      return;
+    }
+
+    const store = new OSS(this.key);
+
+    let res = data? await store.put(key, new OSS.Buffer(JSON.stringify(data))):
+      await store.delete(key);
+    return res;
+  }
+  async load(key) {
+    return (await $fetch(AliyunSyncData.OtherURL(key)) || [])[0];
+  }
+  async sync() {
 
     if(!this.key) {
       console.warn("no key exist");
     }
 
-    const store = this.key && new OSS(this.key);
+    let now = new Date();
 
-    this.matchIndex = await $fetch(CONFIG.DataUrl.matches) || [];
+    await this.loadRemote(now);
 
-    //
-    // sync matches
-    //
-    let storage = this.storages[idx];
-    if(!storage) {
-      storage = this.storages[idx] = new LocalStorage(idx);
-    }
+    let savedToRemove = await this.saveRemote();
 
-    let upstreamName = `data-${idx}.json`;
-    let upstreamUrl = CONFIG.DataUrl.data + upstreamName;
-    let upstream = await $fetch(upstreamUrl);
-    if(!upstream) {
-      upstream = {
-        matches: [],
-        ladder: new Ladder()
-      }
-    }
-    
-    // merge
-    Object.assign(upstream.matches, storage.matches);
-    Object.assign(upstream.ladder, storage.ladder);
-
-    // save to upstream
-    store && await store.put(upstreamName, new OSS.Buffer(JSON.stringify(upstream)));
-    if(store && this.matchIndex.slice(-1)[0] != idx) {
-      this.matchIndex.push(idx);
-      this.matchIndex = Array.from(new Set(this.matchIndex)).sort((a,b)=>new Date(a)-new Date(b));
-      await store.put("matches.json", new OSS.Buffer(JSON.stringify(this.matchIndex)));
-    }
-
-    // apply to local
-    storage.matches = upstream.matches;
-    storage.ladder = upstream.ladder;
-
-    // save to local
-    storage.save();
-
-    //
-    // sync total-ladder
-    //
-    upstreamUrl = CONFIG.DataUrl.ladder;
-    upstream = await $fetch(upstreamUrl);
-
-    if(!upstream) {
-      upstream = new Ladder()
-    }
-
-    // update ladder
-    storage.ladder.ladder.forEach(l => {
-      MatchController.LadderEvolve(upstream.ladder, l.person, l);
-    })
-
-    upstream.beginTime = upstream.beginTime || storage.ladder.beginTime;
-    upstream.endTime = storage.ladder.endTime;
-    upstream.matchCount = (+upstream.matchCount||0) + (+storage.ladder.matchCount||0);
-    upstream.matchTotalTimeSec = (+upstream.matchTotalTimeSec||0) + (+storage.ladder.matchTotalTimeSec||0);
-
-    // save to upstream
-    store && await store.put("ladder.json", new OSS.Buffer(JSON.stringify(upstream)));
-
-    if(this.totalLadder) {
-      // apply to local
-      this.totalLadder.ladder = upstream;
-      // save to local
-      this.totalLadder.save();
-    }
-
-    return store? "remote": "local"
+    return savedToRemove? "remote": "local"
   }
 }
