@@ -1,6 +1,40 @@
 
+class KDAEventCalc {
+  scores;
+  get events() {
+    let rScores = this.scores.reverse();
+    this.scores.reduce((pre, nxt) => {
+      if(pre.person && pre.kill) {
+        pre = {
+          [pre.person]: 1
+        };
+      }
+
+      if(nxt.kill) {
+        pre[nxt.person] = pre[nxt.person]? pre[nxt.person]+1: 1;
+      } else if(nxt.death){
+        return [nxt, pre[1]+1]
+      }
+    })
+    // 7 kill
+    if(this.kills.slice(-7))
+  }
+  get nextKillEvent() {
+
+  }
+  get nextDeathEvent() {
+
+  }
+  constructor(scores) {
+    this.scores = scores;
+  }
+
+
+
+}
 class MatchController {
   match = new Match();
+  eventData = {};
   get ready() {
     return !!(this.match.personGroup.filter(i=>i).length == 4)
   }
@@ -32,10 +66,11 @@ class MatchController {
     let assistGroup = this.aGroup.indexOf(person) >= 0? this.aGroup: this.bGroup;
     let assist = assistGroup.filter(i => i != person)[0];
     this.match.scores.push(new GameScore(person, null, assist));
-    calcEvent();
+    calcEvent("kill", person);
   }
   loss(person) {
     this.match.scores.push(new GameScore(null, person))
+    calcEvent("death", person);
   }
   revert() {
     this.match.scores.length && this.match.scores.length --;
