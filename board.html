@@ -63,7 +63,7 @@
   <button class="menuBtn">M<small>enu</small></button>
 
   <div class="connect">
-    <img src="res/sync.svg" />
+    <img src="res/svg/sync.svg" />
   </div>
   <div class="score">
     <div class="aScore">/</div>
@@ -72,32 +72,32 @@
   </div>
   <div class="match notready">
     <div class="person aGroup1">
-      <img class="mvp" src="res/mvp.svg" />
-      <img class="loser" src="res/loser.svg" />
+      <img class="mvp" src="res/svg/mvp.svg" />
+      <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
     <div class="person aGroup2">
-      <img class="mvp" src="res/mvp.svg" />
-      <img class="loser" src="res/loser.svg" />
+      <img class="mvp" src="res/svg/mvp.svg" />
+      <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
     <div class="person bGroup1">
-      <img class="mvp" src="res/mvp.svg" />
-      <img class="loser" src="res/loser.svg" />
+      <img class="mvp" src="res/svg/mvp.svg" />
+      <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
     <div class="person bGroup2">
-      <img class="mvp" src="res/mvp.svg" />
-      <img class="loser" src="res/loser.svg" />
+      <img class="mvp" src="res/svg/mvp.svg" />
+      <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
       <button class="goalBtn">O</button>
@@ -115,12 +115,22 @@
           refreshUI();
           break;
         }
+        case "end": {
+          let beginTime = matchCtrl.match.beginTime;
+          let date = $dateString(new Date(beginTime));
+          new LocalStorage("current").delete();
+          location.href = `match-result.html?${date}-${beginTime}`
+          break;
+        }
       }
     })
 
     // sync match to client by ConnectController
-    function connectSync() {
-      connectCtrl.send("match", matchCtrl.match);
+    function connectSync(action) {
+      if(action == "end")
+        connectCtrl.send("end");
+      else
+        connectCtrl.send("match", matchCtrl.match);
     }
     
     function refreshUI() {
@@ -254,6 +264,7 @@
         clearInterval(timeTmr)
         timeTmr = null;
       }
+      connectSync();
       refreshUI();
     })
 
@@ -265,6 +276,7 @@
       let beginTime = matchCtrl.match.beginTime;
       try{
         let date = await matchCtrl.end();
+        connectSync("end");
         if(date)
           location.href = `match-result.html?${date}-${beginTime}`
       } catch(e) {
@@ -288,21 +300,25 @@
     $sel("div.aGroup1 .name").addEventListener("click", async function(){
       let person = await personChooser.choose();
       person && (matchCtrl.match.personGroup[0] = person);
+      connectSync();
       refreshUI();
     })
     $sel("div.aGroup2 .name").addEventListener("click", async function(){
       let person = await personChooser.choose();
       person && (matchCtrl.match.personGroup[1] = person);
+      connectSync();
       refreshUI();
     })
     $sel("div.bGroup1 .name").addEventListener("click", async function(){
       let person = await personChooser.choose();
       person && (matchCtrl.match.personGroup[2] = person);
+      connectSync();
       refreshUI();
     })
     $sel("div.bGroup2 .name").addEventListener("click", async function(){
       let person = await personChooser.choose();
       person && (matchCtrl.match.personGroup[3] = person);
+      connectSync();
       refreshUI();
     })
 

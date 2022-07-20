@@ -1,0 +1,66 @@
+@font-face {
+  font-family: 'icomoon';
+  src:  url('fonts/icomoon.eot?ow4i36');
+  src:  url('fonts/icomoon.eot?ow4i36#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?ow4i36') format('truetype'),
+    url('fonts/icomoon.woff?ow4i36') format('woff'),
+    url('fonts/icomoon.svg?ow4i36#icomoon') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+[class^="icon-"], [class*=" icon-"] {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'icomoon' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.icon-medal:before {
+  content: "\e909";
+}
+.icon-kda-a:before {
+  content: "\e900";
+  color: #fff;
+}
+.icon-win:before {
+  content: "\e901";
+  color: #fff;
+}
+.icon-kda-d:before {
+  content: "\e902";
+  color: #fff;
+}
+.icon-kda-k:before {
+  content: "\e903";
+  color: #fff;
+}
+.icon-loss:before {
+  content: "\e904";
+  color: #fff;
+}
+.icon-mvp .path1:before {
+  content: "\e905";
+  color: rgb(0, 0, 0);
+}
+.icon-mvp .path2:before {
+  content: "\e906";
+  margin-left: -1em;
+  color: rgb(255, 255, 255);
+}
+.icon-loser:before {
+  content: "\e907";
+}
+.icon-sync:before {
+  content: "\e908";
+  color: #fff;
+}

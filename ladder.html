@@ -14,6 +14,7 @@
   <script type="text/javascript" src="res/sync.js"></script>
   <script type="text/javascript" src="res/sync-aliyun.js"></script>
   <script type="text/javascript" src="res/app.js"></script>
+  <link rel="stylesheet" href="res/icomoon/style.css">
   <link rel="stylesheet" href="res/style.css">
   <style>
     .matches {
@@ -61,6 +62,13 @@
         <div class="score" style="width:{{width}}%"><span>{{score}}</span></div>
       </div>
     </script>
+
+    <div title="总分 &nbsp; 击杀 / 失误 / 助攻 / &nbsp;  胜率% ( 胜场数 / 败场数 )" class="ladder-help place-holder-owner">
+      <i class="icon-medal"></i> &nbsp; <i class="icon-kda-k"></i> / <i class="icon-kda-d"></i> / <i class="icon-kda-a"></i> / &nbsp;  <i class="icon-win"></i>% ( <i class="icon-win"></i> / <i class="icon-loss"></i> )
+    </div>
+    <div class="ladder-help place-holder">
+      总分 &nbsp; 击杀 / 失误 / 助攻 / &nbsp;  胜率% ( 胜场数 / 败场数 )
+    </div>
     <div class="ladder">
     </div>
   </div>
@@ -176,6 +184,8 @@
 
     let menu = new Menu();
     ladderCtrl.sync().then(refreshUI);
+
+    new PlaceHolder();
   </script>
 </body>
 </html>

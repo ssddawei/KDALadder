@@ -12,6 +12,16 @@ body {
   /* width: 100%; */
   height: 100%;
 }
+
+/* place-holder */
+.place-holder:not(.show) {
+  display: none;
+}
+.place-holder-owner.hide {
+  display: none;
+}
+
+
 .puff-out-center {
 	animation: puff-out-center 1s cubic-bezier(0.165, 0.840, 0.440, 1.000) both;
 }
@@ -333,7 +343,7 @@ button:active,button:after,button:before {
   height: 1rem;
   /* margin-left: -0.7rem; */
   padding: 0.2rem;
-  background: rgb(255,255,255) linear-gradient(225deg, rgba(0,0,0,0), rgba(0,0,0) 60%);
+  background: rgb(255,255,255) linear-gradient(225deg, rgba(0,0,0,0), rgba(0,0,0) 50%);
   border-radius: 0 0 0 0.5rem;
   animation: none;
 }
@@ -409,13 +419,13 @@ body.match .match .person {
 body.match .match .person .mvp {
   position: absolute;
   width: 0.8rem;
-  top: -0.1rem;
+  top: 0.1rem;
   display: none;
 }
 body.match .match .person .loser {
   position: absolute;
   width: 1rem;
-  top: -0.1rem;
+  top: 0.1rem;
   display: none;
 }
 body.match .match .person.mvp .mvp, body.match .match .person.loser .loser {
@@ -520,12 +530,14 @@ body.board .score .aScore, body.board .score .bScore {
   color: black;
   background: linear-gradient(0deg, rgb(203, 203, 203) 0%, rgb(255, 255, 255) 50%);
   border-radius: 0 0 0.2rem 0.2rem;
-  padding: 0 1rem;
+  width: 4rem;
+  margin: 0 0.1rem;
+  /* padding: 0 1rem; */
 }
 body.board .score .aScore {
 }
 body.board .score .bScore {
-  margin-left: 0.2rem;
+  /* margin-left: 0.2rem; */
 }
 body.board .score .time {
   color: #aaa;
@@ -597,7 +609,7 @@ body.board .match .person .kda {
 }
 body.board .match .person .kda small:first-child{
   /* vertical-align: middle; */
-  font-weight: bold;
+  font-weight: 900;
   font-size: 1rem;
 }
 body.board .match .person button {
@@ -632,6 +644,18 @@ body.board .match .person button.lossBtn {
 
 @media (orientation: portrait) {
 
+  body.board .menuBtn {
+    opacity: 0.2;
+  }
+  body.board .connect {
+    left: 50%;
+    right: auto;
+    top: -0.2rem;
+    margin-left: -0.7rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+    background-image: linear-gradient(0deg, rgba(255,255,255,0.6) 10%, rgba(0,0,0,0.8) 100%);
+    zoom: 0.8
+  }
   body.board {
     background: black;
     display: flex;
@@ -640,39 +664,36 @@ body.board .match .person button.lossBtn {
   }
   
   body.board .score {
-    position: absolute;
-    top: 50%;
-    margin-top: -1.5rem;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    pointer-events: none;
+    width: 100%;
+    justify-content: space-between;
   }
 
   body.board .score .time {
     margin-top: -1rem;
   }
-  body.board .score .aScore {
-    background: red;
-    margin-top: -1rem;
-  }
+  body.board .score .aScore,
   body.board .score .bScore {
-    background: deepskyblue;
-    margin-top: 1rem;
-    margin-left: inherit;
+    width: 49%;
+    margin: 0;
   }
 
   body.board .match {
-    margin-top: 2rem;
     flex-direction: row;
     flex-wrap: wrap;
   }
   body.board .match .person{
-    width: 30%;
+    width: 100%;
+    height: 25%;
     display: flex;
     flex-direction: column;
     justify-self: center;
     align-items: center;
+  }
+  body.board .match .person .kda{
+    height: 100%;
+  }
+  body.board .match .person .kda small{
+    font-size: 1rem;
   }
 }
 
@@ -701,12 +722,32 @@ body.ladder div.box h1 {
   margin: 0;
   margin-top: 0.4rem;
   text-align: center;
+  /* background: linear-gradient(100deg, rgba(255,255,255,1) 0%, rgba(0,184,255,0.2) 100%);
+  background: linear-gradient(90deg, rgba(131,58,180,1) 0%, rgba(253,29,29,1) 50%, rgba(252,176,69,1) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; */
 }
 body.ladder div.box > small {
   text-align: center;
+  margin-bottom: 0.2rem;
+}
+body.ladder div.ladder-help {
+  text-align: left;
+  margin-left: 1.9rem;
+  border:0;
+  border-bottom-width: 0.05rem;
+  border-style: solid ;
+  border-image: linear-gradient(90deg, rgba(0,255,210,0.5) 0%, rgba(0,141,195,0) 100%) 1 0%;
+  background: white linear-gradient(90deg, rgba(0,255,210,0.5) 0%, rgba(0,141,195,0) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 0.2rem
+}
+body.ladder div.ladder-help i{
+  font-size: 0.2rem
 }
 body.ladder div.ladder {
-  padding: 0.5rem 0;
+  padding: 0.1rem 0 0 0;
   overflow: auto;
 }
 body.ladder div.ladder .item {

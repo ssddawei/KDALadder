@@ -31,7 +31,8 @@ class MatchController {
   goal(person) {
     let assistGroup = this.aGroup.indexOf(person) >= 0? this.aGroup: this.bGroup;
     let assist = assistGroup.filter(i => i != person)[0];
-    this.match.scores.push(new GameScore(person, null, assist))
+    this.match.scores.push(new GameScore(person, null, assist));
+    calcEvent();
   }
   loss(person) {
     this.match.scores.push(new GameScore(null, person))
@@ -117,6 +118,16 @@ class MatchController {
     MatchController.LadderEvolve(ladder.ladder, this.bGroup[1], this.kda(this.bGroup[1]));
     
     return ladder;
+  }
+  calcEvent() {
+    let rScores = this.match.scores.reverse();
+    // 7sha
+    if(rScores.length >= 7) {
+      
+    }
+  }
+  event(name) {
+    SoundEffect.play("a-" + name + ".ogg");
   }
   async end() {
 
@@ -390,4 +401,38 @@ class ListChooser {
       this.chooseCallback = done;
     })
   };
+}
+
+class PlaceHolder {
+  constructor() {
+    $sels(".place-holder-owner").forEach(i => {
+      i.addEventListener("click", () => {
+        let next = i.nextElementSibling;
+        if(next.classList.contains("place-holder")) {
+          next.classList.add("show");
+          i.classList.add("hide");
+        }
+      })
+    })
+    $sels(".place-holder").forEach(i => {
+      i.addEventListener("click", () => {
+        let prev = i.previousElementSibling;
+        if(prev.classList.contains("place-holder-owner")) {
+          prev.classList.remove("hide");
+          i.classList.remove("show");
+        }
+      })
+    })
+  }
+}
+
+class SoundEffect {
+  static audio;
+  static play(effect) {
+    if(!SoundEffect.audio){
+      SoundEffect.audio = new Audio();
+    }
+    SoundEffect.audio.src = "res/sound/" + effect;
+    SoundEffect.audio.play();
+  }
 }
