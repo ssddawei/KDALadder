@@ -1,40 +1,126 @@
 
 class KDAEventCalc {
-  scores;
-  get events() {
-    let rScores = this.scores.reverse();
-    this.scores.reduce((pre, nxt) => {
-      if(pre.person && pre.kill) {
-        pre = {
-          [pre.person]: 1
-        };
+  // killing-spree  3kill
+  // rampage        4kill
+  // unstoppable    5kill
+  // godlike        6kill
+  // legendary      7kill
+  static Legendary = [null, null, null, "killing-spree", "rampage", "unstoppable", "godlike", "legendary"];
+  static Pentakill = [null, null, "2sha", "3sha", "4sha", "5sha"];
+
+  info_pentakill = [{}];
+  info_legendary = [{}];
+  events = [];
+
+  evolve(score, dryrun) {
+
+    let iEvents = [];
+    let curPentakill = this.info_pentakill[this.info_pentakill.length - 1];
+    let curLegendary = this.info_legendary[this.info_legendary.length - 1];
+    let nextPentakill = {}; // recalc pentakill for each score, because pentakill need Continuous Kill
+    let nextLegendary = {...curLegendary};
+    
+    
+
+    if(score.death) {
+      let person = score.death;
+      if(nextLegendary[person] >= 5){
+        iEvents.push({ person, name: "shutdown" });
       }
-
-      if(nxt.kill) {
-        pre[nxt.person] = pre[nxt.person]? pre[nxt.person]+1: 1;
-      } else if(nxt.death){
-        return [nxt, pre[1]+1]
+      // clear legendary for death
+      nextLegendary[person] = 0;
+    } 
+    if(score.kill) {
+      let person = score.kill;
+      nextLegendary[person] = curLegendary[person]? curLegendary[person]+1: 1;
+      nextPentakill[person] = curPentakill[person]? curPentakill[person]+1: 1;
+      
+      let pentakill = KDAEventCalc.Pentakill[nextPentakill[person]];
+      let legendary = KDAEventCalc.Legendary[Math.min(7, nextLegendary[person])];
+      if(pentakill) {
+        iEvents.push({ person, name: pentakill });
+      } 
+      if(legendary) {
+        iEvents.push({ person, name: legendary });
       }
-    })
-    // 7 kill
-    if(this.kills.slice(-7))
+    }
+
+    if(!dryrun) {
+      this.info_pentakill.push(nextPentakill);
+      this.info_legendary.push(nextLegendary);
+      this.events.push(iEvents);
+    }
+    return iEvents;
   }
-  get nextKillEvent() {
-
+  revert() {
+    this.info_pentakill.splice(-1, 1);
+    this.info_legendary.splice(-1, 1);
+    this.events.splice(-1, 1);
   }
-  get nextDeathEvent() {
-
+  get currentEvent() {
+    return this.events[this.events.length -1];
   }
-  constructor(scores) {
-    this.scores = scores;
+  static __unittest() {
+    let test = new KDAEventCalc();
+    test.evolve(new GameScore());
+    test.currentEvent.length == 0 || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent.length == 0  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "2sha" || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "3sha"
+      && test.currentEvent[1].name == "killing-spree"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "4sha"
+      && test.currentEvent[1].name == "rampage"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "5sha"
+      && test.currentEvent[1].name == "unstoppable"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "godlike"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "legendary"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "legendary"  || console.error("failed");
+
+    // shutdown
+    test.evolve(new GameScore(null, "person1"));
+    test.currentEvent[0].name == "shutdown"  || console.error("failed");
+
+    // no shutdown
+    test.evolve(new GameScore("person1"));
+    test.currentEvent.length == 0  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "2sha" || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "3sha"
+      && test.currentEvent[1].name == "killing-spree"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "4sha"
+      && test.currentEvent[1].name == "rampage"  || console.error("failed");
+    test.evolve(new GameScore(null, "person1"));
+    test.currentEvent.length == 0  || console.error("failed");
+
+    // 
+    test.evolve(new GameScore("person1"));
+    test.currentEvent.length == 0  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "2sha" || console.error("failed");
+    test.evolve(new GameScore("person2")); // stop 3sha
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "killing-spree"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "2sha"
+      && test.currentEvent[1].name == "rampage"  || console.error("failed");
+    test.evolve(new GameScore("person1")); // godlike
+    test.evolve(new GameScore(null, "person1"));
+    test.currentEvent[0].name == "shutdown"  || console.error("failed");
   }
-
-
-
 }
 class MatchController {
   match = new Match();
-  eventData = {};
+  eventCalc = new KDAEventCalc();
   get ready() {
     return !!(this.match.personGroup.filter(i=>i).length == 4)
   }
@@ -66,14 +152,17 @@ class MatchController {
     let assistGroup = this.aGroup.indexOf(person) >= 0? this.aGroup: this.bGroup;
     let assist = assistGroup.filter(i => i != person)[0];
     this.match.scores.push(new GameScore(person, null, assist));
-    calcEvent("kill", person);
+    let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
+    event.length && this.onEvent(event);
   }
   loss(person) {
     this.match.scores.push(new GameScore(null, person))
-    calcEvent("death", person);
+    let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
+    event.length && this.onEvent(event);
   }
   revert() {
     this.match.scores.length && this.match.scores.length --;
+    this.eventCalc.revert();
   }
   kda(person) {
     if(+person < 4) {
@@ -154,15 +243,13 @@ class MatchController {
     
     return ladder;
   }
-  calcEvent() {
-    let rScores = this.match.scores.reverse();
-    // 7sha
-    if(rScores.length >= 7) {
-      
-    }
-  }
-  event(name) {
-    SoundEffect.play("a-" + name + ".ogg");
+  onEvent(e) {
+    (async ()=>{
+      for(let i in e) {
+        SoundEffect.play("a-" + e[i].name + ".ogg");
+        i < e.length - 1 && await new Promise(o=>setTimeout(o, 2000));
+      }
+    })()
   }
   async end() {
 
