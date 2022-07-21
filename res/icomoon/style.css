@@ -1,10 +1,10 @@
 @font-face {
   font-family: 'icomoon';
-  src:  url('fonts/icomoon.eot?ow4i36');
-  src:  url('fonts/icomoon.eot?ow4i36#iefix') format('embedded-opentype'),
-    url('fonts/icomoon.ttf?ow4i36') format('truetype'),
-    url('fonts/icomoon.woff?ow4i36') format('woff'),
-    url('fonts/icomoon.svg?ow4i36#icomoon') format('svg');
+  src:  url('fonts/icomoon.eot?o2aveg');
+  src:  url('fonts/icomoon.eot?o2aveg#iefix') format('embedded-opentype'),
+    url('fonts/icomoon.ttf?o2aveg') format('truetype'),
+    url('fonts/icomoon.woff?o2aveg') format('woff'),
+    url('fonts/icomoon.svg?o2aveg#icomoon') format('svg');
   font-weight: normal;
   font-style: normal;
   font-display: block;
@@ -25,6 +25,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.icon-music:before {
+  content: "\e90a";
+  color: #fff;
+}
 .icon-medal:before {
   content: "\e909";
 }

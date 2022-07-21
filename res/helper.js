@@ -31,6 +31,18 @@ let $fetch = async function(){
   return JSON.parse(json);
 }
 
+let $throttle = function(fun, timeout, overrun) {
+  let tmr;
+  return () => {
+    if(tmr) {
+      overrun && overrun();
+      return;
+    }
+    tmr = setTimeout(() => {tmr = null}, timeout);
+    return fun();
+  }
+}
+
 let $prompt = async function(title){
   let tpl = `\
     <div class="dialog">\

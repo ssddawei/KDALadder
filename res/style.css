@@ -21,6 +21,22 @@ body {
   display: none;
 }
 
+/* cooldown */
+@keyframes cooldown4000 {
+  0% {
+    background-position: 100% 50%;
+    /* pointer-events: none; */
+  }
+  100% {
+    background-position: 0% 50%;
+    /* pointer-events: none; */
+  }
+}
+button.cooldown4000{
+  background-size: 200% 200%!important;
+  background-image: linear-gradient(90deg, white 0%, white 50%, gray 50%, gray 100%)!important;
+	animation: cooldown4000 4s linear !important;
+}
 
 .puff-out-center {
 	animation: puff-out-center 1s cubic-bezier(0.165, 0.840, 0.440, 1.000) both;
@@ -64,9 +80,9 @@ body {
     opacity: 1;
   }
   50% {
-    transform: scale(2);
+    transform: scale(1.5);
     filter: blur(4px);
-    opacity: 0;
+    opacity: 0.3;
   }
   0% {
     transform: scale(1);
@@ -76,7 +92,7 @@ body {
 }
 
 button{
-	animation: puff-out-center 0.8s both ;
+	animation: puff-out-center 0.8s linear ;
 }
 button:active,button:after,button:before {
 	animation: none;
@@ -165,6 +181,19 @@ button:active,button:after,button:before {
   border-radius: 0.2rem;
   font-size: 0.8rem;
   z-index: 999;
+}
+.menuBtn .icon-music:before {
+  position: absolute;
+  color: red;
+  right: 0.1rem;
+  bottom: 0.1rem;
+}
+.musicBtn.disabled {
+  text-decoration: line-through;
+  color: red
+}
+.music-icon {
+  display: none;
 }
 .menu {
   position: absolute;
@@ -383,6 +412,27 @@ body.match .score .aScore, body.match .score .bScore {
   align-items: center;
   font-size: 1.6rem;
   color: black;
+}
+body.match .gRevertBtn, body.match .gEndBtn {
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  top: 50%;
+  width: 2rem;
+  height: 1rem;
+  margin-left: -1rem;
+  margin-top: -0.5rem;
+  background: white;
+  border: 0.1rem solid rgba(0,0,0,0.3);
+  font-size: 0.5rem;
+  border-radius: 0.1rem;
+  box-shadow: 0 0 1rem 0.1rem black;
+  overflow: hidden;
+  display: none;
+}
+body.match .gEndBtn {
+  background-color: red;
+  color: white;
 }
 body.match .score .aScore {
   background: red;

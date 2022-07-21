@@ -58,9 +58,13 @@
     <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
     <button class="endBtn">结束</button>
     <button class="revertBtn">撤销</button>
+    <button class="musicBtn">音效</button>
     <button onclick="document.body.requestFullscreen();">全屏</button>
   </div>
-  <button class="menuBtn">M<small>enu</small></button>
+  <button class="menuBtn">
+    M<small>enu</small>
+    <em class="icon-music"></em>
+  </button>
 
   <div class="connect">
     <img src="res/svg/sync.svg" />
@@ -106,10 +110,19 @@
   </div>
   <script>
 
+    const CD = 2000;
     let timeTmr;
     let matchCtrl = new MatchController();
     let connectCtrl = new ConnectController("server", (data) => {
       switch(data.action) {
+        case "connect": {
+          // SoundEffect.disabled = true;
+          break;
+        }
+        case "cooldown": {
+          SoundEffect.play("cooldown", 1);
+          break;
+        }
         case "match": {
           matchCtrl.match = data.data;
           refreshUI();
@@ -125,10 +138,24 @@
       }
     })
 
+    let personChooser = new ListChooser( async () => {
+      let ladder = await new LadderController().seasonLadder();
+      return ladder.ladder.map(p => ({
+        data: p.person,
+        subtitle: `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`
+      }))
+    }, true);
+    $sel("div.dataList .newItemBtn").addEventListener("click", async () => {
+      let newPerson = await $prompt("输入新成员名字");
+      personChooser.select(newPerson);
+    })
+
     // sync match to client by ConnectController
     function connectSync(action) {
       if(action == "end")
         connectCtrl.send("end");
+      else if(action == "cooldown")
+        connectCtrl.send("cooldown");
       else
         connectCtrl.send("match", matchCtrl.match);
     }
@@ -212,46 +239,27 @@
     }
     
 
-    $sel("div.aGroup1 .goalBtn").addEventListener("click", () => {
-      matchCtrl.goal(matchCtrl.aGroup[0]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.aGroup2 .goalBtn").addEventListener("click", () => {
-      matchCtrl.goal(matchCtrl.aGroup[1]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.bGroup1 .goalBtn").addEventListener("click", () => {
-      matchCtrl.goal(matchCtrl.bGroup[0]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.bGroup2 .goalBtn").addEventListener("click", () => {
-      matchCtrl.goal(matchCtrl.bGroup[1]);
-      connectSync();
-      refreshUI();
-    })
+    ["div.aGroup1", "div.aGroup2", "div.bGroup1", "div.bGroup2"].forEach((i, idx) => {
 
-    $sel("div.aGroup1 .lossBtn").addEventListener("click", () => {
-      matchCtrl.loss(matchCtrl.aGroup[0]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.aGroup2 .lossBtn").addEventListener("click", () => {
-      matchCtrl.loss(matchCtrl.aGroup[1]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.bGroup1 .lossBtn").addEventListener("click", () => {
-      matchCtrl.loss(matchCtrl.bGroup[0]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.bGroup2 .lossBtn").addEventListener("click", () => {
-      matchCtrl.loss(matchCtrl.bGroup[1]);
-      connectSync();
-      refreshUI();
+      $sel(i + " .goalBtn").addEventListener("click", $throttle(() => {
+        matchCtrl.goal(matchCtrl.match.personGroup[idx]);
+        connectSync();
+        refreshUI();
+      }, CD, ()=>{ SoundEffect.play("cooldown", 1); connectSync("cooldown") }))
+
+      $sel(i + " .lossBtn").addEventListener("click", $throttle(() => {
+        matchCtrl.loss(matchCtrl.match.personGroup[idx]);
+        connectSync();
+        refreshUI();
+      }, CD, ()=>{ SoundEffect.play("cooldown", 1); connectSync("cooldown") }))
+
+      $sel(i + " .name").addEventListener("click", async function(){
+        let person = await personChooser.choose();
+        person && (matchCtrl.match.personGroup[idx] = person);
+        connectSync();
+        refreshUI();
+      })
+
     })
 
     $sel(".revertBtn").addEventListener("click", () => {
@@ -285,43 +293,6 @@
       }
     });
     
-    let personChooser = new ListChooser( async () => {
-      let ladder = await new LadderController().seasonLadder();
-      return ladder.ladder.map(p => ({
-        data: p.person,
-        subtitle: `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`
-      }))
-    }, true);
-    $sel("div.dataList .newItemBtn").addEventListener("click", async () => {
-      let newPerson = await $prompt("输入新成员名字");
-      personChooser.select(newPerson);
-    })
-
-    $sel("div.aGroup1 .name").addEventListener("click", async function(){
-      let person = await personChooser.choose();
-      person && (matchCtrl.match.personGroup[0] = person);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.aGroup2 .name").addEventListener("click", async function(){
-      let person = await personChooser.choose();
-      person && (matchCtrl.match.personGroup[1] = person);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.bGroup1 .name").addEventListener("click", async function(){
-      let person = await personChooser.choose();
-      person && (matchCtrl.match.personGroup[2] = person);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.bGroup2 .name").addEventListener("click", async function(){
-      let person = await personChooser.choose();
-      person && (matchCtrl.match.personGroup[3] = person);
-      connectSync();
-      refreshUI();
-    })
-
     let menu = new Menu();
 
     matchCtrl.load();
