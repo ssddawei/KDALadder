@@ -13,7 +13,7 @@ class KDAEventCalc {
   info_legendary = [{}];
   info_zisha = [{}];
   events = [];
-  firstBlood;
+  info_firstBlood = [];
 
   evolve(score, dryrun) {
 
@@ -24,14 +24,15 @@ class KDAEventCalc {
     let nextPentakill = {}; // recalc pentakill for each score, because pentakill need Continuous Kill
     let nextLegendary = {...curLegendary};
     let nextZisha = {}; // need Continuous Death
+    let nextFirstBlood;
     
     
 
     if(score.death) {
       let person = score.death;
       // firstbood
-      if(!this.firstBlood) {
-        this.firstBlood = person;
+      if(!this.info_firstBlood.find(i => i)) {
+        nextFirstBlood = person;
         iEvents.push({ person, name: "first-blood" });
       }
       // shutdown
@@ -66,6 +67,7 @@ class KDAEventCalc {
       this.info_pentakill.push(nextPentakill);
       this.info_legendary.push(nextLegendary);
       this.info_zisha.push(nextZisha);
+      this.info_firstBlood.push(nextFirstBlood);
       this.events.push(iEvents);
     }
     return iEvents;
@@ -73,6 +75,9 @@ class KDAEventCalc {
   revert() {
     this.info_pentakill.splice(-1, 1);
     this.info_legendary.splice(-1, 1);
+    this.info_zisha.splice(-1, 1);
+    this.info_firstBlood.splice(-1, 1);
+
     this.events.splice(-1, 1);
   }
   get currentEvent() {
@@ -104,7 +109,7 @@ class KDAEventCalc {
 
     // shutdown
     test.evolve(new GameScore(null, "person1"));
-    test.currentEvent[0].name == "shutdown"  || console.error("failed");
+    test.currentEvent[1].name == "shutdown"  || console.error("failed");
 
     // no shutdown
     test.evolve(new GameScore("person1"));
@@ -135,7 +140,14 @@ class KDAEventCalc {
     test.evolve(new GameScore(null, "person1"));
     test.currentEvent[0].name == "shutdown"  || console.error("failed");
 
-    //
+    // first-blood
+    let testFB = new KDAEventCalc();
+    testFB.evolve(new GameScore("person1"));
+    testFB.evolve(new GameScore("person2"));
+    testFB.evolve(new GameScore(null, "person1"));
+    testFB.currentEvent[0].name == "first-blood"  || console.error("failed");
+    testFB.evolve(new GameScore(null, "person1"));
+    testFB.currentEvent.length == 0  || console.error("failed");
   }
 }
 class MatchController {
@@ -604,6 +616,7 @@ class SoundEffect {
     SoundEffect.audio[audioSeq].play();
   }
   static bindUI() {
+    if(!$sel(".musicBtn"))return;
     SoundEffect.refreshUI();
     $sel(".musicBtn").addEventListener("click", () => {
       SoundEffect.disabled = !SoundEffect.disabled;
@@ -611,6 +624,7 @@ class SoundEffect {
     })
   }
   static refreshUI() {
+    if(!$sel(".musicBtn"))return;
     if(SoundEffect.disabled) {
       $sel(".musicBtn").classList.add("disabled");
       $sel(".icon-music").style.display="inherit";

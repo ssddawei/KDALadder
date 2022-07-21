@@ -250,34 +250,42 @@
       }
 
       // CD
-      setTimeout(()=>{
-        $sels(".goalBtn,.lossBtn").forEach(function(i){
-          i.classList.add("cooldown"+(CD-1000));
-        });
-      }, 1000)
-      setTimeout(()=>{
+      $sels(".goalBtn,.lossBtn").forEach(function(i){
+        i.classList.add("cooldown"+(CD));
+      });
+
+      clearTimeout(window.__cdTmr);
+      window.__cdTmr = setTimeout(()=>{
         $sel(".gRevertBtn").style.display = "none";
         $sels(".goalBtn,.lossBtn").forEach(function(i){
-          i.classList.remove("cooldown"+(CD-1000));
+          i.classList.remove("cooldown"+(CD));
         });
       }, CD)
     }
 
     ["div.aGroup1", "div.aGroup2", "div.bGroup1", "div.bGroup2"].forEach((i, idx) => {
 
-      $sel(i + " .goalBtn").addEventListener("click", $throttle(() => {
+      $sel(i + " .goalBtn").addEventListener("click", function(){
+        if(this.classList.contains("cooldown"+(CD))) {
+          SoundEffect.play("cooldown", 1); connectSync("cooldown")
+          return;
+        }
         matchCtrl.goal(matchCtrl.match.personGroup[idx]);
         connectSync();
         refreshUI();
         onScore();
-      }, CD, ()=>{ SoundEffect.play("cooldown", 1); connectSync("cooldown") }))
+      });
 
-      $sel(i + " .lossBtn").addEventListener("click", $throttle(() => {
+      $sel(i + " .lossBtn").addEventListener("click", function(){
+        if(this.classList.contains("cooldown"+(CD))) {
+          SoundEffect.play("cooldown", 1); connectSync("cooldown")
+          return;
+        }
         matchCtrl.loss(matchCtrl.match.personGroup[idx]);
         connectSync();
         refreshUI();
         onScore();
-      }, CD, ()=>{ SoundEffect.play("cooldown", 1); connectSync("cooldown") }))
+      })
 
       $sel(i + " .name").addEventListener("click", async function(){
         let person = await personChooser.choose();
@@ -303,7 +311,7 @@
       // reset cd
       $sel(".gRevertBtn").style.display = "none";
       $sels(".goalBtn,.lossBtn").forEach(function(i){
-        i.classList.remove("cooldown"+(CD-1000));
+        i.classList.remove("cooldown"+(CD));
       });
     }))
 

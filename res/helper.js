@@ -30,18 +30,26 @@ let $fetch = async function(){
   let json = text[0] == '['? text: '[' + text + ']';
   return JSON.parse(json);
 }
-
 let $throttle = function(fun, timeout, overrun) {
   let tmr;
+  let reset = ()=>{ clearTimeout(tmr); tmr = null };
+  {// for reset
+    $throttle.__all = $throttle.__all||[];
+    $throttle.__all.push(reset)
+  }
   return () => {
     if(tmr) {
       overrun && overrun();
       return;
     }
-    tmr = setTimeout(() => {tmr = null}, timeout);
+    tmr = setTimeout(reset, timeout);
     return fun();
   }
 }
+let $throttleResetAll = function() {
+  $throttle.__all && $throttle.__all.forEach(i=>i());
+}
+
 
 let $prompt = async function(title){
   let tpl = `\
