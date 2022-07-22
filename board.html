@@ -75,11 +75,9 @@
     <img src="res/svg/frame-sword-right.svg" alt="" class="sword-right">
     <img src="res/svg/frame-shield.svg" alt="" class="shield">
     <img src="res/svg/quadra-kill.svg" alt="" class="mark"> -->
-
     <object data="res/svg/frame-sword-left.svg" type="image/svg+xml" class="sword-left"></object>
     <object data="res/svg/frame-sword-right.svg" type="image/svg+xml" class="sword-right"></object>
     <object data="res/svg/frame-shield.svg" type="image/svg+xml" class="shield"></object>
-    <!-- <object data="res/svg/quadra-kill.svg" type="image/svg+xml" class="mark"></object> -->
     <div class="mark"></div>
   </div>
 
@@ -128,7 +126,6 @@
   </div>
   <script>
 
-    const CD = 2000;
     let timeTmr;
     let matchCtrl = new MatchController();
     let connectCtrl = new ConnectController("server", (data) => {
@@ -329,11 +326,7 @@
     });
     
     let menu = new Menu();
-
     matchCtrl.load();
-    // matchCtrl.match.personGroup = ['a', 'b', 'c', 'd'];
-    // matchCtrl.goal('a');
-    // matchCtrl.goal('c');
     refreshUI();
 
   </script>

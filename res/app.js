@@ -574,6 +574,9 @@ class ListChooser {
     $sel("div.dataList .cancelBtn").addEventListener("click", () => {
       this.cancel();
     });
+    $sel("div.dataList").addEventListener("click", () => {
+      this.cancel();
+    });
   }
   async refreshUI() {
     let datas = this.loader && await this.loader() || [];

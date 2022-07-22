@@ -565,7 +565,7 @@ body.match .gRevertBtn, body.match .gEndBtn {
   margin-left: -1rem;
   margin-top: -0.5rem;
   background: white;
-  border: 0.1rem solid rgba(0,0,0,0.3);
+  border: 0;
   font-size: 0.5rem;
   border-radius: 0.1rem;
   box-shadow: 0 0 1rem 0.1rem black;
@@ -573,7 +573,8 @@ body.match .gRevertBtn, body.match .gEndBtn {
   display: none;
 }
 body.match .gEndBtn {
-  background-color: red;
+  background: darkred;
+  box-shadow: 0 0 1rem 0.1rem white;
   color: white;
 }
 body.match .score .aScore {
