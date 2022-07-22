@@ -1,11 +1,204 @@
 
+class KDAEventCalc {
+  // killing-spree  3kill
+  // rampage        4kill
+  // unstoppable    5kill
+  // godlike        6kill
+  // legendary      7kill
+  static Legendary = [null, null, null, "killing-spree", "rampage", "unstoppable", "godlike", "legendary"];
+  static Pentakill = [null, null, "2sha", "3sha", "4sha", "5sha"];
+  static Zisha = [null, null, null, "zisha"];
+  static NameToCN = {
+    "killing-spree": "三杀",
+    "rampage": "四杀",
+    "unstoppable": "五杀",
+    "godlike": "六杀",
+    "legendary": "七杀",
+    "2sha": "连续二杀",
+    "3sha": "连续三杀",
+    "4sha": "连续四杀",
+    "5sha": "连续五杀",
+    "zisha": "自杀",
+    "shutdown": "终结连杀",
+    "first-blood": "第一滴血",
+  }
+  static NameToEN = {
+    "killing-spree": "KillingSpree",
+    "rampage": "Rampage",
+    "unstoppable": "Unstoppable",
+    "godlike": "Godlike",
+    "legendary": "Legendary",
+    "2sha": "DoubleKill",
+    "3sha": "TripleKill",
+    "4sha": "QuadraKill",
+    "5sha": "PentaKill",
+    "zisha": "Executed",
+    "shutdown": "Shutdown",
+    "first-blood": "FirstBlood",
+  }
+
+  info_pentakill = [{}];
+  info_legendary = [{}];
+  info_zisha = [{}];
+  events = [];
+  info_firstBlood = [];
+
+  evolve(score, dryrun) {
+
+    let iEvents = [];
+    let curPentakill = this.info_pentakill[this.info_pentakill.length - 1];
+    let curLegendary = this.info_legendary[this.info_legendary.length - 1];
+    let curZisha = this.info_zisha[this.info_zisha.length - 1];
+    let nextPentakill = {}; // recalc pentakill for each score, because pentakill need Continuous Kill
+    let nextLegendary = {...curLegendary};
+    let nextZisha = {}; // need Continuous Death
+    let nextFirstBlood;
+    
+    
+
+    if(score.death) {
+      let person = score.death;
+      // firstbood
+      if(!this.info_firstBlood.find(i => i)) {
+        nextFirstBlood = person;
+        iEvents.push({ person, name: "first-blood" });
+      }
+      // shutdown
+      if(nextLegendary[person] >= 5){
+        iEvents.push({ person, name: "shutdown" });
+      }
+      // clear legendary for death
+      nextLegendary[person] = 0;
+      // zisha
+      nextZisha[person] = curZisha[person]? curZisha[person]+1: 1;
+      let zisha = KDAEventCalc.Zisha[Math.min(KDAEventCalc.Zisha.length-1, nextZisha[person])];
+      if(zisha) {
+        iEvents.push({ person, name: zisha });
+      }
+    } 
+    if(score.kill) {
+      let person = score.kill;
+      nextLegendary[person] = curLegendary[person]? curLegendary[person]+1: 1;
+      nextPentakill[person] = curPentakill[person]? curPentakill[person]+1: 1;
+      
+      let pentakill = KDAEventCalc.Pentakill[nextPentakill[person]];
+      let legendary = KDAEventCalc.Legendary[Math.min(KDAEventCalc.Legendary.length-1, nextLegendary[person])];
+      if(pentakill) {
+        iEvents.push({ person, name: pentakill });
+      } 
+      if(legendary) {
+        iEvents.push({ person, name: legendary });
+      }
+    }
+
+    if(!dryrun) {
+      this.info_pentakill.push(nextPentakill);
+      this.info_legendary.push(nextLegendary);
+      this.info_zisha.push(nextZisha);
+      this.info_firstBlood.push(nextFirstBlood);
+      this.events.push(iEvents);
+    }
+    return iEvents;
+  }
+  revert() {
+    this.info_pentakill.splice(-1, 1);
+    this.info_legendary.splice(-1, 1);
+    this.info_zisha.splice(-1, 1);
+    this.info_firstBlood.splice(-1, 1);
+
+    this.events.splice(-1, 1);
+  }
+  get currentEvent() {
+    return this.events[this.events.length -1];
+  }
+  static __unittest() {
+    let test = new KDAEventCalc();
+    test.evolve(new GameScore());
+    test.currentEvent.length == 0 || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent.length == 0  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "2sha" || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "3sha"
+      && test.currentEvent[1].name == "killing-spree"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "4sha"
+      && test.currentEvent[1].name == "rampage"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "5sha"
+      && test.currentEvent[1].name == "unstoppable"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "godlike"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "legendary"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "legendary"  || console.error("failed");
+
+    // shutdown
+    test.evolve(new GameScore(null, "person1"));
+    test.currentEvent[1].name == "shutdown"  || console.error("failed");
+
+    // no shutdown
+    test.evolve(new GameScore("person1"));
+    test.currentEvent.length == 0  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "2sha" || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "3sha"
+      && test.currentEvent[1].name == "killing-spree"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "4sha"
+      && test.currentEvent[1].name == "rampage"  || console.error("failed");
+    test.evolve(new GameScore(null, "person1"));
+    test.currentEvent.length == 0  || console.error("failed");
+
+    // godlike and double-kill
+    test.evolve(new GameScore("person1"));
+    test.currentEvent.length == 0  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "2sha" || console.error("failed");
+    test.evolve(new GameScore("person2")); // stop 3sha
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "killing-spree"  || console.error("failed");
+    test.evolve(new GameScore("person1"));
+    test.currentEvent[0].name == "2sha"
+      && test.currentEvent[1].name == "rampage"  || console.error("failed");
+    test.evolve(new GameScore("person1")); // godlike
+    test.evolve(new GameScore(null, "person1"));
+    test.currentEvent[0].name == "shutdown"  || console.error("failed");
+
+    // first-blood
+    let testFB = new KDAEventCalc();
+    testFB.evolve(new GameScore("person1"));
+    testFB.evolve(new GameScore("person2"));
+    testFB.evolve(new GameScore(null, "person1"));
+    testFB.currentEvent[0].name == "first-blood"  || console.error("failed");
+    testFB.evolve(new GameScore(null, "person1"));
+    testFB.currentEvent.length == 0  || console.error("failed");
+  }
+}
 class MatchController {
-  match = new Match();
+  _match = new Match();
+  eventCalc = new KDAEventCalc();
+  eventCallback;
+  get match() {
+    return this._match;
+  }
+  set match(m) { // recalc event in every match setted
+    this._match = m;
+    this.eventCalc = new KDAEventCalc();
+    m.scores.forEach(i => this.eventCalc.evolve(i));
+    this.eventCalc.currentEvent && this.onEvent(this.eventCalc.currentEvent)
+  }
   get ready() {
     return !!(this.match.personGroup.filter(i=>i).length == 4)
   }
   get started() {
     return this.aScore > 0 || this.bScore > 0;
+  }
+  get readyToEnd() {
+    return Math.abs(this.aScore - this.bScore) >= 2 && (this.aScore > 20 || this.bScore > 20)
   }
   get aGroup() {
     return this.match.personGroup.slice(0,2);
@@ -31,13 +224,18 @@ class MatchController {
   goal(person) {
     let assistGroup = this.aGroup.indexOf(person) >= 0? this.aGroup: this.bGroup;
     let assist = assistGroup.filter(i => i != person)[0];
-    this.match.scores.push(new GameScore(person, null, assist))
+    this.match.scores.push(new GameScore(person, null, assist));
+    let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
+    event.length && this.onEvent(event);
   }
   loss(person) {
     this.match.scores.push(new GameScore(null, person))
+    let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
+    event.length && this.onEvent(event);
   }
   revert() {
     this.match.scores.length && this.match.scores.length --;
+    this.eventCalc.revert();
   }
   kda(person) {
     if(+person < 4) {
@@ -78,6 +276,9 @@ class MatchController {
     }
     return this.match.personGroup[Object.entries(kda).sort((a,b)=>a[1].score-b[1].score)[0][0]];
   }
+  nextEvent(person, killOrDeath) {
+    return this.eventCalc.evolve(new GameScore(killOrDeath && person, !killOrDeath && person), true)
+  }
   static LadderEvolve(ladder, person, kda) {
     let item = ladder.filter(i => i.person == person)[0];
     if(!item) {
@@ -117,6 +318,15 @@ class MatchController {
     MatchController.LadderEvolve(ladder.ladder, this.bGroup[1], this.kda(this.bGroup[1]));
     
     return ladder;
+  }
+  onEvent(e) {
+    (async ()=>{
+      for(let i in e) {
+        SoundEffect.play(e[i].name);
+        i < e.length - 1 && await new Promise(o=>setTimeout(o, 2000));
+      }
+    })()
+    this.eventCallback && this.eventCallback(e);
   }
   async end() {
 
@@ -293,6 +503,7 @@ class ConnectController {
     let conn = this.conn = new ConnectWebrtc(new AliyunSyncData(), 
       (msg) => {
         this.refreshUI("done");
+        this.onData && this.onData({action: "connect"});
         if(msg.indexOf("hi") == 0)return;
         
         let data = JSON.parse(msg);
@@ -363,6 +574,9 @@ class ListChooser {
     $sel("div.dataList .cancelBtn").addEventListener("click", () => {
       this.cancel();
     });
+    $sel("div.dataList").addEventListener("click", () => {
+      this.cancel();
+    });
   }
   async refreshUI() {
     let datas = this.loader && await this.loader() || [];
@@ -391,3 +605,73 @@ class ListChooser {
     })
   };
 }
+
+class PlaceHolder {
+  constructor() {
+    $sels(".place-holder-owner").forEach(i => {
+      i.addEventListener("click", () => {
+        let next = i.nextElementSibling;
+        if(next.classList.contains("place-holder")) {
+          next.classList.add("show");
+          i.classList.add("hide");
+        }
+      })
+    })
+    $sels(".place-holder").forEach(i => {
+      i.addEventListener("click", () => {
+        let prev = i.previousElementSibling;
+        if(prev.classList.contains("place-holder-owner")) {
+          prev.classList.remove("hide");
+          i.classList.remove("show");
+        }
+      })
+    })
+  }
+}
+
+
+class SoundEffect {
+  static audio = [];
+  static get disabled() {
+    return !!localStorage.getItem("music-disabled");
+  }
+  static set disabled(d) {
+    if(d)
+      localStorage.setItem("music-disabled", true);
+    else
+      localStorage.removeItem("music-disabled");
+    SoundEffect.refreshUI();
+  }
+  static play(effect, audioSeq = 0) {
+    if(SoundEffect.disabled)return;
+
+    if(!SoundEffect.audio[audioSeq]){
+      SoundEffect.audio[audioSeq] = new Audio();
+    }
+    SoundEffect.audio[audioSeq].src = "res/sound/a-" + effect + ".ogg";
+    SoundEffect.audio[audioSeq].play();
+  }
+  static bindUI() {
+    if(!$sel(".musicBtn"))return;
+    SoundEffect.refreshUI();
+    $sel(".musicBtn").addEventListener("click", () => {
+      SoundEffect.disabled = !SoundEffect.disabled;
+      SoundEffect.refreshUI();
+    })
+  }
+  static refreshUI() {
+    if(!$sel(".musicBtn"))return;
+    if(SoundEffect.disabled) {
+      $sel(".musicBtn").classList.add("disabled");
+      $sel(".icon-music").style.display="inherit";
+    } else {
+      $sel(".musicBtn").classList.remove("disabled");
+      $sel(".icon-music").style.display="none";
+    }
+  }
+}
+
+window.addEventListener("load", ()=>{
+  SoundEffect.bindUI();
+  new PlaceHolder();
+})

@@ -15,6 +15,7 @@
   <script type="text/javascript" src="res/sync-aliyun.js"></script>
   <script type="text/javascript" src="res/connect-webrtc.js"></script>
   <script type="text/javascript" src="res/app.js"></script>
+  <link rel="stylesheet" href="res/icomoon/style.css">
   <link rel="stylesheet" href="res/style.css">
   <style>
     .match {
@@ -55,72 +56,121 @@
   </div>
   
   <div class="connect">
-    <img src="res/sync.svg" />
+    <img src="res/svg/sync.svg" alt="" />
   </div>
   <div class="menu">
     <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
     <button class="endBtn">结束</button>
     <button class="revertBtn">撤销</button>
     <button onclick="location.href='board.html'">看板</button>
+    <button class="musicBtn">音效</button>
     <button onclick="document.body.requestFullscreen();">全屏</button>
   </div>
-  <button class="menuBtn">M<small>enu</small></button>
+  <button class="menuBtn">
+    M<small>enu</small>
+    <em class="icon-music"></em>
+  </button>
+
+  <button class="gRevertBtn">撤销</button>
+  <button class="gEndBtn">结束</button>
 
   <div class="score">
     <div class="aScore">/</div>
     <div class="bScore">/</div>
     <div class="time"></div>
   </div>
-  <div class="match notready">
+  <div class="match notready cooldown5">
     <div class="person aGroup1">
-      <img class="mvp" src="res/mvp.svg" />
-      <img class="loser" src="res/loser.svg" />
+      <img class="mvp" src="res/svg/mvp.svg" alt="" />
+      <img class="loser" src="res/svg/loser.svg" alt="" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="killTag"></div>
+      <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
     <div class="person aGroup2">
-      <img class="mvp" src="res/mvp.svg" />
-      <img class="loser" src="res/loser.svg" />
+      <img class="mvp" src="res/svg/mvp.svg" alt="" />
+      <img class="loser" src="res/svg/loser.svg" alt="" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="killTag"></div>
+      <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
     <div class="person bGroup1">
-      <img class="mvp" src="res/mvp.svg" />
-      <img class="loser" src="res/loser.svg" />
+      <img class="mvp" src="res/svg/mvp.svg" alt="" />
+      <img class="loser" src="res/svg/loser.svg" alt="" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="killTag"></div>
+      <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
     <div class="person bGroup2">
-      <img class="mvp" src="res/mvp.svg" />
-      <img class="loser" src="res/loser.svg" />
+      <img class="mvp" src="res/svg/mvp.svg" alt="" />
+      <img class="loser" src="res/svg/loser.svg" alt="" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="killTag"></div>
+      <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
   </div>
   <script>
+
+    const CD = 5000;
     let timeTmr;
     let matchCtrl = new MatchController();
     let connectCtrl = new ConnectController("client", (data) => {
       switch(data.action) {
+        case "connect": {
+          SoundEffect.disabled = true;
+          break;
+        }
+        case "cooldown": {
+          SoundEffect.play("cooldown", 1);
+          break;
+        }
         case "match": {
           matchCtrl.match = data.data;
           refreshUI();
           break;
         }
+        case "end": {
+          let beginTime = matchCtrl.match.beginTime;
+          let date = $dateString(new Date(beginTime));
+          new LocalStorage("current").delete();
+          location.href = `match-result.html?${date}-${beginTime}`
+          break;
+        }
       }
     })
     
+    let personChooser = new ListChooser( async () => {
+      let ladder = await new LadderController().seasonLadder();
+      return ladder.ladder.map(p => ({
+        data: p.person,
+        subtitle: `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`
+      }))
+    }, true);
+    $sel("div.dataList .newItemBtn").addEventListener("click", async () => {
+      let newPerson = await $prompt("输入新成员名字");
+      personChooser.select(newPerson);
+    })
+
     // sync match to server by ConnectController
-    function connectSync() {
-      connectCtrl.send("match", matchCtrl.match);
+    function connectSync(action) {
+      if(action == "end")
+        connectCtrl.send("end");
+      else if(action == "cooldown")
+        connectCtrl.send("cooldown");
+      else
+        connectCtrl.send("match", matchCtrl.match);
     }
     
     function refreshUI() {
@@ -192,59 +242,77 @@
         return [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"][idx];
       }
       
+      // next event
+      [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"].forEach((i, idx) => {
+        let kEvent = matchCtrl.nextEvent(matchCtrl.match.personGroup[idx], true);
+        let dEvent = matchCtrl.nextEvent(matchCtrl.match.personGroup[idx], false);
+        $sel(i + " .killTag").innerHTML = kEvent && kEvent[0] && KDAEventCalc.NameToEN[kEvent[0].name] || ""
+        $sel(i + " .deathTag").innerHTML = dEvent && dEvent[0] && KDAEventCalc.NameToEN[dEvent[0].name] || ""
+      })
       if(matchCtrl.started) {
         $sel(personToTarget(mvp)).classList.add("mvp");
         $sel(personToTarget(loser)).classList.add("loser");
       }
 
-
+      $sel(".gEndBtn").style.display = matchCtrl.readyToEnd? "block": "none"
+      
       matchCtrl.save();
     }
     
+    function onScore() {
+      if(!matchCtrl.readyToEnd) {
+        $sel(".gRevertBtn").style.display = "block";
+      }
 
-    $sel("div.aGroup1 .goalBtn").addEventListener("click", () => {
-      matchCtrl.goal(matchCtrl.aGroup[0]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.aGroup2 .goalBtn").addEventListener("click", () => {
-      matchCtrl.goal(matchCtrl.aGroup[1]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.bGroup1 .goalBtn").addEventListener("click", () => {
-      matchCtrl.goal(matchCtrl.bGroup[0]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.bGroup2 .goalBtn").addEventListener("click", () => {
-      matchCtrl.goal(matchCtrl.bGroup[1]);
-      connectSync();
-      refreshUI();
+      // CD
+      $sels(".goalBtn,.lossBtn").forEach(function(i){
+        i.classList.add("cooldown"+(CD));
+      });
+
+      clearTimeout(window.__cdTmr);
+      window.__cdTmr = setTimeout(()=>{
+        $sel(".gRevertBtn").style.display = "none";
+        $sels(".goalBtn,.lossBtn").forEach(function(i){
+          i.classList.remove("cooldown"+(CD));
+        });
+      }, CD)
+    }
+
+    ["div.aGroup1", "div.aGroup2", "div.bGroup1", "div.bGroup2"].forEach((i, idx) => {
+
+      $sel(i + " .goalBtn").addEventListener("click", function(){
+        if(this.classList.contains("cooldown"+(CD))) {
+          SoundEffect.play("cooldown", 1); connectSync("cooldown")
+          return;
+        }
+        $activeAnimate(this);
+        matchCtrl.goal(matchCtrl.match.personGroup[idx]);
+        connectSync();
+        refreshUI();
+        onScore();
+      });
+
+      $sel(i + " .lossBtn").addEventListener("click", function(){
+        if(this.classList.contains("cooldown"+(CD))) {
+          SoundEffect.play("cooldown", 1); connectSync("cooldown")
+          return;
+        }
+        $activeAnimate(this);
+        matchCtrl.loss(matchCtrl.match.personGroup[idx]);
+        connectSync();
+        refreshUI();
+        onScore();
+      })
+
+      $sel(i + " .name").addEventListener("click", async function(){
+        let person = await personChooser.choose();
+        person && (matchCtrl.match.personGroup[idx] = person);
+        connectSync();
+        refreshUI();
+      })
     })
 
-    $sel("div.aGroup1 .lossBtn").addEventListener("click", () => {
-      matchCtrl.loss(matchCtrl.aGroup[0]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.aGroup2 .lossBtn").addEventListener("click", () => {
-      matchCtrl.loss(matchCtrl.aGroup[1]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.bGroup1 .lossBtn").addEventListener("click", () => {
-      matchCtrl.loss(matchCtrl.bGroup[0]);
-      connectSync();
-      refreshUI();
-    })
-    $sel("div.bGroup2 .lossBtn").addEventListener("click", () => {
-      matchCtrl.loss(matchCtrl.bGroup[1]);
-      connectSync();
-      refreshUI();
-    })
-
-    $sel(".revertBtn").addEventListener("click", () => {
+    $sels(".revertBtn,.gRevertBtn").forEach(i=>i.addEventListener("click", () => {
       if(!matchCtrl.match.scores.length){
         $alert("对不起，办不到。");
         return;
@@ -254,10 +322,17 @@
         clearInterval(timeTmr)
         timeTmr = null;
       }
+      connectSync();
       refreshUI();
-    })
 
-    $sel(".endBtn").addEventListener("click", async () => {
+      // reset cd
+      $sel(".gRevertBtn").style.display = "none";
+      $sels(".goalBtn,.lossBtn").forEach(function(i){
+        i.classList.remove("cooldown"+(CD));
+      });
+    }))
+
+    $sels(".endBtn,.gEndBtn").forEach(i=>i.addEventListener("click", async () => {
       if(!matchCtrl.started){
         $alert("比赛都没开始，结束你个头。");
         return;
@@ -265,53 +340,19 @@
       let beginTime = matchCtrl.match.beginTime;
       try{
         let date = await matchCtrl.end();
+        connectSync("end")
         if(date)
           location.href = `match-result.html?${date}-${beginTime}`
       } catch(e) {
         $alert("sync error " + e);
         throw e;
       }
-    });
+    }))
     
-    let personChooser = new ListChooser( async () => {
-      let ladder = await new LadderController().seasonLadder();
-      return ladder.ladder.map(p => ({
-        data: p.person,
-        subtitle: `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win/(p.win+p.loss)*100).toFixed(1)}%`
-      }))
-    }, true);
-    $sel("div.dataList .newItemBtn").addEventListener("click", async () => {
-      let newPerson = await $prompt("输入新成员名字");
-      personChooser.select(newPerson);
-    })
-
-    $sel("div.aGroup1 .name").addEventListener("click", async function(){
-      let person = await personChooser.choose();
-      person && (matchCtrl.match.personGroup[0] = person);
-      refreshUI();
-    })
-    $sel("div.aGroup2 .name").addEventListener("click", async function(){
-      let person = await personChooser.choose();
-      person && (matchCtrl.match.personGroup[1] = person);
-      refreshUI();
-    })
-    $sel("div.bGroup1 .name").addEventListener("click", async function(){
-      let person = await personChooser.choose();
-      person && (matchCtrl.match.personGroup[2] = person);
-      refreshUI();
-    })
-    $sel("div.bGroup2 .name").addEventListener("click", async function(){
-      let person = await personChooser.choose();
-      person && (matchCtrl.match.personGroup[3] = person);
-      refreshUI();
-    })
-
     let menu = new Menu();
 
     matchCtrl.load();
-    // matchCtrl.match.personGroup = ['a', 'b', 'c', 'd'];
-    // matchCtrl.goal('a');
-    // matchCtrl.goal('c');
+    
     refreshUI();
 
   </script>

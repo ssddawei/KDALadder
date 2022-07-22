@@ -1,12 +1,32 @@
 /*
 
 */
+const STUNS = [
+  // "stun:stun.xten.com:3478",
+  // "stun:stun.voipbuster.com:3478",
+  // "stun:stun.sipgate.net:3478",
+  // "stun:stun.ekiga.net:3478",
+  // "stun:stun.ideasip.com:3478",
+  // "stun:stun.schlund.de:3478",
+  // "stun:stun.voiparound.com:3478",
+  // "stun:stun.voipbuster.com:3478",
+  // "stun:stun.voipstun:stunt.com:3478",
+  // "stun:stun.counterpath.com:3478",
+  // "stun:stun.1und1.de:3478",
+  // "stun:stun.gmx.net:3478",
+  // "stun:stun.callwithus.com:3478",
+  // "stun:stun.counterpath.net:3478",
+  // "stun:stun.internetcalls.com:3478",
+  // "stun:numb.viagenie.ca:3478",
+]
+
 class ConnectWebrtc {
   sync; // use to exchange SDP ( such aliyun oss AliyunSyncData )
   receiveCallback; // webrtc RTCDataChannel message receiver
   errorCallback; // webrtc RTCDataChannel error 
   pc; // RTCPeerConnection
   channel; // RTCDataChannel
+  waitCandidateMax = 3;
   constructor(sync, receiveCallback, errorCallback) {
     this.sync = sync;
     this.receiveCallback = receiveCallback;
@@ -25,7 +45,9 @@ class ConnectWebrtc {
     await this.sync.save("answer.sdp");
 
     let pc = this.pc = new RTCPeerConnection({
-      "iceCandidatePoolSize":1
+      "iceCandidatePoolSize":1,
+      "iceServers":STUNS.map(i => ({urls:i}))
+
     }, null);
 
     // create channel
@@ -49,9 +71,11 @@ class ConnectWebrtc {
 
     // wait candidate
     let candidate = new Promise(o => {
-      pc.onicecandidate = function(e){
+      let count = 0;
+      pc.onicecandidate = (e)=>{
         console.log("oncandidate", e.candidate)
         if(!e.candidate) o();
+        else if(++count >= this.waitCandidateMax) o();
       };
     })
 
@@ -88,7 +112,8 @@ class ConnectWebrtc {
   // Client invoke answer, wait server to response
   async answer() {
     let pc = this.pc = new RTCPeerConnection({
-      "iceCandidatePoolSize":1
+      "iceCandidatePoolSize":1,
+      "iceServers":STUNS.map(i => ({urls:i}))
     }, null);
 
     // create channel
@@ -114,9 +139,11 @@ class ConnectWebrtc {
 
     // wait candidate
     let candidate = new Promise(o => {
-      pc.onicecandidate = function(e){
+      let count = 0;
+      pc.onicecandidate = (e)=>{
         console.log("oncandidate", e.candidate)
         if(!e.candidate) o();
+        else if(++count >= this.waitCandidateMax) o();
       };
     })
 

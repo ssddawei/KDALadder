@@ -12,6 +12,44 @@ body {
   /* width: 100%; */
   height: 100%;
 }
+
+/* place-holder */
+.place-holder:not(.show) {
+  display: none;
+}
+.place-holder-owner.hide {
+  display: none;
+}
+
+/* cooldown */
+@keyframes cooldown5000 {
+  0% {
+    background-position: 100% 50%;
+    /* pointer-events: none; */
+  }
+  100% {
+    background-position: 0% 50%;
+    /* pointer-events: none; */
+  }
+}
+button.cooldown5000{
+  position: relative;
+  overflow: hidden;
+}
+button.cooldown5000:before{
+  content: ' ';
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-size: 200% 200%!important;
+  background-image: linear-gradient(90deg, white 0%, white 50%, gray 50%, gray 100%)!important;
+	animation: cooldown5000 5s linear !important;
+  opacity: 0.6;
+}
+
 .puff-out-center {
 	animation: puff-out-center 1s cubic-bezier(0.165, 0.840, 0.440, 1.000) both;
 }
@@ -38,7 +76,7 @@ body {
   }
   50% {
     transform: scale(2);
-    filter: blur(4px);
+    filter: blur(1px);
     opacity: 0.7;
   }
   0% {
@@ -54,9 +92,9 @@ body {
     opacity: 1;
   }
   50% {
-    transform: scale(2);
+    transform: scale(1.5);
     filter: blur(4px);
-    opacity: 0;
+    opacity: 0.3;
   }
   0% {
     transform: scale(1);
@@ -69,9 +107,138 @@ button{
 	animation: puff-out-center 0.8s both ;
 }
 button:active,button:after,button:before {
-	animation: none;
+	/* animation: none; */
 }
 
+/* animate  */
+@keyframes broadcast-shield {
+  0% {
+    transform: scale(10);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes broadcast-sword-left {
+  0% {
+    transform: translate(-10rem, -10rem) scale(2) rotate(-360deg);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  30% {
+    transform: translate(-10rem, -10rem) scale(2) rotate(-360deg);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  100% {
+    transform: translate(0rem, 0rem) scale(1);
+  }
+}
+@keyframes broadcast-sword-right {
+  0% {
+    transform: translate(10rem, -10rem) scale(2) rotate(360deg);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  30% {
+    transform: translate(10rem, -10rem) scale(2) rotate(360deg);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  100% {
+    transform: translate(0rem, 0rem) scale(1);
+  }
+}
+@keyframes broadcast-mark {
+  0% {
+    transform: scale(10) rotate(-110deg);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  60% {
+    transform: scale(10) rotate(-110deg);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  100% {
+    transform: scale(1) rotate(10deg);
+  }
+}
+
+@keyframes broadcast {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.broadcast {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  overflow: hidden;
+  pointer-events: none;
+  filter: drop-shadow(0 0 0.2rem rgb(0, 0, 0)) drop-shadow(0 0 0.5rem rgb(82, 0, 0)) drop-shadow(0 0 1rem rgb(0, 0, 0));
+  opacity: 0;
+}
+.broadcast.active{
+  animation: 0.5s broadcast 7s ease-in backwards;
+}
+.broadcast .shield {
+  position: absolute;
+  width: 4rem;
+}
+.broadcast.active .shield {
+  animation: broadcast-shield 0.5s ease-in;
+}
+.broadcast .sword-left {
+  position: absolute;
+  width: 5rem;
+  margin-top: -0.5rem;
+  margin-left: -1rem;
+}
+.broadcast.active .sword-left {
+  animation: broadcast-sword-left 1s ease-in;
+}
+.broadcast .sword-right {
+  position: absolute;
+  width: 5rem;
+  margin-top: -0.5rem;
+  margin-left: 1rem;
+}
+.broadcast.active .sword-right {
+  animation: broadcast-sword-right 1s ease-in;
+}
+.broadcast .mark {
+  position: absolute;
+  font-size:1.5rem;
+  filter: drop-shadow(0 0 0.2rem rgb(0, 0, 0)) drop-shadow(0 0 0.5rem rgb(0, 0, 0));
+  color: white;
+  transform: scale(1) rotate(10deg);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.broadcast .mark small:first-child{
+  font-size: 2rem;
+  margin-bottom: -1rem;
+  color: white;
+}
+.broadcast .mark small{
+  font-size: 1rem;
+  margin-top: -0.5rem;
+}
+.broadcast.active .mark {
+  animation: broadcast-mark 2s ease-in;
+}
 /* prompt */
 @keyframes dialog-ani {
   0% {
@@ -155,6 +322,19 @@ button:active,button:after,button:before {
   border-radius: 0.2rem;
   font-size: 0.8rem;
   z-index: 999;
+}
+.menuBtn .icon-music:before {
+  position: absolute;
+  color: red;
+  right: 0.1rem;
+  bottom: 0.1rem;
+}
+.musicBtn.disabled {
+  text-decoration: line-through;
+  color: red
+}
+.music-icon {
+  display: none;
 }
 .menu {
   position: absolute;
@@ -333,9 +513,10 @@ button:active,button:after,button:before {
   height: 1rem;
   /* margin-left: -0.7rem; */
   padding: 0.2rem;
-  background: rgb(255,255,255) linear-gradient(225deg, rgba(0,0,0,0), rgba(0,0,0) 60%);
+  background: rgb(255,255,255) linear-gradient(225deg, rgba(0,0,0,0), rgba(0,0,0) 50%);
   border-radius: 0 0 0 0.5rem;
   animation: none;
+  overflow: hidden;
 }
 .connect.done {
   background: rgb(0,255,0) linear-gradient(225deg, rgba(0,0,0,0), rgba(0,0,0) 60%);
@@ -374,6 +555,28 @@ body.match .score .aScore, body.match .score .bScore {
   font-size: 1.6rem;
   color: black;
 }
+body.match .gRevertBtn, body.match .gEndBtn {
+  position: absolute;
+  z-index: 100;
+  left: 50%;
+  top: 50%;
+  width: 2rem;
+  height: 1rem;
+  margin-left: -1rem;
+  margin-top: -0.5rem;
+  background: white;
+  border: 0;
+  font-size: 0.5rem;
+  border-radius: 0.1rem;
+  box-shadow: 0 0 1rem 0.1rem black;
+  overflow: hidden;
+  display: none;
+}
+body.match .gEndBtn {
+  background: darkred;
+  box-shadow: 0 0 1rem 0.1rem white;
+  color: white;
+}
 body.match .score .aScore {
   background: red;
 }
@@ -409,13 +612,13 @@ body.match .match .person {
 body.match .match .person .mvp {
   position: absolute;
   width: 0.8rem;
-  top: -0.1rem;
+  top: 0.1rem;
   display: none;
 }
 body.match .match .person .loser {
   position: absolute;
   width: 1rem;
-  top: -0.1rem;
+  top: 0.1rem;
   display: none;
 }
 body.match .match .person.mvp .mvp, body.match .match .person.loser .loser {
@@ -430,6 +633,28 @@ body.match .match .person .kda {
   text-align: center;
   font-size: 0.4rem;
   color: #aaa;
+}
+body.match .match .person .killTag {
+  position: absolute;
+  top: 1.6rem;
+  background: darkred;
+  border-radius: 0.1rem;
+  padding: 0 0.1rem;
+  font-size: 0.3rem;
+  right:0;
+  z-index: 100;
+  pointer-events: none;
+}
+body.match .match .person .deathTag {
+  position: absolute;
+  top: 4rem;
+  background: darkred;
+  border-radius: 0.1rem;
+  padding: 0 0.1rem;
+  font-size: 0.3rem;
+  right:0;
+  z-index: 100;
+  pointer-events: none;
 }
 body.match .match .person button {
   width: 2rem;
@@ -520,12 +745,14 @@ body.board .score .aScore, body.board .score .bScore {
   color: black;
   background: linear-gradient(0deg, rgb(203, 203, 203) 0%, rgb(255, 255, 255) 50%);
   border-radius: 0 0 0.2rem 0.2rem;
-  padding: 0 1rem;
+  width: 4rem;
+  margin: 0 0.1rem;
+  /* padding: 0 1rem; */
 }
 body.board .score .aScore {
 }
 body.board .score .bScore {
-  margin-left: 0.2rem;
+  /* margin-left: 0.2rem; */
 }
 body.board .score .time {
   color: #aaa;
@@ -569,6 +796,18 @@ body.board .match .person .loser {
   right: 0.1rem;
   display: none;
 }
+body.board .match .person .tag {
+  position: absolute;
+  bottom: 0rem;
+  background: rgba(255,255,255,0.6);
+  color: black;
+  border-radius: 0.1rem;
+  padding: 0 0.1rem;
+  font-size: 0.4rem;
+  right:0;
+  z-index: 100;
+  pointer-events: none;
+}
 body.board .match .person.mvp {
   background: #8c0000 linear-gradient(0deg, rgba(0,0,0,0.5) 0%, rgba(116, 116, 116, 0.5) 100%);
 }
@@ -597,7 +836,7 @@ body.board .match .person .kda {
 }
 body.board .match .person .kda small:first-child{
   /* vertical-align: middle; */
-  font-weight: bold;
+  font-weight: 900;
   font-size: 1rem;
 }
 body.board .match .person button {
@@ -616,7 +855,7 @@ body.board .match .person button.goalBtn {
   height: 100%;
   left:0;
   top:0;
-  opacity: 0;
+  opacity: 0.05;
 }
 body.board .match .person button.lossBtn {
   background: white;
@@ -627,11 +866,23 @@ body.board .match .person button.lossBtn {
   height: 100%;
   left:50%;
   top:0;
-  opacity: 0;
+  opacity: 0.05;
 }
 
 @media (orientation: portrait) {
 
+  body.board .menuBtn {
+    opacity: 0.2;
+  }
+  body.board .connect {
+    left: 50%;
+    right: auto;
+    top: -0.2rem;
+    margin-left: -0.7rem;
+    border-radius: 0 0 0.5rem 0.5rem;
+    background-image: linear-gradient(0deg, rgba(255,255,255,0.6) 10%, rgba(0,0,0,0.8) 100%);
+    zoom: 0.8
+  }
   body.board {
     background: black;
     display: flex;
@@ -640,39 +891,36 @@ body.board .match .person button.lossBtn {
   }
   
   body.board .score {
-    position: absolute;
-    top: 50%;
-    margin-top: -1.5rem;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    pointer-events: none;
+    width: 100%;
+    justify-content: space-between;
   }
 
   body.board .score .time {
     margin-top: -1rem;
   }
-  body.board .score .aScore {
-    background: red;
-    margin-top: -1rem;
-  }
+  body.board .score .aScore,
   body.board .score .bScore {
-    background: deepskyblue;
-    margin-top: 1rem;
-    margin-left: inherit;
+    width: 49%;
+    margin: 0;
   }
 
   body.board .match {
-    margin-top: 2rem;
     flex-direction: row;
     flex-wrap: wrap;
   }
   body.board .match .person{
-    width: 30%;
+    width: 100%;
+    height: 25%;
     display: flex;
     flex-direction: column;
     justify-self: center;
     align-items: center;
+  }
+  body.board .match .person .kda{
+    height: 100%;
+  }
+  body.board .match .person .kda small{
+    font-size: 1rem;
   }
 }
 
@@ -701,12 +949,32 @@ body.ladder div.box h1 {
   margin: 0;
   margin-top: 0.4rem;
   text-align: center;
+  /* background: linear-gradient(100deg, rgba(255,255,255,1) 0%, rgba(0,184,255,0.2) 100%);
+  background: linear-gradient(90deg, rgba(131,58,180,1) 0%, rgba(253,29,29,1) 50%, rgba(252,176,69,1) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent; */
 }
 body.ladder div.box > small {
   text-align: center;
+  margin-bottom: 0.2rem;
+}
+body.ladder div.ladder-help {
+  text-align: left;
+  margin-left: 1.9rem;
+  border:0;
+  border-bottom-width: 0.05rem;
+  border-style: solid ;
+  border-image: linear-gradient(90deg, rgba(0,255,210,0.5) 0%, rgba(0,141,195,0) 100%) 1 0%;
+  background: white linear-gradient(90deg, rgba(0,255,210,0.5) 0%, rgba(0,141,195,0) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 0.2rem
+}
+body.ladder div.ladder-help i{
+  font-size: 0.2rem
 }
 body.ladder div.ladder {
-  padding: 0.5rem 0;
+  padding: 0.1rem 0 0 0;
   overflow: auto;
 }
 body.ladder div.ladder .item {

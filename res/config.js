@@ -1,9 +1,9 @@
 let CONFIG = {
   AliyunOSSKey: {
     region: "oss-cn-guangzhou",
-    bucket: "kdaladder",
+    bucket: "kdaladder-dev",
     // accessKeyId: "",
     // accessKeySecret: "",
   },
-  DataUrl: "https://kdaladder.oss-cn-guangzhou.aliyuncs.com/"
+  DataUrl: "https://kdaladder-dev.oss-cn-guangzhou.aliyuncs.com/"
 }
