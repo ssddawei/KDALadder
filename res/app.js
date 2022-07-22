@@ -8,6 +8,34 @@ class KDAEventCalc {
   static Legendary = [null, null, null, "killing-spree", "rampage", "unstoppable", "godlike", "legendary"];
   static Pentakill = [null, null, "2sha", "3sha", "4sha", "5sha"];
   static Zisha = [null, null, null, "zisha"];
+  static NameToCN = {
+    "killing-spree": "三杀",
+    "rampage": "四杀",
+    "unstoppable": "五杀",
+    "godlike": "六杀",
+    "legendary": "七杀",
+    "2sha": "连续二杀",
+    "3sha": "连续三杀",
+    "4sha": "连续四杀",
+    "5sha": "连续五杀",
+    "zisha": "自杀",
+    "shutdown": "终结连杀",
+    "first-blood": "第一滴血",
+  }
+  static NameToEN = {
+    "killing-spree": "KillingSpree",
+    "rampage": "Rampage",
+    "unstoppable": "Unstoppable",
+    "godlike": "Godlike",
+    "legendary": "Legendary",
+    "2sha": "DoubleKill",
+    "3sha": "TripleKill",
+    "4sha": "QuadraKill",
+    "5sha": "PentaKill",
+    "zisha": "Executed",
+    "shutdown": "Shutdown",
+    "first-blood": "FirstBlood",
+  }
 
   info_pentakill = [{}];
   info_legendary = [{}];
@@ -153,6 +181,7 @@ class KDAEventCalc {
 class MatchController {
   _match = new Match();
   eventCalc = new KDAEventCalc();
+  eventCallback;
   get match() {
     return this._match;
   }
@@ -247,6 +276,9 @@ class MatchController {
     }
     return this.match.personGroup[Object.entries(kda).sort((a,b)=>a[1].score-b[1].score)[0][0]];
   }
+  nextEvent(person, killOrDeath) {
+    return this.eventCalc.evolve(new GameScore(killOrDeath && person, !killOrDeath && person), true)
+  }
   static LadderEvolve(ladder, person, kda) {
     let item = ladder.filter(i => i.person == person)[0];
     if(!item) {
@@ -294,6 +326,7 @@ class MatchController {
         i < e.length - 1 && await new Promise(o=>setTimeout(o, 2000));
       }
     })()
+    this.eventCallback && this.eventCallback(e);
   }
   async end() {
 

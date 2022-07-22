@@ -49,7 +49,11 @@ let $throttle = function(fun, timeout, overrun) {
 let $throttleResetAll = function() {
   $throttle.__all && $throttle.__all.forEach(i=>i());
 }
-
+let $activeAnimate = function(target) {
+  target.style.animation = 'none';
+  target.offsetHeight; /* trigger reflow */
+  target.style.animation = ''; 
+}
 
 let $prompt = async function(title){
   let tpl = `\

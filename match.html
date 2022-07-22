@@ -85,6 +85,8 @@
       <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="killTag"></div>
+      <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
@@ -93,6 +95,8 @@
       <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="killTag"></div>
+      <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
@@ -101,6 +105,8 @@
       <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="killTag"></div>
+      <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
@@ -109,6 +115,8 @@
       <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="killTag"></div>
+      <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
@@ -234,6 +242,13 @@
         return [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"][idx];
       }
       
+      // next event
+      [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"].forEach((i, idx) => {
+        let kEvent = matchCtrl.nextEvent(matchCtrl.match.personGroup[idx], true);
+        let dEvent = matchCtrl.nextEvent(matchCtrl.match.personGroup[idx], false);
+        $sel(i + " .killTag").innerHTML = kEvent && kEvent[0] && KDAEventCalc.NameToEN[kEvent[0].name] || ""
+        $sel(i + " .deathTag").innerHTML = dEvent && dEvent[0] && KDAEventCalc.NameToEN[dEvent[0].name] || ""
+      })
       if(matchCtrl.started) {
         $sel(personToTarget(mvp)).classList.add("mvp");
         $sel(personToTarget(loser)).classList.add("loser");
@@ -270,6 +285,7 @@
           SoundEffect.play("cooldown", 1); connectSync("cooldown")
           return;
         }
+        $activeAnimate(this);
         matchCtrl.goal(matchCtrl.match.personGroup[idx]);
         connectSync();
         refreshUI();
@@ -281,6 +297,7 @@
           SoundEffect.play("cooldown", 1); connectSync("cooldown")
           return;
         }
+        $activeAnimate(this);
         matchCtrl.loss(matchCtrl.match.personGroup[idx]);
         connectSync();
         refreshUI();

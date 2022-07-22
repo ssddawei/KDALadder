@@ -69,6 +69,20 @@
   <div class="connect">
     <img src="res/svg/sync.svg" />
   </div>
+
+  <div class="broadcast">
+    <!-- <img src="res/svg/frame-sword-left.svg" alt="" class="sword-left">
+    <img src="res/svg/frame-sword-right.svg" alt="" class="sword-right">
+    <img src="res/svg/frame-shield.svg" alt="" class="shield">
+    <img src="res/svg/quadra-kill.svg" alt="" class="mark"> -->
+
+    <object data="res/svg/frame-sword-left.svg" type="image/svg+xml" class="sword-left"></object>
+    <object data="res/svg/frame-sword-right.svg" type="image/svg+xml" class="sword-right"></object>
+    <object data="res/svg/frame-shield.svg" type="image/svg+xml" class="shield"></object>
+    <!-- <object data="res/svg/quadra-kill.svg" type="image/svg+xml" class="mark"></object> -->
+    <div class="mark"></div>
+  </div>
+
   <div class="score">
     <div class="aScore">/</div>
     <div class="bScore">/</div>
@@ -80,6 +94,7 @@
       <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="tag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
@@ -88,6 +103,7 @@
       <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="tag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
@@ -96,6 +112,7 @@
       <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="tag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
@@ -104,6 +121,7 @@
       <img class="loser" src="res/svg/loser.svg" />
       <div class="name"></div>
       <div class="kda"></div>
+      <div class="tag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
     </div>
@@ -137,6 +155,14 @@
         }
       }
     })
+    matchCtrl.eventCallback = (e) => {
+      if(!e || !e.length)return;
+      e = e[0];
+      $sel(".broadcast .mark").innerHTML = `<small>${e.person}</small>${KDAEventCalc.NameToEN[e.name]}<small>${KDAEventCalc.NameToCN[e.name]}</small>`
+      $sel(".broadcast").classList.remove("active");
+      $sel(".broadcast").offsetHeight;
+      $sel(".broadcast").classList.add("active");
+    }
 
     let personChooser = new ListChooser( async () => {
       let ladder = await new LadderController().seasonLadder();
@@ -223,6 +249,13 @@
       $sels("div.match .person").forEach(i => i.classList.remove("mvp"))
       $sels("div.match .person").forEach(i => i.classList.remove("loser"))
 
+      // tag 
+      if(matchCtrl.eventCalc.currentEvent) {
+        let event = matchCtrl.eventCalc.currentEvent[0];
+        let idx = matchCtrl.match.personGroup.indexOf(event.person);
+        let elm = [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"][idx]
+        $sel(elm + " .tag").innerHTML = KDAEventCalc.NameToEN[event.name];
+      }
       let personToTarget = (person) => {
         let idx = matchCtrl.match.personGroup.map((i,idx)=>i==person? idx: null)
           .filter(i=>i!==null)[0];
@@ -241,17 +274,19 @@
 
     ["div.aGroup1", "div.aGroup2", "div.bGroup1", "div.bGroup2"].forEach((i, idx) => {
 
-      $sel(i + " .goalBtn").addEventListener("click", $throttle(() => {
+      $sel(i + " .goalBtn").addEventListener("click", function(){
         matchCtrl.goal(matchCtrl.match.personGroup[idx]);
+        $activeAnimate(this);
         connectSync();
         refreshUI();
-      }, CD, ()=>{ SoundEffect.play("cooldown", 1); connectSync("cooldown") }))
+      })
 
-      $sel(i + " .lossBtn").addEventListener("click", $throttle(() => {
+      $sel(i + " .lossBtn").addEventListener("click", function(){
         matchCtrl.loss(matchCtrl.match.personGroup[idx]);
+        $activeAnimate(this);
         connectSync();
         refreshUI();
-      }, CD, ()=>{ SoundEffect.play("cooldown", 1); connectSync("cooldown") }))
+      })
 
       $sel(i + " .name").addEventListener("click", async function(){
         let person = await personChooser.choose();
