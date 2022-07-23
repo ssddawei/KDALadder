@@ -214,6 +214,14 @@ class MatchController {
     return this.match.scores.filter(i => this.bGroup.indexOf(i.kill) >= 0).length +
       this.match.scores.filter(i => this.aGroup.indexOf(i.death) >= 0).length
   }
+  get scoreText() {
+    let aFirst = this.match.scores.slice(-1).filter(
+      i => this.aGroup.indexOf(i.kill) >= 0 || this.bGroup.indexOf(i.death) >= 0
+    ).length > 0;
+    let a = this.aScore % 10;
+    let b = this.bScore % 10;
+    return aFirst? `${a} ${b}`: `${b} ${a}`;
+  }
   constructor(aGroupOrMatch = [], bGroup = []) {
     if(aGroupOrMatch instanceof Match || aGroupOrMatch.scores) {
       this.match = aGroupOrMatch;
@@ -226,11 +234,13 @@ class MatchController {
     let assist = assistGroup.filter(i => i != person)[0];
     this.match.scores.push(new GameScore(person, null, assist));
     let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
+    event.push({name: "text", text: `比分 ${this.scoreText}`});
     event.length && this.onEvent(event);
   }
   loss(person) {
     this.match.scores.push(new GameScore(null, person))
     let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
+    event.push({name: "text", text: `比分 ${this.scoreText}`});
     event.length && this.onEvent(event);
   }
   revert() {
@@ -322,11 +332,14 @@ class MatchController {
   onEvent(e) {
     (async ()=>{
       for(let i in e) {
-        SoundEffect.play(e[i].name);
+        e[i].name == "text"?
+        	SoundEffect.speak(e[i].text):
+          SoundEffect.play(e[i].name);
         i < e.length - 1 && await new Promise(o=>setTimeout(o, 2000));
       }
     })()
-    this.eventCallback && this.eventCallback(e);
+    let outEvents = e.filter(i=>i.name != "text")
+    this.eventCallback && outEvents.length && this.eventCallback(outEvents);
   }
   async end() {
 
@@ -641,6 +654,14 @@ class SoundEffect {
     else
       localStorage.removeItem("music-disabled");
     SoundEffect.refreshUI();
+  }
+  static speak(text) {
+    let msg = new SpeechSynthesisUtterance();
+    msg.text = text;
+    msg.rate = 0.7;
+    msg.pitch = 1;
+    msg.lang = "zh-HK";
+    speechSynthesis.speak(msg);
   }
   static play(effect, audioSeq = 0) {
     if(SoundEffect.disabled)return;

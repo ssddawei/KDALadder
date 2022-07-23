@@ -83,7 +83,7 @@
 
   <div class="score">
     <div class="aScore">/</div>
-    <div class="bScore">/</div>
+    <iv class="bScore">/</div>
     <div class="time" style="display:none"></div>
   </div>
   <div class="match notready">
@@ -143,6 +143,14 @@
           refreshUI();
           break;
         }
+        case "revert": {
+          matchCtrl.revert();
+          refreshUI();
+          $sel(".broadcast").classList.remove("active");
+      		$sel(".broadcast").offsetHeight;
+      
+          break;
+        }
         case "end": {
           let beginTime = matchCtrl.match.beginTime;
           let date = $dateString(new Date(beginTime));
@@ -152,6 +160,7 @@
         }
       }
     })
+
     matchCtrl.eventCallback = (e) => {
       if(!e || !e.length)return;
       e = e[0];
@@ -175,10 +184,8 @@
 
     // sync match to client by ConnectController
     function connectSync(action) {
-      if(action == "end")
-        connectCtrl.send("end");
-      else if(action == "cooldown")
-        connectCtrl.send("cooldown");
+      if(action)
+        connectCtrl.send(action);
       else
         connectCtrl.send("match", matchCtrl.match);
     }
@@ -304,8 +311,9 @@
         clearInterval(timeTmr)
         timeTmr = null;
       }
-      connectSync();
+      connectSync("revert");
       refreshUI();
+      $sel(".broadcast").classList.remove("active");
     })
 
     $sel(".endBtn").addEventListener("click", async () => {
