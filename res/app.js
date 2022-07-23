@@ -1,47 +1,56 @@
 
+
 class KDAEventCalc {
   // killing-spree  3kill
   // rampage        4kill
   // unstoppable    5kill
   // godlike        6kill
   // legendary      7kill
-  static Legendary = [null, null, null, "killing-spree", "rampage", "unstoppable", "godlike", "legendary"];
-  static Pentakill = [null, null, "2sha", "3sha", "4sha", "5sha"];
-  static Zisha = [null, null, null, "zisha"];
-  static NameToCN = {
-    "killing-spree": "三杀",
-    "rampage": "四杀",
-    "unstoppable": "五杀",
-    "godlike": "六杀",
-    "legendary": "七杀",
-    "2sha": "连续二杀",
-    "3sha": "连续三杀",
-    "4sha": "连续四杀",
-    "5sha": "连续五杀",
-    "zisha": "自杀",
-    "shutdown": "终结连杀",
-    "first-blood": "第一滴血",
-  }
-  static NameToEN = {
-    "killing-spree": "KillingSpree",
-    "rampage": "Rampage",
-    "unstoppable": "Unstoppable",
-    "godlike": "Godlike",
-    "legendary": "Legendary",
-    "2sha": "DoubleKill",
-    "3sha": "TripleKill",
-    "4sha": "QuadraKill",
-    "5sha": "PentaKill",
-    "zisha": "Executed",
-    "shutdown": "Shutdown",
-    "first-blood": "FirstBlood",
-  }
+  // static Legendary = [null, null, null, "killing-spree", "rampage", "unstoppable", "godlike", "legendary"];
+  // static Pentakill = [null, null, "2sha", "3sha", "4sha", "5sha"];
+  // static Zisha = [null, null, null, "zisha"];
+  // static NameToCN = {
+  //     "killing-spree": "三杀",
+  //     "rampage": "四杀",
+  //     "unstoppable": "五杀",
+  //     "godlike": "六杀",
+  //     "legendary": "七杀",
+  //     "2sha": "连续二杀",
+  //     "3sha": "连续三杀",
+  //     "4sha": "连续四杀",
+  //     "5sha": "连续五杀",
+  //     "zisha": "自杀",
+  //     "shutdown": "终结连杀",
+  //     "first-blood": "第一滴血",
+  // }
+  // static NameToEN = {
+  //     "killing-spree": "KillingSpree",
+  //     "rampage": "Rampage",
+  //     "unstoppable": "Unstoppable",
+  //     "godlike": "Godlike",
+  //     "legendary": "Legendary",
+  //     "2sha": "DoubleKill",
+  //     "3sha": "TripleKill",
+  //     "4sha": "QuadraKill",
+  //     "5sha": "PentaKill",
+  //     "zisha": "Executed",
+  //     "shutdown": "Shutdown",
+  //     "first-blood": "FirstBlood",
+  // }
 
-  info_pentakill = [{}];
-  info_legendary = [{}];
-  info_zisha = [{}];
-  events = [];
-  info_firstBlood = [];
+  // info_pentakill = [{}];
+  // info_legendary = [{}];
+  // info_zisha = [{}];
+  // events = [];
+  // info_firstBlood = [];
+
+  constructor() {
+      this.info_pentakill = [{}];
+      this.info_legendary = [{}];
+      this.info_zisha = [{}];
+      this.events = [];
+      this.info_firstBlood = [];
+  }
 
   evolve(score, dryrun) {
 
@@ -109,7 +118,7 @@ class KDAEventCalc {
     this.events.splice(-1, 1);
   }
   get currentEvent() {
-    return this.events[this.events.length -1];
+    return this.events[this.events.length -1] || [];
   }
   static __unittest() {
     let test = new KDAEventCalc();
@@ -178,10 +187,43 @@ class KDAEventCalc {
     testFB.currentEvent.length == 0  || console.error("failed");
   }
 }
+
+KDAEventCalc.Legendary = [null, null, null, "killing-spree", "rampage", "unstoppable", "godlike", "legendary"];
+KDAEventCalc.Pentakill = [null, null, "2sha", "3sha", "4sha", "5sha"];
+KDAEventCalc.Zisha = [null, null, null, "zisha"];
+KDAEventCalc.NameToCN = {
+    "killing-spree": "三杀",
+    "rampage": "四杀",
+    "unstoppable": "五杀",
+    "godlike": "六杀",
+    "legendary": "七杀",
+    "2sha": "连续二杀",
+    "3sha": "连续三杀",
+    "4sha": "连续四杀",
+    "5sha": "连续五杀",
+    "zisha": "自杀",
+    "shutdown": "终结连杀",
+    "first-blood": "第一滴血",
+}
+KDAEventCalc.NameToEN = {
+    "killing-spree": "KillingSpree",
+    "rampage": "Rampage",
+    "unstoppable": "Unstoppable",
+    "godlike": "Godlike",
+    "legendary": "Legendary",
+    "2sha": "DoubleKill",
+    "3sha": "TripleKill",
+    "4sha": "QuadraKill",
+    "5sha": "PentaKill",
+    "zisha": "Executed",
+    "shutdown": "Shutdown",
+    "first-blood": "FirstBlood",
+}
+
 class MatchController {
-  _match = new Match();
-  eventCalc = new KDAEventCalc();
-  eventCallback;
+  // _match = new Match();
+  // eventCalc = new KDAEventCalc();
+  // eventCallback;
   get match() {
     return this._match;
   }
@@ -189,7 +231,9 @@ class MatchController {
     this._match = m;
     this.eventCalc = new KDAEventCalc();
     m.scores.forEach(i => this.eventCalc.evolve(i));
-    this.eventCalc.currentEvent && this.onEvent(this.eventCalc.currentEvent)
+    let event = this.eventCalc.currentEvent;
+    event.push({name: "text", text: `比分 ${this.scoreText}`});
+    event.length && this.onEvent(event)
   }
   get ready() {
     return !!(this.match.personGroup.filter(i=>i).length == 4)
@@ -223,6 +267,9 @@ class MatchController {
     return aFirst? `${a} ${b}`: `${b} ${a}`;
   }
   constructor(aGroupOrMatch = [], bGroup = []) {
+    this._match = new Match();
+    this.eventCalc = new KDAEventCalc();
+    // eventCallback;
     if(aGroupOrMatch instanceof Match || aGroupOrMatch.scores) {
       this.match = aGroupOrMatch;
     } else {
@@ -393,8 +440,10 @@ class MatchController {
 }
 
 class LadderController {
-  syncData = new AliyunSyncData(null, new LocalStorage("remote"));
-
+  // syncData = new AliyunSyncData(null, new LocalStorage("remote"));
+  constructor() {
+    this.syncData = new AliyunSyncData(null, new LocalStorage("remote"));
+  }
   get storage() {
     return this.syncData.local
   }
@@ -468,16 +517,24 @@ class LadderController {
   Bind ConnectWebrtc to UI
 */
 class ConnectController {
-  conn;
-  status;
-  mode;
-  onData;
+  // conn;
+  // status;
+  // mode;
+  // onData;
   constructor(mode, onData) {
     this.mode = mode; // act as "server" or "client"
     this.onData = onData; // on data receive
 
     $sel(".connect").addEventListener("click", async () => {
 
+      if(this.status == "done" ||this.status == "loading"){
+        if(await $confirm("确定断开？")){
+          this.conn && this.conn.close()
+          this.conn == undefined;
+          this.refreshUI();
+          return;
+        }
+      }
       // check sync key
       if(!new AliyunSyncData().key) {
         let key = await $prompt("多端连接，请输入密钥");
@@ -523,6 +580,7 @@ class ConnectController {
         this.onData && this.onData(data);
       }, (err) => {
         this.refreshUI(["error", "done"]);
+        // this.connect(); // retry
       });
 
     try{
@@ -576,8 +634,8 @@ class Menu {
 }
 
 class ListChooser {
-  chooseCallback;
-  loader;
+  // chooseCallback;
+  // loader;
   constructor(loader) {
     this.loader = loader;
     $sel("div.dataList .list").addEventListener("click", (e) => {
@@ -644,7 +702,7 @@ class PlaceHolder {
 
 
 class SoundEffect {
-  static audio = [];
+  // static audio = [];
   static get disabled() {
     return !!localStorage.getItem("music-disabled");
   }
@@ -656,6 +714,8 @@ class SoundEffect {
     SoundEffect.refreshUI();
   }
   static speak(text) {
+    if(SoundEffect.disabled)return;
+
     let msg = new SpeechSynthesisUtterance();
     msg.text = text;
     msg.rate = 0.7;
@@ -691,6 +751,7 @@ class SoundEffect {
     }
   }
 }
+SoundEffect.audio = [];
 
 window.addEventListener("load", ()=>{
   SoundEffect.bindUI();

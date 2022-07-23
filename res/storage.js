@@ -1,14 +1,14 @@
 class Score {
-  timestamp;
+  // timestamp;
   constructor(TS) {
     this.timestamp = TS || Date.now();
   }
 }
 
 class GameScore extends Score {
-  kill;
-  death;
-  assist;
+  // kill;
+  // death;
+  // assist;
   constructor(K, D, A, TS) {
     super(TS)
     this.kill = K;
@@ -18,8 +18,8 @@ class GameScore extends Score {
 }
 
 class MatchScore extends Score {
-  win = [];
-  loss = [];
+  // win = [];
+  // loss = [];
   constructor(W, L, TS) {
     super(TS)
     this.win = W;
@@ -28,10 +28,10 @@ class MatchScore extends Score {
 }
 
 class Match {
-  scores = [];
-  beginTime = 0;
-  endTime = 0;
-  personGroup = [];
+  // scores = [];
+  // beginTime = 0;
+  // endTime = 0;
+  // personGroup = [];
   get endTime2() {
     if(this.endTime) {
       return this.endTime;
@@ -41,6 +41,11 @@ class Match {
     }
   }
   constructor(beginTime, personGroup) {
+    this.scores = [];
+    this.beginTime = 0;
+    this.endTime = 0;
+    this.personGroup = [];
+
     this.beginTime = beginTime || Date.now();
     this.personGroup = personGroup || [];
   }
@@ -50,19 +55,28 @@ class Match {
 }
 
 class Ladder {
-  beginTime = 0;
-  endTime = 0;
-  matchCount = 0;
-  matchTotalTimeSec = 0;
-  ladder = [];
+  // beginTime = 0;
+  // endTime = 0;
+  // matchCount = 0;
+  // matchTotalTimeSec = 0;
+  // ladder = [];
+  constructor() {
+    this.beginTime = 0;
+    this.endTime = 0;
+    this.matchCount = 0;
+    this.matchTotalTimeSec = 0;
+    this.ladder = [];
+  }
 }
 
 class Storage {
-  prefix = "";
-  ladder = {};
-  data = {};
+  // prefix = "";
+  // ladder = {};
+  // data = {};
   constructor(prefix) {
     this.prefix = (prefix || "");
+    this.ladder = {};
+    this.data = {};
   }
   load(){};
   save(){};

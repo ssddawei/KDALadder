@@ -103,11 +103,13 @@
   <script>
 
     class MatchResultController {
-      date;
-      beginTime;
-      matchCtrl;
+      // date;
+      // beginTime;
+      // matchCtrl;
       constructor() {
         let query = location.search.slice(1);
+        query = query.split("&")[0];
+
         let splitIdx = query.lastIndexOf("-");
         this.date = query.slice(0, splitIdx);
         this.beginTime = query.slice(splitIdx+1);
@@ -125,6 +127,14 @@
 
     let ctrl = new MatchResultController();
     
+    let isWatch = location.search.split("&")[1] == "watch";
+    if(isWatch) {
+      $sel(".ladderBtn").remove();
+      $sel(".newMatchBtn").onclick=()=>{
+        location.href="watch.html"
+      }
+    }
+
     function refreshUI() {
       $sel(".beginTime").innerHTML = new Date(ctrl.matchCtrl.match.beginTime).toLocaleString();
       $sel(".aScore").innerHTML = ctrl.matchCtrl.aScore ;

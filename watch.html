@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match</title>
+    <script type="text/javascript" src="//gosspublic.alicdn.com/aliyun-oss-sdk-6.17.0.min.js"></script>
+    <script type="text/javascript" src="res/config.js"></script>
+    <script type="text/javascript" src="res/helper.js"></script>
+    <script type="text/javascript" src="res/algorithm.js"></script>
+    <script type="text/javascript" src="res/storage.js"></script>
+    <script type="text/javascript" src="res/storage-localstorage.js"></script>
+    <script type="text/javascript" src="res/sync.js"></script>
+    <script type="text/javascript" src="res/sync-aliyun.js"></script>
+    <script type="text/javascript" src="res/connect-webrtc.js"></script>
+    <script type="text/javascript" src="res/app.js"></script>
+    <link rel="stylesheet" href="res/icomoon/style.css">
+    <link rel="stylesheet" href="res/watch.css">
+    <style>
+        .match {
+            display: flex
+        }
+
+        .match.started .person .name {
+            pointer-events: none;
+        }
+
+        .person {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .person button {
+            display: block
+        }
+
+        body.match:not(.notready) .gStartBtn {
+            display: block;
+        }
+
+        body.match.started .gStartBtn {
+            display: none;
+        }
+    </style>
+</head>
+
+<body class="match">
+    <script id="DataListItem" type="text/template">
+    <div class="item" data-data="{{data}}">
+      <div class="data">{{data}}</div>
+      <div class="subtitle">{{subtitle}}</div>
+    </div>
+  </script>
+    <div class="dataList">
+        <div class="list"></div>
+        <div class="item newItemBtn">
+            <div class="name">新增</div>
+        </div>
+        <div class="item cancelBtn">
+            <div class="name">取消</div>
+        </div>
+    </div>
+
+    <div class="connect">
+        <img src="res/svg/sync.svg" alt="" />
+    </div>
+    <div class="menu">
+        <button class="endBtn">结束</button>
+        <button class="revertBtn">撤销</button>
+    </div>
+    <button class="menuBtn">
+        M<small>enu</small>
+        <em class="icon-music"></em>
+    </button>
+
+    <button class="gStartBtn">开始</button>
+    <button class="gRevertBtn">撤销</button>
+    <button class="gEndBtn">结束</button>
+
+    <div class="score">
+        <div class="time"></div>
+        <div class="aScore">/</div>
+        <div class="bScore">/</div>
+    </div>
+    <div class="goalBox">
+        <button class="goalBtn">O</button>
+        <button class="lossBtn">X</button>
+        <button class="cancelBtn">C<small>ancel</small></button>
+    </div>
+    <div class="match notready cooldown5">
+        <div class="person aGroup1">
+            <img class="mvp" src="res/svg/mvp.svg" alt="" />
+            <img class="loser" src="res/svg/loser.svg" alt="" />
+            <div class="name"></div>
+            <div class="kda"></div>
+            <div class="killTag"></div>
+            <div class="deathTag"></div>
+        </div>
+        <div class="person bGroup1">
+            <img class="mvp" src="res/svg/mvp.svg" alt="" />
+            <img class="loser" src="res/svg/loser.svg" alt="" />
+            <div class="name">CCC</div>
+            <div class="kda"></div>
+            <div class="killTag"></div>
+            <div class="deathTag"></div>
+        </div>
+        <div class="person aGroup2">
+            <img class="mvp" src="res/svg/mvp.svg" alt="" />
+            <img class="loser" src="res/svg/loser.svg" alt="" />
+            <div class="name"></div>
+            <div class="kda"></div>
+            <div class="killTag"></div>
+            <div class="deathTag"></div>
+        </div>
+        <div class="person bGroup2">
+            <img class="mvp" src="res/svg/mvp.svg" alt="" />
+            <img class="loser" src="res/svg/loser.svg" alt="" />
+            <div class="name"></div>
+            <div class="kda"></div>
+            <div class="killTag"></div>
+            <div class="deathTag"></div>
+        </div>
+    </div>
+    <script>
+
+        SoundEffect.disabled = true;
+        new AliyunSyncData().saveKey(location.search.slice(1))
+
+        const CD = 5000;
+        let uiStarted; // control the gStartBtn visibility
+        let timeTmr;
+        let matchCtrl = new MatchController();
+        let connectCtrl = new ConnectController("client", (data) => {
+            switch (data.action) {
+                case "connect": {
+                    SoundEffect.disabled = true;
+                    break;
+                }
+                case "cooldown": {
+                    SoundEffect.play("cooldown", 1);
+                    break;
+                }
+                case "match": {
+                    matchCtrl.match = data.data;
+                    refreshUI();
+                    break;
+                }
+                case "revert": {
+                    matchCtrl.revert();
+                    refreshUI();
+                    break;
+                }
+                case "end": {
+                    let beginTime = matchCtrl.match.beginTime;
+                    let date = $dateString(new Date(beginTime));
+                    new LocalStorage("current").delete();
+                    location.href = `match-result.html?${date}-${beginTime}`
+                    break;
+                }
+            }
+        })
+
+        let personChooser = new ListChooser(async () => {
+            let ladder = await new LadderController().seasonLadder();
+            return ladder.ladder.map(p => ({
+                data: p.person,
+                subtitle: `${p.score.toFixed(1)} ${p.kill}/${p.death}/${p.assist} ${(p.win / (p.win + p.loss) * 100).toFixed(1)}%`
+            }))
+        }, true);
+        $sel("div.dataList .newItemBtn").addEventListener("click", async () => {
+            let newPerson = await $prompt("输入新成员名字");
+            personChooser.select(newPerson);
+        })
+
+        // sync match to server by ConnectController
+        function connectSync(action) {
+            if (action)
+                connectCtrl.send(action);
+            else
+                connectCtrl.send("match", matchCtrl.match);
+        }
+
+        function refreshUI() {
+
+            if (!timeTmr && matchCtrl.match.scores.length) {
+
+                if (!matchCtrl.match.beginTime)
+                    matchCtrl.match.beginTime = Date.now();
+
+                timeTmr = setInterval(() => {
+                    let span = Math.floor((Date.now() - matchCtrl.match.beginTime) / 1000);
+                    let minutes = Math.floor(span / 60);
+                    let seconds = span % 60;
+                    $sel("div.time").innerHTML = `${minutes}:${seconds}`;
+                }, 1000);
+            }
+            matchCtrl.ready ?
+                $sel("body.match").classList.remove("notready") :
+                $sel("body.match").classList.add("notready");
+            (matchCtrl.started || uiStarted) ?
+                $sel("body.match").classList.add("started") :
+                $sel("body.match").classList.remove("started");
+
+            // name
+            $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "-";
+            $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "-";
+            $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "-";
+            $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "-";
+
+            // match score
+            if ($sel(".aScore").innerHTML != matchCtrl.aScore) {// active animate
+                $sel(".aScore").classList.add("puff-out-center-3");
+                $sel(".aScore").style.animation = 'none';
+                $sel(".aScore").offsetHeight; /* trigger reflow */
+                $sel(".aScore").style.animation = '';
+                $sel(".aScore").innerHTML = `${matchCtrl.aScore}`
+            }
+            if ($sel(".bScore").innerHTML != matchCtrl.bScore) {// active animate
+                $sel(".bScore").classList.add("puff-out-center-3");
+                $sel(".bScore").style.animation = 'none';
+                $sel(".bScore").offsetHeight; /* trigger reflow */
+                $sel(".bScore").style.animation = '';
+                $sel(".bScore").innerHTML = `${matchCtrl.bScore}`
+            }
+
+            // kda
+            let applyKDA = (person, target) => {
+                let kda = matchCtrl.kda(person);
+                $sel(target).innerHTML = `${kda.kill} / ${kda.death} / ${kda.assist}`;
+            }
+
+            applyKDA(matchCtrl.aGroup[0], ".aGroup1 .kda");
+            applyKDA(matchCtrl.aGroup[1], ".aGroup2 .kda");
+            applyKDA(matchCtrl.bGroup[0], ".bGroup1 .kda");
+            applyKDA(matchCtrl.bGroup[1], ".bGroup2 .kda");
+
+            // mvp
+            let mvp = matchCtrl.mvp();
+            let loser = matchCtrl.loser();
+
+            $sels("div.match .person").forEach(i => i.classList.remove("mvp"))
+            $sels("div.match .person").forEach(i => i.classList.remove("loser"))
+
+            let personToTarget = (person) => {
+                let idx = matchCtrl.match.personGroup.map((i, idx) => i == person ? idx : null)
+                    .filter(i => i !== null)[0];
+                return [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"][idx];
+            }
+            if (matchCtrl.started) {
+                $sel(personToTarget(mvp)).classList.add("mvp");
+                $sel(personToTarget(loser)).classList.add("loser");
+            }
+
+            // next event
+            [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"].forEach((i, idx) => {
+                let kEvent = matchCtrl.nextEvent(matchCtrl.match.personGroup[idx], true);
+                let dEvent = matchCtrl.nextEvent(matchCtrl.match.personGroup[idx], false);
+                $sel(i + " .killTag").innerHTML = kEvent && kEvent[0] && KDAEventCalc.NameToEN[kEvent[0].name] || ""
+                $sel(i + " .deathTag").innerHTML = dEvent && dEvent[0] && KDAEventCalc.NameToEN[dEvent[0].name] || ""
+            })
+
+
+            $sel(".gEndBtn").style.display = matchCtrl.readyToEnd ? "block" : "none"
+
+            matchCtrl.save();
+        }
+
+        function onScore() {
+            if (!matchCtrl.readyToEnd) {
+                $sel(".gRevertBtn").style.display = "block";
+            }
+
+            // CD
+            $sels(".goalBtn,.lossBtn").forEach(function (i) {
+                i.classList.add("cooldown" + (CD));
+            });
+
+            clearTimeout(window.__cdTmr);
+            window.__cdTmr = setTimeout(() => {
+                $sel(".gRevertBtn").style.display = "none";
+                $sels(".goalBtn,.lossBtn").forEach(function (i) {
+                    i.classList.remove("cooldown" + (CD));
+                });
+            }, CD)
+        }
+
+        $sel(".goalBox .cancelBtn").addEventListener("click", function () {
+            this.classList.add("active");
+            $activeAnimate(this);
+            setTimeout(() => {
+                $sel(".goalBox").classList.remove("show");
+                this.classList.remove("active");
+            }, 200)
+        });
+        $sel(".goalBox .goalBtn").addEventListener("click", function () {
+            let idx = +this.dataset["personIdx"];
+            this.classList.add("active");
+            $activeAnimate(this);
+            matchCtrl.goal(matchCtrl.match.personGroup[idx]);
+            connectSync();
+            refreshUI();
+            onScore();
+
+            setTimeout(() => {
+                $sel(".goalBox").classList.remove("show");
+                this.classList.remove("active");
+            }, 500)
+        });
+        $sel(".goalBox .lossBtn").addEventListener("click", function () {
+            let idx = +this.dataset["personIdx"];
+            this.classList.add("active");
+            $activeAnimate(this);
+            matchCtrl.loss(matchCtrl.match.personGroup[idx]);
+            connectSync();
+            refreshUI();
+            onScore();
+
+            setTimeout(() => {
+                $sel(".goalBox").classList.remove("show");
+                this.classList.remove("active");
+            }, 500)
+        });
+
+        ["div.aGroup1", "div.aGroup2", "div.bGroup1", "div.bGroup2"].forEach((i, idx) => {
+
+            $sel(i).addEventListener("click", async function () {
+                if (!matchCtrl.started && !uiStarted) {
+                    let person = await personChooser.choose();
+                    person && (matchCtrl.match.personGroup[idx] = person);
+                    connectSync();
+                    refreshUI();
+                    return
+                };
+
+                $sel(".goalBox").classList.add("show");
+                $sel(".goalBox .goalBtn").dataset["personIdx"] = idx;
+                $sel(".goalBox .lossBtn").dataset["personIdx"] = idx;
+            });
+
+            $sel(i + " .name").addEventListener("click", async function () {
+            })
+        })
+
+        $sel(".gStartBtn").addEventListener("click", () => {
+            uiStarted = true;
+            refreshUI();
+        });
+
+        $sels(".revertBtn,.gRevertBtn").forEach(i => i.addEventListener("click", () => {
+            if (uiStarted && !matchCtrl.started) {
+                uiStarted = false;
+                $sel("body.match").classList.remove("started")
+                refreshUI();
+                return;
+            }
+            if (!matchCtrl.match.scores.length) {
+                $alert("对不起，办不到。");
+                return;
+            }
+            matchCtrl.revert();
+            if (!matchCtrl.match.scores.length && timeTmr) {
+                clearInterval(timeTmr)
+                timeTmr = null;
+            }
+            connectSync("revert");
+            refreshUI();
+
+            // reset cd
+            $sel(".gRevertBtn").style.display = "none";
+            $sels(".goalBtn,.lossBtn").forEach(function (i) {
+                i.classList.remove("cooldown" + (CD));
+            });
+        }))
+
+        $sels(".endBtn,.gEndBtn").forEach(i => i.addEventListener("click", async () => {
+            if (!matchCtrl.started) {
+                $alert("比赛都没开始，结束你个头。");
+                return;
+            }
+            let beginTime = matchCtrl.match.beginTime;
+            try {
+                let date = await matchCtrl.end();
+                connectSync("end")
+                if (date)
+                    location.href = `match-result.html?${date}-${beginTime}&watch`
+            } catch (e) {
+                $alert("sync error " + e);
+                throw e;
+            }
+        }))
+
+        let menu = new Menu();
+
+        matchCtrl.load();
+
+        refreshUI();
+
+    </script>
+</body>
+
+</html>

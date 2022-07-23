@@ -19,7 +19,7 @@ class AliyunSyncData extends SyncData {
     }
   }
   saveKey(keyString) {
-    let keys = keyString.split("/");
+    let keys = keyString.split(/[\/-]/);
     if(keys.length != 2)return false;
 
     let key = Object.assign({}, CONFIG.AliyunOSSKey, {

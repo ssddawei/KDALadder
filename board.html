@@ -256,9 +256,11 @@
       // tag 
       if(matchCtrl.eventCalc.currentEvent) {
         let event = matchCtrl.eventCalc.currentEvent[0];
-        let idx = matchCtrl.match.personGroup.indexOf(event.person);
-        let elm = [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"][idx]
-        $sel(elm + " .tag").innerHTML = KDAEventCalc.NameToEN[event.name];
+        if(event) {
+          let idx = matchCtrl.match.personGroup.indexOf(event.person);
+          let elm = [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"][idx]
+          $sel(elm + " .tag").innerHTML = KDAEventCalc.NameToEN[event.name];
+        }
       }
       let personToTarget = (person) => {
         let idx = matchCtrl.match.personGroup.map((i,idx)=>i==person? idx: null)
