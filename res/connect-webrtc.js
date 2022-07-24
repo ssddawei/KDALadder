@@ -63,6 +63,15 @@ class ConnectWebrtc {
       return nativeSRD.apply(this, arguments);
     };
   }
+  _onOpen() {
+
+  }
+  _onClose() {
+    this.pc && this.errorCallback && this.errorCallback(e);
+    this.channel && this.channel.close();
+    this.channel = null;
+    setTimeout(this.close.bind(this), 1000); // wait message sended
+  }
   // Server invoke offer, wait client to answer
   async offer() {
 
@@ -80,6 +89,7 @@ class ConnectWebrtc {
     let open = new Promise(o => {
       this.channel.onopen = (event) => {
         console.log("onopen")
+        this._onOpen(event);
         o()
       }
     })
@@ -88,16 +98,10 @@ class ConnectWebrtc {
       this.receiveCallback && this.receiveCallback(event.data);
     }
     this.channel.onerror = (e) => {
-      this.pc && this.errorCallback && this.errorCallback(e);
-      this.channel && this.channel.close();
-      this.channel = null;
-      setTimeout(this.close.bind(this), 1000); // wait message sended
+      this._onClose(e);
     }
     this.channel.onclose = (e) => {
-      this.pc && this.errorCallback && this.errorCallback(e);
-      this.channel && this.channel.close();
-      this.channel = null;
-      setTimeout(this.close.bind(this), 1000); // wait message sended
+      this._onClose(e);
     }
 
     // wait candidate
@@ -153,6 +157,7 @@ class ConnectWebrtc {
         this.channel = event.channel;
         this.channel.onopen = (event) => {
           console.log("onopen")
+          this._onOpen(event);
           o();
         }
         this.channel.onmessage = (event) => {
@@ -160,16 +165,10 @@ class ConnectWebrtc {
           this.receiveCallback && this.receiveCallback(event.data);
         }
         this.channel.onerror = (e) => {
-          this.pc && this.errorCallback && this.errorCallback(e);
-          this.channel && this.channel.close();
-          this.channel = null;
-          setTimeout(this.close.bind(this), 1000); // wait message sended
+          this._onClose(e);
         }
         this.channel.onclose = (e) => {
-          this.pc && this.errorCallback && this.errorCallback(e);
-          this.channel && this.channel.close();
-          this.channel = null;
-          setTimeout(this.close.bind(this), 1000); // wait message sended
+          this._onClose(e);
         }
       }
     })

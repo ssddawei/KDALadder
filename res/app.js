@@ -232,7 +232,8 @@ class MatchController {
     this.eventCalc = new KDAEventCalc();
     m.scores.forEach(i => this.eventCalc.evolve(i));
     let event = this.eventCalc.currentEvent;
-    event.push({name: "text", text: `比分 ${this.scoreText}`});
+    if(this.started && !this.ended)
+      event.push({name: "text", text: `比分 ${this.scoreText}`});
     event.length && this.onEvent(event)
   }
   get ready() {
@@ -243,6 +244,9 @@ class MatchController {
   }
   get readyToEnd() {
     return Math.abs(this.aScore - this.bScore) >= 2 && (this.aScore > 20 || this.bScore > 20)
+  }
+  get ended() {
+    return !!(this.match.scores.filter(i=>i.win || i.loss).length)
   }
   get aGroup() {
     return this.match.personGroup.slice(0,2);
@@ -470,11 +474,11 @@ class LadderController {
       return pre;
     }, {ladder:[]})
   }
-  async dateLadder(date = $dateString(new Date())) {
+  async dateLadder(date = $dateString(new Date()), beginTime) {
     let season = $seasonString(new Date(date));
     let ladder = this.remote.ladder[season];
     
-    if(!ladder) {
+    if(!ladder || (beginTime && !ladder.filter(i=>i.beginTime == beginTime).length)) {
       await this.syncData.loadRemote(new Date(date));
       ladder = this.remote.ladder[season];
     }
@@ -500,9 +504,9 @@ class LadderController {
       return pre;
     }, {ladder:[]})
   }
-  async dateMatch(date = $dateString(new Date())) {
+  async dateMatch(date = $dateString(new Date()), beginTime) {
     let match = this.remote.data[date];
-    if(!match) {
+    if(!match || (beginTime && !match.filter(i=>i.beginTime == beginTime).length)) {
       await this.syncData.loadRemote(new Date(date));
     }
     return this.remote.data[date];
@@ -548,9 +552,12 @@ class ConnectController {
         }
       }
 
-      this.refreshUI("loading");
       this.connect();
     });
+
+    if(localStorage.getItem("connect-status") == "done") {
+      this.connect();
+    }
   }
   refreshUI(status) {
     this.status = status;
@@ -562,8 +569,17 @@ class ConnectController {
       $sel(".connect").classList.add(this.status);
     else if(typeof(this.status) == "object")
       $sel(".connect").classList.add(...this.status);
+
+    if(status == "done"){ 
+      localStorage.setItem("connect-status", "done");
+    } else {
+      localStorage.removeItem("connect-status");
+    }
   }
   async connect() {
+
+    this.refreshUI("loading");
+
     if(this.conn){ 
       this.conn.close();
       this.conn = undefined;

@@ -155,7 +155,7 @@
           let beginTime = matchCtrl.match.beginTime;
           let date = $dateString(new Date(beginTime));
           new LocalStorage("current").delete();
-          location.href = `match-result.html?${date}-${beginTime}`
+          location.href = `match-result.html?${date}-${beginTime}&board`
           break;
         }
       }
@@ -328,7 +328,7 @@
         let date = await matchCtrl.end();
         connectSync("end");
         if(date)
-          location.href = `match-result.html?${date}-${beginTime}`
+          location.href = `match-result.html?${date}-${beginTime}&board`
       } catch(e) {
         $alert("sync error " + e);
         throw e;

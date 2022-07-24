@@ -48,7 +48,8 @@
 <body class="result">
   <div class="menu">
     <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
-    <button class="newMatchBtn" onclick="location.href='match.html'">新赛事</button>
+    <button class="newMatchBtn" onclick="
+      location.href=location.search.indexOf('board')? 'board.html': 'match.html'">新赛事</button>
   </div>
 
   <button class="menuBtn">M<small>enu</small></button>
@@ -114,8 +115,10 @@
         this.date = query.slice(0, splitIdx);
         this.beginTime = query.slice(splitIdx+1);
 
-        let storage = new LocalStorage("remote");
-        let matches = storage.data[this.date];
+      }
+      async load() {
+        let matches = await new LadderController().dateMatch(this.date, this.beginTime);//new LocalStorage("remote");
+        // let matches = data[this.date];
         if(matches) {
           let match = matches.filter(i => i.beginTime == this.beginTime)[0];
           this.matchCtrl = new MatchController(match)
@@ -126,6 +129,8 @@
     }
 
     let ctrl = new MatchResultController();
+
+
     
     let isWatch = location.search.split("&")[1] == "watch";
     if(isWatch) {
@@ -208,7 +213,8 @@
     }
 
     let menu = new Menu();
-    refreshUI();
+
+    ctrl.load().then(refreshUI);
 
   </script>
 </body>
