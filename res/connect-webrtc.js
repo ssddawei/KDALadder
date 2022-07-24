@@ -21,22 +21,56 @@ const STUNS = [
 ]
 
 class ConnectWebrtc {
-  sync; // use to exchange SDP ( such aliyun oss AliyunSyncData )
-  receiveCallback; // webrtc RTCDataChannel message receiver
-  errorCallback; // webrtc RTCDataChannel error 
-  pc; // RTCPeerConnection
-  channel; // RTCDataChannel
-  waitCandidateMax = 3;
+  // sync; // use to exchange SDP ( such aliyun oss AliyunSyncData )
+  // receiveCallback; // webrtc RTCDataChannel message receiver
+  // errorCallback; // webrtc RTCDataChannel error 
+  // pc; // RTCPeerConnection
+  // channel; // RTCDataChannel
+  // waitCandidateMax = 3;
   constructor(sync, receiveCallback, errorCallback) {
+    this.waitCandidateMax = 3;
     this.sync = sync;
     this.receiveCallback = receiveCallback;
     this.errorCallback = errorCallback;
+    this.removeAllowExtmapMixed(window);
   }
   close() {
-    if(this.pc) {
+    if(this.channel){
+      this.channel.close();
+      this.channel = undefined;
+    }
+    else if(this.pc) {
       this.pc.close();
       this.pc = undefined;
     }
+  }
+  removeAllowExtmapMixed(window) {
+    /* remove a=extmap-allow-mixed for Chrome < M71 */
+    if (!window.RTCPeerConnection) {
+      return;
+    }
+    // const browserDetails = utils.detectBrowser(window);
+    // if (browserDetails.version >= 71) {
+    //   return;
+    // }
+    const nativeSRD = window.RTCPeerConnection.prototype.setRemoteDescription;
+    window.RTCPeerConnection.prototype.setRemoteDescription = function(desc) {
+      if (desc && desc.sdp && desc.sdp.indexOf('\na=extmap-allow-mixed') !== -1) {
+        desc.sdp = desc.sdp.split('\n').filter((line) => {
+          return line.trim() !== 'a=extmap-allow-mixed';
+        }).join('\n');
+      }
+      return nativeSRD.apply(this, arguments);
+    };
+  }
+  _onOpen() {
+
+  }
+  _onClose() {
+    this.pc && this.errorCallback && this.errorCallback(e);
+    this.channel && this.channel.close();
+    this.channel = null;
+    setTimeout(this.close.bind(this), 1000); // wait message sended
   }
   // Server invoke offer, wait client to answer
   async offer() {
@@ -55,6 +89,7 @@ class ConnectWebrtc {
     let open = new Promise(o => {
       this.channel.onopen = (event) => {
         console.log("onopen")
+        this._onOpen(event);
         o()
       }
     })
@@ -63,10 +98,10 @@ class ConnectWebrtc {
       this.receiveCallback && this.receiveCallback(event.data);
     }
     this.channel.onerror = (e) => {
-      this.pc && this.errorCallback && this.errorCallback(e);
+      this._onClose(e);
     }
     this.channel.onclose = (e) => {
-      this.pc && this.errorCallback && this.errorCallback(e);
+      this._onClose(e);
     }
 
     // wait candidate
@@ -122,6 +157,7 @@ class ConnectWebrtc {
         this.channel = event.channel;
         this.channel.onopen = (event) => {
           console.log("onopen")
+          this._onOpen(event);
           o();
         }
         this.channel.onmessage = (event) => {
@@ -129,10 +165,10 @@ class ConnectWebrtc {
           this.receiveCallback && this.receiveCallback(event.data);
         }
         this.channel.onerror = (e) => {
-          this.pc && this.errorCallback && this.errorCallback(e);
+          this._onClose(e);
         }
         this.channel.onclose = (e) => {
-          this.pc && this.errorCallback && this.errorCallback(e);
+          this._onClose(e);
         }
       }
     })

@@ -141,6 +141,11 @@
           refreshUI();
           break;
         }
+        case "revert": {
+          matchCtrl.revert();
+          refreshUI();
+          break;
+        }
         case "end": {
           let beginTime = matchCtrl.match.beginTime;
           let date = $dateString(new Date(beginTime));
@@ -165,10 +170,8 @@
 
     // sync match to server by ConnectController
     function connectSync(action) {
-      if(action == "end")
-        connectCtrl.send("end");
-      else if(action == "cooldown")
-        connectCtrl.send("cooldown");
+      if(action)
+        connectCtrl.send(action);
       else
         connectCtrl.send("match", matchCtrl.match);
     }
@@ -322,7 +325,7 @@
         clearInterval(timeTmr)
         timeTmr = null;
       }
-      connectSync();
+      connectSync("revert");
       refreshUI();
 
       // reset cd

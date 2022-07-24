@@ -1,47 +1,56 @@
 
+
 class KDAEventCalc {
   // killing-spree  3kill
   // rampage        4kill
   // unstoppable    5kill
   // godlike        6kill
   // legendary      7kill
-  static Legendary = [null, null, null, "killing-spree", "rampage", "unstoppable", "godlike", "legendary"];
-  static Pentakill = [null, null, "2sha", "3sha", "4sha", "5sha"];
-  static Zisha = [null, null, null, "zisha"];
-  static NameToCN = {
-    "killing-spree": "三杀",
-    "rampage": "四杀",
-    "unstoppable": "五杀",
-    "godlike": "六杀",
-    "legendary": "七杀",
-    "2sha": "连续二杀",
-    "3sha": "连续三杀",
-    "4sha": "连续四杀",
-    "5sha": "连续五杀",
-    "zisha": "自杀",
-    "shutdown": "终结连杀",
-    "first-blood": "第一滴血",
-  }
-  static NameToEN = {
-    "killing-spree": "KillingSpree",
-    "rampage": "Rampage",
-    "unstoppable": "Unstoppable",
-    "godlike": "Godlike",
-    "legendary": "Legendary",
-    "2sha": "DoubleKill",
-    "3sha": "TripleKill",
-    "4sha": "QuadraKill",
-    "5sha": "PentaKill",
-    "zisha": "Executed",
-    "shutdown": "Shutdown",
-    "first-blood": "FirstBlood",
-  }
+  // static Legendary = [null, null, null, "killing-spree", "rampage", "unstoppable", "godlike", "legendary"];
+  // static Pentakill = [null, null, "2sha", "3sha", "4sha", "5sha"];
+  // static Zisha = [null, null, null, "zisha"];
+  // static NameToCN = {
+  //     "killing-spree": "三杀",
+  //     "rampage": "四杀",
+  //     "unstoppable": "五杀",
+  //     "godlike": "六杀",
+  //     "legendary": "七杀",
+  //     "2sha": "连续二杀",
+  //     "3sha": "连续三杀",
+  //     "4sha": "连续四杀",
+  //     "5sha": "连续五杀",
+  //     "zisha": "自杀",
+  //     "shutdown": "终结连杀",
+  //     "first-blood": "第一滴血",
+  // }
+  // static NameToEN = {
+  //     "killing-spree": "KillingSpree",
+  //     "rampage": "Rampage",
+  //     "unstoppable": "Unstoppable",
+  //     "godlike": "Godlike",
+  //     "legendary": "Legendary",
+  //     "2sha": "DoubleKill",
+  //     "3sha": "TripleKill",
+  //     "4sha": "QuadraKill",
+  //     "5sha": "PentaKill",
+  //     "zisha": "Executed",
+  //     "shutdown": "Shutdown",
+  //     "first-blood": "FirstBlood",
+  // }
 
-  info_pentakill = [{}];
-  info_legendary = [{}];
-  info_zisha = [{}];
-  events = [];
-  info_firstBlood = [];
+  // info_pentakill = [{}];
+  // info_legendary = [{}];
+  // info_zisha = [{}];
+  // events = [];
+  // info_firstBlood = [];
+
+  constructor() {
+      this.info_pentakill = [{}];
+      this.info_legendary = [{}];
+      this.info_zisha = [{}];
+      this.events = [];
+      this.info_firstBlood = [];
+  }
 
   evolve(score, dryrun) {
 
@@ -109,7 +118,7 @@ class KDAEventCalc {
     this.events.splice(-1, 1);
   }
   get currentEvent() {
-    return this.events[this.events.length -1];
+    return this.events[this.events.length -1] || [];
   }
   static __unittest() {
     let test = new KDAEventCalc();
@@ -178,10 +187,43 @@ class KDAEventCalc {
     testFB.currentEvent.length == 0  || console.error("failed");
   }
 }
+
+KDAEventCalc.Legendary = [null, null, null, "killing-spree", "rampage", "unstoppable", "godlike", "legendary"];
+KDAEventCalc.Pentakill = [null, null, "2sha", "3sha", "4sha", "5sha"];
+KDAEventCalc.Zisha = [null, null, null, "zisha"];
+KDAEventCalc.NameToCN = {
+    "killing-spree": "三杀",
+    "rampage": "四杀",
+    "unstoppable": "五杀",
+    "godlike": "六杀",
+    "legendary": "七杀",
+    "2sha": "连续二杀",
+    "3sha": "连续三杀",
+    "4sha": "连续四杀",
+    "5sha": "连续五杀",
+    "zisha": "自杀",
+    "shutdown": "终结连杀",
+    "first-blood": "第一滴血",
+}
+KDAEventCalc.NameToEN = {
+    "killing-spree": "KillingSpree",
+    "rampage": "Rampage",
+    "unstoppable": "Unstoppable",
+    "godlike": "Godlike",
+    "legendary": "Legendary",
+    "2sha": "DoubleKill",
+    "3sha": "TripleKill",
+    "4sha": "QuadraKill",
+    "5sha": "PentaKill",
+    "zisha": "Executed",
+    "shutdown": "Shutdown",
+    "first-blood": "FirstBlood",
+}
+
 class MatchController {
-  _match = new Match();
-  eventCalc = new KDAEventCalc();
-  eventCallback;
+  // _match = new Match();
+  // eventCalc = new KDAEventCalc();
+  // eventCallback;
   get match() {
     return this._match;
   }
@@ -189,7 +231,10 @@ class MatchController {
     this._match = m;
     this.eventCalc = new KDAEventCalc();
     m.scores.forEach(i => this.eventCalc.evolve(i));
-    this.eventCalc.currentEvent && this.onEvent(this.eventCalc.currentEvent)
+    let event = this.eventCalc.currentEvent;
+    if(this.started && !this.ended)
+      event.push({name: "text", text: `比分 ${this.scoreText}`});
+    event.length && this.onEvent(event)
   }
   get ready() {
     return !!(this.match.personGroup.filter(i=>i).length == 4)
@@ -199,6 +244,9 @@ class MatchController {
   }
   get readyToEnd() {
     return Math.abs(this.aScore - this.bScore) >= 2 && (this.aScore > 20 || this.bScore > 20)
+  }
+  get ended() {
+    return !!(this.match.scores.filter(i=>i.win || i.loss).length)
   }
   get aGroup() {
     return this.match.personGroup.slice(0,2);
@@ -214,7 +262,18 @@ class MatchController {
     return this.match.scores.filter(i => this.bGroup.indexOf(i.kill) >= 0).length +
       this.match.scores.filter(i => this.aGroup.indexOf(i.death) >= 0).length
   }
+  get scoreText() {
+    let aFirst = this.match.scores.slice(-1).filter(
+      i => this.aGroup.indexOf(i.kill) >= 0 || this.bGroup.indexOf(i.death) >= 0
+    ).length > 0;
+    let a = this.aScore % 10;
+    let b = this.bScore % 10;
+    return aFirst? `${a} ${b}`: `${b} ${a}`;
+  }
   constructor(aGroupOrMatch = [], bGroup = []) {
+    this._match = new Match();
+    this.eventCalc = new KDAEventCalc();
+    // eventCallback;
     if(aGroupOrMatch instanceof Match || aGroupOrMatch.scores) {
       this.match = aGroupOrMatch;
     } else {
@@ -226,11 +285,13 @@ class MatchController {
     let assist = assistGroup.filter(i => i != person)[0];
     this.match.scores.push(new GameScore(person, null, assist));
     let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
+    event.push({name: "text", text: `比分 ${this.scoreText}`});
     event.length && this.onEvent(event);
   }
   loss(person) {
     this.match.scores.push(new GameScore(null, person))
     let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
+    event.push({name: "text", text: `比分 ${this.scoreText}`});
     event.length && this.onEvent(event);
   }
   revert() {
@@ -322,11 +383,14 @@ class MatchController {
   onEvent(e) {
     (async ()=>{
       for(let i in e) {
-        SoundEffect.play(e[i].name);
+        e[i].name == "text"?
+        	SoundEffect.speak(e[i].text):
+          SoundEffect.play(e[i].name);
         i < e.length - 1 && await new Promise(o=>setTimeout(o, 2000));
       }
     })()
-    this.eventCallback && this.eventCallback(e);
+    let outEvents = e.filter(i=>i.name != "text")
+    this.eventCallback && outEvents.length && this.eventCallback(outEvents);
   }
   async end() {
 
@@ -380,8 +444,10 @@ class MatchController {
 }
 
 class LadderController {
-  syncData = new AliyunSyncData(null, new LocalStorage("remote"));
-
+  // syncData = new AliyunSyncData(null, new LocalStorage("remote"));
+  constructor() {
+    this.syncData = new AliyunSyncData(null, new LocalStorage("remote"));
+  }
   get storage() {
     return this.syncData.local
   }
@@ -408,11 +474,11 @@ class LadderController {
       return pre;
     }, {ladder:[]})
   }
-  async dateLadder(date = $dateString(new Date())) {
+  async dateLadder(date = $dateString(new Date()), beginTime) {
     let season = $seasonString(new Date(date));
     let ladder = this.remote.ladder[season];
     
-    if(!ladder) {
+    if(!ladder || (beginTime && !ladder.filter(i=>i.beginTime == beginTime).length)) {
       await this.syncData.loadRemote(new Date(date));
       ladder = this.remote.ladder[season];
     }
@@ -438,9 +504,9 @@ class LadderController {
       return pre;
     }, {ladder:[]})
   }
-  async dateMatch(date = $dateString(new Date())) {
+  async dateMatch(date = $dateString(new Date()), beginTime) {
     let match = this.remote.data[date];
-    if(!match) {
+    if(!match || (beginTime && !match.filter(i=>i.beginTime == beginTime).length)) {
       await this.syncData.loadRemote(new Date(date));
     }
     return this.remote.data[date];
@@ -455,16 +521,24 @@ class LadderController {
   Bind ConnectWebrtc to UI
 */
 class ConnectController {
-  conn;
-  status;
-  mode;
-  onData;
+  // conn;
+  // status;
+  // mode;
+  // onData;
   constructor(mode, onData) {
     this.mode = mode; // act as "server" or "client"
     this.onData = onData; // on data receive
 
     $sel(".connect").addEventListener("click", async () => {
 
+      if(this.status == "done" ||this.status == "loading"){
+        if(await $confirm("确定断开？")){
+          this.conn && this.conn.close()
+          this.conn == undefined;
+          this.refreshUI();
+          return;
+        }
+      }
       // check sync key
       if(!new AliyunSyncData().key) {
         let key = await $prompt("多端连接，请输入密钥");
@@ -478,9 +552,12 @@ class ConnectController {
         }
       }
 
-      this.refreshUI("loading");
       this.connect();
     });
+
+    if(localStorage.getItem("connect-status") == "done") {
+      this.connect();
+    }
   }
   refreshUI(status) {
     this.status = status;
@@ -492,8 +569,17 @@ class ConnectController {
       $sel(".connect").classList.add(this.status);
     else if(typeof(this.status) == "object")
       $sel(".connect").classList.add(...this.status);
+
+    if(status == "done"){ 
+      localStorage.setItem("connect-status", "done");
+    } else {
+      localStorage.removeItem("connect-status");
+    }
   }
   async connect() {
+
+    this.refreshUI("loading");
+
     if(this.conn){ 
       this.conn.close();
       this.conn = undefined;
@@ -510,6 +596,7 @@ class ConnectController {
         this.onData && this.onData(data);
       }, (err) => {
         this.refreshUI(["error", "done"]);
+        // this.connect(); // retry
       });
 
     try{
@@ -563,8 +650,8 @@ class Menu {
 }
 
 class ListChooser {
-  chooseCallback;
-  loader;
+  // chooseCallback;
+  // loader;
   constructor(loader) {
     this.loader = loader;
     $sel("div.dataList .list").addEventListener("click", (e) => {
@@ -631,7 +718,7 @@ class PlaceHolder {
 
 
 class SoundEffect {
-  static audio = [];
+  // static audio = [];
   static get disabled() {
     return !!localStorage.getItem("music-disabled");
   }
@@ -641,6 +728,16 @@ class SoundEffect {
     else
       localStorage.removeItem("music-disabled");
     SoundEffect.refreshUI();
+  }
+  static speak(text) {
+    if(SoundEffect.disabled)return;
+
+    let msg = new SpeechSynthesisUtterance();
+    msg.text = text;
+    msg.rate = 0.7;
+    msg.pitch = 1;
+    msg.lang = "zh-HK";
+    speechSynthesis.speak(msg);
   }
   static play(effect, audioSeq = 0) {
     if(SoundEffect.disabled)return;
@@ -670,6 +767,7 @@ class SoundEffect {
     }
   }
 }
+SoundEffect.audio = [];
 
 window.addEventListener("load", ()=>{
   SoundEffect.bindUI();
