@@ -36,6 +36,10 @@
       pointer-events:none;
       opacity: 0.3;
     }
+    .CDBtn.disabled {
+      text-decoration: line-through;
+      color: red
+    }
   </style>
 </head>
 <body class="match">
@@ -64,6 +68,7 @@
     <button class="revertBtn">撤销</button>
     <button onclick="location.href='board.html'">看板</button>
     <button class="musicBtn">音效</button>
+    <button class="CDBtn">CD</button>
     <button onclick="document.body.requestFullscreen();">全屏</button>
   </div>
   <button class="menuBtn">
@@ -124,6 +129,7 @@
   <script>
 
     const CD = 5000;
+    let CDDisabled = (!!localStorage.getItem("cd-disabled"));
     let timeTmr;
     let matchCtrl = new MatchController();
     let connectCtrl = new ConnectController("client", (data) => {
@@ -258,6 +264,13 @@
       }
 
       $sel(".gEndBtn").style.display = matchCtrl.readyToEnd? "block": "none"
+
+      // CDBtn
+      if(CDDisabled) {
+        $sel(".CDBtn").classList.add("disabled");
+      } else {
+        $sel(".CDBtn").classList.remove("disabled");
+      }
       
       matchCtrl.save();
     }
@@ -269,7 +282,7 @@
 
       // CD
       $sels(".goalBtn,.lossBtn").forEach(function(i){
-        i.classList.add("cooldown"+(CD));
+        !CDDisabled && i.classList.add("cooldown"+(CD));
       });
 
       clearTimeout(window.__cdTmr);
@@ -284,7 +297,7 @@
     ["div.aGroup1", "div.aGroup2", "div.bGroup1", "div.bGroup2"].forEach((i, idx) => {
 
       $sel(i + " .goalBtn").addEventListener("click", function(){
-        if(this.classList.contains("cooldown"+(CD))) {
+        if(!CDDisabled && this.classList.contains("cooldown"+(CD))) {
           SoundEffect.play("cooldown", 1); connectSync("cooldown")
           return;
         }
@@ -296,7 +309,7 @@
       });
 
       $sel(i + " .lossBtn").addEventListener("click", function(){
-        if(this.classList.contains("cooldown"+(CD))) {
+        if(!CDDisabled && this.classList.contains("cooldown"+(CD))) {
           SoundEffect.play("cooldown", 1); connectSync("cooldown")
           return;
         }
@@ -351,6 +364,15 @@
         throw e;
       }
     }))
+
+    $sel(".CDBtn").addEventListener("click", () => {
+      CDDisabled = !CDDisabled;
+      CDDisabled? 
+        localStorage.setItem("cd-disabled", true):
+        localStorage.removeItem("cd-disabled")
+
+      refreshUI();
+    })
     
     let menu = new Menu();
 

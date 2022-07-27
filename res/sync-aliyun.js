@@ -67,7 +67,7 @@ class AliyunSyncData extends SyncData {
           data = "," + data;
 
         await store.append(AliyunSyncData.LadderURL(season, true), new OSS.Buffer(data), {
-          position: rLadder? JSON.stringify(rLadder).length - 2: 0
+          position: rLadder? new Blob([JSON.stringify(rLadder)]).size - 2: 0
         });
 
         rLadder.splice(rLadder.length, 0, ...unsyncLadder);
@@ -83,7 +83,7 @@ class AliyunSyncData extends SyncData {
           data = "," + data;
 
         await store.append(AliyunSyncData.DataURL(date, true), new OSS.Buffer(data), {
-          position: rMatch? JSON.stringify(rMatch).length - 2: 0
+          position: rMatch? new Blob([JSON.stringify(rMatch)]).size - 2: 0
         });
 
         rMatch.splice(rMatch.length, 0, ...unsyncData);

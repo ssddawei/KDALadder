@@ -385,13 +385,13 @@ button:active,button:after,button:before {
 }
 
 .menu button {
-  height: 1.4rem;
+  height: 0.7rem;
   color: #aaa;
   background: rgb(0,0,0);
   background: linear-gradient(90deg, rgba(0,0,0,1) 0%, rgba(96,96,96,1) 100%);
   border: 0;
   border-radius: 0 0 0.2rem 0.2rem;
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   margin: 0.2rem 0.1rem;
   animation: none
 }
