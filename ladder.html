@@ -49,6 +49,7 @@
 
   <div class="menu">
     <button class="newMatchBtn" onclick="location.href='match.html'">新赛事</button>
+    <button class="clearCacheBtn">清除缓存</button>
   </div>
 
   <button class="menuBtn">M<small>enu</small></button>
@@ -181,6 +182,10 @@
       ladderDate = await ladderChooser.choose() || ladderDate;
       refreshUI();
     });
+    $sel(".clearCacheBtn").addEventListener("click", ()=>{
+      localStorage.clear();
+      $alert("The Cache was fucking cleared, you win.")
+    })
 
     let menu = new Menu();
     ladderCtrl.sync().then(refreshUI);
