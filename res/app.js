@@ -232,9 +232,9 @@ class MatchController {
     this.eventCalc = new KDAEventCalc();
     m.scores.forEach(i => this.eventCalc.evolve(i));
     let event = this.eventCalc.currentEvent;
-    if(this.started && !this.ended)
-      event.push({name: "text", text: `比分 ${this.scoreText}`});
     event.length && this.onEvent(event)
+    if(this.started && !this.ended)
+      SoundEffect.speak(`比分 ${this.scoreText}`);
   }
   get ready() {
     return !!(this.match.personGroup.filter(i=>i).length == 4)
@@ -285,14 +285,14 @@ class MatchController {
     let assist = assistGroup.filter(i => i != person)[0];
     this.match.scores.push(new GameScore(person, null, assist));
     let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
-    event.push({name: "text", text: `比分 ${this.scoreText}`});
     event.length && this.onEvent(event);
+    SoundEffect.speak(`比分 ${this.scoreText}`);
   }
   loss(person) {
     this.match.scores.push(new GameScore(null, person))
     let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
-    event.push({name: "text", text: `比分 ${this.scoreText}`});
     event.length && this.onEvent(event);
+    SoundEffect.speak(`比分 ${this.scoreText}`);
   }
   revert() {
     this.match.scores.length && this.match.scores.length --;
@@ -383,9 +383,7 @@ class MatchController {
   onEvent(e) {
     (async ()=>{
       for(let i in e) {
-        e[i].name == "text"?
-        	SoundEffect.speak(e[i].text):
-          SoundEffect.play(e[i].name);
+        // SoundEffect.play(e[i].name);
         i < e.length - 1 && await new Promise(o=>setTimeout(o, 2000));
       }
     })()
@@ -535,6 +533,7 @@ class ConnectController {
         if(await $confirm("确定断开？")){
           this.conn && this.conn.close()
           this.conn == undefined;
+          localStorage.removeItem("connect-status");
           this.refreshUI();
           return;
         }
@@ -570,14 +569,10 @@ class ConnectController {
     else if(typeof(this.status) == "object")
       $sel(".connect").classList.add(...this.status);
 
-    if(status == "done"){ 
-      localStorage.setItem("connect-status", "done");
-    } else {
-      localStorage.removeItem("connect-status");
-    }
   }
   async connect() {
 
+    localStorage.setItem("connect-status", "done");
     this.refreshUI("loading");
 
     if(this.conn){ 
@@ -596,7 +591,7 @@ class ConnectController {
         this.onData && this.onData(data);
       }, (err) => {
         this.refreshUI(["error", "done"]);
-        // this.connect(); // retry
+        this.connect(); // retry
       });
 
     try{

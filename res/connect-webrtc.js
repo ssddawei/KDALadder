@@ -66,7 +66,7 @@ class ConnectWebrtc {
   _onOpen() {
 
   }
-  _onClose() {
+  _onClose(e) {
     this.pc && this.errorCallback && this.errorCallback(e);
     this.channel && this.channel.close();
     this.channel = null;
@@ -148,6 +148,11 @@ class ConnectWebrtc {
     do{
       if(timeout <= 0) throw new Error("timeout");
       if(!this.pc) throw new Error("canceled");
+      let curOffer = await this.sync.load("offer.sdp");
+      if(JSON.stringify(curOffer) != JSON.stringify(offer)) {
+        console.log(`JSON.stringify(${curOffer}) != JSON.stringify(${offer})`)
+        await this.sync.save("offer.sdp", offer);
+      }
       await new Promise(o => setTimeout(o, SPAN)); // sleep 1 sec
       answer = await this.sync.load("answer.sdp");
       timeout -= SPAN;

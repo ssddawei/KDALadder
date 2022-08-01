@@ -131,6 +131,8 @@
   </div>
   <script>
 
+    const BroadcastAnimateDisabled = true;
+
     let timeTmr;
     let matchCtrl = new MatchController();
     let connectCtrl = new ConnectController("server", (data) => {
@@ -151,8 +153,10 @@
         case "revert": {
           matchCtrl.revert();
           refreshUI();
-          $sel(".broadcast").classList.remove("active");
-      		$sel(".broadcast").offsetHeight;
+          if(!BroadcastAnimateDisabled){
+            $sel(".broadcast").classList.remove("active");
+            $sel(".broadcast").offsetHeight;
+          }
       
           break;
         }
@@ -175,10 +179,12 @@
     matchCtrl.eventCallback = (e) => {
       if(!e || !e.length)return;
       e = e[0];
-      $sel(".broadcast .mark").innerHTML = `<small>${e.person}</small>${KDAEventCalc.NameToEN[e.name]}<small>${KDAEventCalc.NameToCN[e.name]}</small>`
-      $sel(".broadcast").classList.remove("active");
-      $sel(".broadcast").offsetHeight;
-      $sel(".broadcast").classList.add("active");
+      if(!BroadcastAnimateDisabled){
+        $sel(".broadcast .mark").innerHTML = `<small>${e.person}</small>${KDAEventCalc.NameToEN[e.name]}<small>${KDAEventCalc.NameToCN[e.name]}</small>`
+        $sel(".broadcast").classList.remove("active");
+        $sel(".broadcast").offsetHeight;
+        $sel(".broadcast").classList.add("active");
+      }
     }
 
     let personChooser = new ListChooser( async () => {
@@ -326,7 +332,10 @@
       }
       connectSync("revert");
       refreshUI();
-      $sel(".broadcast").classList.remove("active");
+      
+      if(!BroadcastAnimateDisabled){
+        $sel(".broadcast").classList.remove("active");
+      }
     })
 
     $sel(".endBtn").addEventListener("click", async () => {
