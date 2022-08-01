@@ -509,7 +509,7 @@ button:active,button:after,button:before {
   position: absolute;
   top: 0;
   right: 0%;
-  z-index: 100;
+  z-index: 2000;
   height: 1rem;
   /* margin-left: -0.7rem; */
   padding: 0.2rem;
@@ -528,6 +528,34 @@ button:active,button:after,button:before {
 .connect img {
   width: 1rem;
   animation: none;
+}
+
+/* result */
+.pop-result {
+  width: 100%;
+  height: 100%;
+  position: fixed;
+  z-index: 2000;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pop-result:not(.show) {
+  display: none;
+}
+.pop-result .close-pop-result {
+  flex: 1rem;
+  border-radius: 0.2rem;
+  font-size: 0.6rem;
+  border: 0;
+  width: 4rem;
+  margin: 0.2rem;
+}
+.pop-result iframe {
+  flex: 100%;
+  width: 100%;
 }
 
 /* match */

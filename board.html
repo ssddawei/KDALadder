@@ -66,6 +66,11 @@
     <em class="icon-music"></em>
   </button>
 
+  <div class="pop-result">
+    <iframe src="" title="result"></iframe>
+    <button class="close-pop-result">关闭</button>
+  </div>
+
   <div class="connect">
     <img src="res/svg/sync.svg" />
   </div>
@@ -155,8 +160,14 @@
           let beginTime = matchCtrl.match.beginTime;
           let date = $dateString(new Date(beginTime));
           new LocalStorage("current").delete();
-          location.href = `match-result.html?${date}-${beginTime}&board`
+          matchCtrl.match = new Match();
+          refreshUI();
+          $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
+          $sel(".pop-result").classList.add('show')
           break;
+        }
+        case "close-result": {
+          $sel(".pop-result").classList.remove('show')
         }
       }
     })
@@ -327,13 +338,24 @@
       try{
         let date = await matchCtrl.end();
         connectSync("end");
-        if(date)
-          location.href = `match-result.html?${date}-${beginTime}&board`
+        if(date) {
+
+          new LocalStorage("current").delete();
+          refreshUI();
+          $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
+          $sel(".pop-result").classList.add('show')
+          
+        }
       } catch(e) {
         $alert("sync error " + e);
         throw e;
       }
     });
+
+    $sel(".close-pop-result").addEventListener("click", () => {
+      $sel('.pop-result').classList.remove('show');
+      connectSync("close-result")
+    })
     
     let menu = new Menu();
     matchCtrl.load();

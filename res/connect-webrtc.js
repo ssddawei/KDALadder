@@ -84,6 +84,23 @@ class ConnectWebrtc {
 
     }, null);
 
+    // connection loss
+    pc.addEventListener('connectionstatechange', (e) => {
+      switch(pc.connectionState) {
+        case "new":
+        case "checking":
+        case "connected":
+          break;
+        case "disconnected":
+        case "closed":
+        case "failed":
+          this.pc && this.errorCallback && this.errorCallback(e);
+          break;
+        default:
+          break;
+      }
+    });
+    
     // create channel
     this.channel = pc.createDataChannel("default");
     let open = new Promise(o => {
@@ -150,6 +167,23 @@ class ConnectWebrtc {
       "iceCandidatePoolSize":1,
       "iceServers":STUNS.map(i => ({urls:i}))
     }, null);
+    
+    // connection loss
+    pc.addEventListener('connectionstatechange', (e) => {
+      switch(pc.connectionState) {
+        case "new":
+        case "checking":
+        case "connected":
+          break;
+        case "disconnected":
+        case "closed":
+        case "failed":
+          this.pc && this.errorCallback && this.errorCallback(e);
+          break;
+        default:
+          break;
+      }
+    });
 
     // create channel
     let open = new Promise(o => {
