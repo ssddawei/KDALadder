@@ -35,14 +35,14 @@ class ConnectWebrtc {
     this.removeAllowExtmapMixed(window);
   }
   close() {
-    if(this.channel){
-      this.channel.close();
-      this.channel = undefined;
-    }
-    else if(this.pc) {
+    if(this.pc) {
       this.pc.close();
       this.pc = undefined;
     }
+    // else if(this.channel){
+    //   this.channel.close();
+    //   this.channel = undefined;
+    // }
   }
   removeAllowExtmapMixed(window) {
     /* remove a=extmap-allow-mixed for Chrome < M71 */
@@ -150,7 +150,6 @@ class ConnectWebrtc {
       if(!this.pc) throw new Error("canceled");
       let curOffer = await this.sync.load("offer.sdp");
       if(JSON.stringify(curOffer) != JSON.stringify(offer)) {
-        console.log(`JSON.stringify(${curOffer}) != JSON.stringify(${offer})`)
         await this.sync.save("offer.sdp", offer);
       }
       await new Promise(o => setTimeout(o, SPAN)); // sleep 1 sec

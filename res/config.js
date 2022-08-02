@@ -2,6 +2,7 @@ let CONFIG = {
   AliyunOSSKey: {
     region: "oss-cn-guangzhou",
     bucket: "kdaladder-dev",
+    timeout: "5s",
     // accessKeyId: "",
     // accessKeySecret: "",
   },

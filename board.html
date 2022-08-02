@@ -88,7 +88,7 @@
 
   <div class="score">
     <div class="aScore">/</div>
-    <iv class="bScore">/</div>
+    <div class="bScore">/</div>
     <div class="time" style="display:none"></div>
   </div>
   <div class="match notready">
@@ -256,12 +256,21 @@
       let applyKDA = (person, target) => {
         let kda = matchCtrl.kda(person);
         $sel(target).innerHTML = `${kda.kill}<small>/</small>${kda.death}<small>/${kda.assist}</small>`;
+        $sel(target).parentElement.dataset["kda_score"] = kda.score;
       }
+
       
       applyKDA(matchCtrl.aGroup[0], ".aGroup1 .kda");
       applyKDA(matchCtrl.aGroup[1], ".aGroup2 .kda");
       applyKDA(matchCtrl.bGroup[0], ".bGroup1 .kda");
       applyKDA(matchCtrl.bGroup[1], ".bGroup2 .kda");
+
+      // sort
+      [...$sels("div.match .person")]
+        .sort((a,b) => b.dataset["kda_score"] - a.dataset["kda_score"])
+        .forEach(i => {
+          $sel("div.match").appendChild(i);
+        })
 
       // mvp
       let mvp = matchCtrl.mvp();
@@ -299,6 +308,7 @@
 
       $sel(i + " .goalBtn").addEventListener("click", function(){
         matchCtrl.goal(matchCtrl.match.personGroup[idx]);
+        this.classList.add("active")
         $activeAnimate(this);
         connectSync();
         refreshUI();
@@ -306,6 +316,7 @@
 
       $sel(i + " .lossBtn").addEventListener("click", function(){
         matchCtrl.loss(matchCtrl.match.personGroup[idx]);
+        this.classList.add("active")
         $activeAnimate(this);
         connectSync();
         refreshUI();
