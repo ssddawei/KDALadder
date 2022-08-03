@@ -323,7 +323,11 @@ class MatchController {
         kda[2].win = kda[3].win = 1;
       }
     }
-    return this.match.personGroup[Object.entries(kda).sort((a,b)=>b[1].score-a[1].score)[0][0]];
+    let mvp = this.match.personGroup[Object.entries(kda).sort((a,b)=>b[1].score-a[1].score)[0][0]];
+    if(this._mvp != mvp) {
+      this.onEvent([{person: mvp, name: "mvp_changed"}])
+    }
+    return this._mvp = mvp;
   }
   loser() {
     if(!this.started)return;
@@ -335,7 +339,11 @@ class MatchController {
         kda[2].win = kda[3].win = 1;
       }
     }
-    return this.match.personGroup[Object.entries(kda).sort((a,b)=>a[1].score-b[1].score)[0][0]];
+    let loser = this.match.personGroup[Object.entries(kda).sort((a,b)=>a[1].score-b[1].score)[0][0]];
+    if(this._loser != loser) {
+      this.onEvent([{person: loser, name: "loser_changed"}])
+    }
+    return this._loser = loser;
   }
   nextEvent(person, killOrDeath) {
     return this.eventCalc.evolve(new GameScore(killOrDeath && person, !killOrDeath && person), true)
@@ -384,6 +392,11 @@ class MatchController {
     (async ()=>{
       for(let i in e) {
         // SoundEffect.play(e[i].name);
+        if(e[i].name == "mvp_changed") {
+          SoundEffect.speak("mvp 榜主......" + e[i].person);
+        } else if (e[i].name == "loser_changed") {
+          SoundEffect.speak("loser 榜主......" + e[i].person);
+        }
         i < e.length - 1 && await new Promise(o=>setTimeout(o, 2000));
       }
     })()
