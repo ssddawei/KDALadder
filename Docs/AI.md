@@ -22,6 +22,13 @@ T4
 yolo(20ms) + strongSORT(50ms) / frame
 
 - https://github.com/Chang-Chia-Chi/TrackNet-Badminton-Tracking-tensorflow2
-羽毛球跟踪位置抖动比较厉害，
+羽毛球跟踪位置抖动比较厉害，比较容易出现检测错误，应该与训练集太小有关系。
 T4
 10fps
+
+- https://github.com/PaddlePaddle/PaddleDetection
+性能优于 yolov5 的目标检测，跟踪
+里面有使用 JDE(Joint Detection and Embedding) 检测与跟踪一体化算法（FairMOT），可以做到实时检测跟踪
+
+- https://github.com/PaddlePaddle/PaddleSpeech#SpeechToText
+百度大脑的飞桨包含一个语音识别开源项目
