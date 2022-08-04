@@ -32,3 +32,7 @@ T4
 
 - https://github.com/PaddlePaddle/PaddleSpeech#SpeechToText
 百度大脑的飞桨包含一个语音识别开源项目
+
+- 两份羽毛球跟踪的论文
+https://www.docin.com/p-2278980712.html
+https://www.doc88.com/p-9913921536756.html
