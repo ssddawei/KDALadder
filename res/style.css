@@ -13,6 +13,34 @@ body {
   height: 100%;
 }
 
+/* nosleep */
+.nosleep {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  width: 3rem;
+  /* height: 1rem; */
+  text-align: center;
+  background: red;
+  color: white;
+  border-radius: 0 0 0.5rem 0.5rem;
+  font-size: 0.5rem;
+  line-height: 0.5rem;
+  z-index: 1000;
+  padding: 0.2rem ;
+  margin-left: -1.7rem;
+  pointer-events: none;
+}
+.nosleep.active {
+  display: none;
+}
+@media (orientation: portrait) {
+  .nosleep{
+		right: 0;
+    left: inherit;
+  }
+}
+
 /* place-holder */
 .place-holder:not(.show) {
   display: none;

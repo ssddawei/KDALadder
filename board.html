@@ -15,6 +15,7 @@
   <script type="text/javascript" src="res/sync-aliyun.js"></script>
   <script type="text/javascript" src="res/connect-webrtc.js"></script>
   <script type="text/javascript" src="res/app.js"></script>
+  <script type="text/javascript" src="res/nosleep.min.js"></script>
   <link rel="stylesheet" href="res/style.css">
   <style>
     .match {
@@ -74,6 +75,8 @@
   <div class="connect">
     <img src="res/svg/sync.svg" />
   </div>
+
+  <div class="nosleep">未激活锁亮</div>
 
   <div class="broadcast">
     <!-- <img src="res/svg/frame-sword-left.svg" alt="" class="sword-left">
@@ -186,6 +189,14 @@
         $sel(".broadcast").classList.add("active");
       }
     }
+
+    window.addEventListener("click", () => {
+			if(!window._nosleep){
+        window._nosleep = new NoSleep();
+        window._nosleep.enable();
+        $sel(".nosleep").classList.add("active")
+      }
+    })
 
     let personChooser = new ListChooser( async () => {
       let ladder = await new LadderController().seasonLadder();
