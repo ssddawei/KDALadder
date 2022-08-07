@@ -15,6 +15,7 @@
   <script type="text/javascript" src="res/sync-aliyun.js"></script>
   <script type="text/javascript" src="res/connect-webrtc.js"></script>
   <script type="text/javascript" src="res/app.js"></script>
+  <script type="text/javascript" src="res/nosleep.min.js"></script>
   <link rel="stylesheet" href="res/icomoon/style.css">
   <link rel="stylesheet" href="res/style.css">
   <style>
@@ -59,9 +60,17 @@
     </div>
   </div>
   
+  <div class="pop-result">
+    <iframe src="" title="result"></iframe>
+    <button class="close-pop-result">关闭</button>
+  </div>
+
   <div class="connect">
     <img src="res/svg/sync.svg" alt="" />
   </div>
+	
+  <div class="nosleep">未激活锁亮</div>
+
   <div class="menu">
     <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
     <button class="endBtn">结束</button>
@@ -156,8 +165,14 @@
           let beginTime = matchCtrl.match.beginTime;
           let date = $dateString(new Date(beginTime));
           new LocalStorage("current").delete();
-          location.href = `match-result.html?${date}-${beginTime}`
+          matchCtrl.match = new Match();
+          refreshUI();
+          $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
+          $sel(".pop-result").classList.add('show')
           break;
+        }
+        case "close-result": {
+          $sel(".pop-result").classList.remove('show')
         }
       }
     })
@@ -182,6 +197,14 @@
         connectCtrl.send("match", matchCtrl.match);
     }
     
+    window.addEventListener("click", () => {
+			if(!window._nosleep){
+        window._nosleep = new NoSleep();
+        window._nosleep.enable();
+        $sel(".nosleep").classList.add("active")
+      }
+    })
+
     function refreshUI() {
 
       if(!timeTmr && matchCtrl.match.scores.length) {
@@ -356,14 +379,22 @@
       let beginTime = matchCtrl.match.beginTime;
       try{
         let date = await matchCtrl.end();
+        refreshUI();
         connectSync("end")
-        if(date)
-          location.href = `match-result.html?${date}-${beginTime}`
+        if(date) {
+          $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
+          $sel(".pop-result").classList.add('show')
+        }
       } catch(e) {
         $alert("sync error " + e);
         throw e;
       }
     }))
+
+    $sel(".close-pop-result").addEventListener("click", () => {
+      $sel('.pop-result').classList.remove('show');
+      connectSync("close-result")
+    })
 
     $sel(".CDBtn").addEventListener("click", () => {
       CDDisabled = !CDDisabled;

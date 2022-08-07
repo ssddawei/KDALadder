@@ -115,6 +115,11 @@
         this.date = query.slice(0, splitIdx);
         this.beginTime = query.slice(splitIdx+1);
 
+        let embedded = $queryValue("embedded");
+        if(embedded !== undefined) {
+          $sel(".menuBtn").style.display = "none";
+        }
+
       }
       async load() {
         let matches = await new LadderController().dateMatch(this.date, this.beginTime);//new LocalStorage("remote");

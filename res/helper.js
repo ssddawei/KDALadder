@@ -30,6 +30,15 @@ let $fetch = async function(){
   let json = text[0] == '['? text: '[' + text + ']';
   return JSON.parse(json);
 }
+let $queryValue = function(key) {
+  let querystr = location.search.slice(1);
+  let obj = {};
+  querystr.split("&").forEach(i => {
+    i = i.split("=");
+    obj[i[0]] = i[1] || "";
+  })
+  return obj[key];
+}
 let $throttle = function(fun, timeout, overrun) {
   let tmr;
   let reset = ()=>{ clearTimeout(tmr); tmr = null };

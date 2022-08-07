@@ -35,14 +35,14 @@ class ConnectWebrtc {
     this.removeAllowExtmapMixed(window);
   }
   close() {
-    if(this.channel){
-      this.channel.close();
-      this.channel = undefined;
-    }
-    else if(this.pc) {
+    if(this.pc) {
       this.pc.close();
       this.pc = undefined;
     }
+    // else if(this.channel){
+    //   this.channel.close();
+    //   this.channel = undefined;
+    // }
   }
   removeAllowExtmapMixed(window) {
     /* remove a=extmap-allow-mixed for Chrome < M71 */
@@ -66,7 +66,7 @@ class ConnectWebrtc {
   _onOpen() {
 
   }
-  _onClose() {
+  _onClose(e) {
     this.pc && this.errorCallback && this.errorCallback(e);
     this.channel && this.channel.close();
     this.channel = null;
@@ -84,6 +84,23 @@ class ConnectWebrtc {
 
     }, null);
 
+    // connection loss
+    pc.addEventListener('connectionstatechange', (e) => {
+      switch(pc.connectionState) {
+        case "new":
+        case "checking":
+        case "connected":
+          break;
+        case "disconnected":
+        case "closed":
+        case "failed":
+          this.pc && this.errorCallback && this.errorCallback(e);
+          break;
+        default:
+          break;
+      }
+    });
+    
     // create channel
     this.channel = pc.createDataChannel("default");
     let open = new Promise(o => {
@@ -131,6 +148,10 @@ class ConnectWebrtc {
     do{
       if(timeout <= 0) throw new Error("timeout");
       if(!this.pc) throw new Error("canceled");
+      let curOffer = await this.sync.load("offer.sdp");
+      if(JSON.stringify(curOffer) != JSON.stringify(offer)) {
+        await this.sync.save("offer.sdp", offer);
+      }
       await new Promise(o => setTimeout(o, SPAN)); // sleep 1 sec
       answer = await this.sync.load("answer.sdp");
       timeout -= SPAN;
@@ -150,6 +171,23 @@ class ConnectWebrtc {
       "iceCandidatePoolSize":1,
       "iceServers":STUNS.map(i => ({urls:i}))
     }, null);
+    
+    // connection loss
+    pc.addEventListener('connectionstatechange', (e) => {
+      switch(pc.connectionState) {
+        case "new":
+        case "checking":
+        case "connected":
+          break;
+        case "disconnected":
+        case "closed":
+        case "failed":
+          this.pc && this.errorCallback && this.errorCallback(e);
+          break;
+        default:
+          break;
+      }
+    });
 
     // create channel
     let open = new Promise(o => {

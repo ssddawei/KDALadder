@@ -1,5 +1,5 @@
 class ALG {
   static PersonScore(kda) {
-    return (kda.kill + kda.assist/2) / (kda.death||0.5) * 0.5 + kda.win/(kda.loss||0.5) * 0.5;
+    return (kda.kill + kda.assist/4) / (kda.death||0.9) * 0.7 + kda.win/(kda.loss||0.9) * 0.3;
   }
 }

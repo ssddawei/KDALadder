@@ -15,6 +15,7 @@
   <script type="text/javascript" src="res/sync-aliyun.js"></script>
   <script type="text/javascript" src="res/connect-webrtc.js"></script>
   <script type="text/javascript" src="res/app.js"></script>
+  <script type="text/javascript" src="res/nosleep.min.js"></script>
   <link rel="stylesheet" href="res/style.css">
   <style>
     .match {
@@ -66,9 +67,16 @@
     <em class="icon-music"></em>
   </button>
 
+  <div class="pop-result">
+    <iframe src="" title="result"></iframe>
+    <button class="close-pop-result">关闭</button>
+  </div>
+
   <div class="connect">
     <img src="res/svg/sync.svg" />
   </div>
+
+  <div class="nosleep">未激活锁亮</div>
 
   <div class="broadcast">
     <!-- <img src="res/svg/frame-sword-left.svg" alt="" class="sword-left">
@@ -83,7 +91,7 @@
 
   <div class="score">
     <div class="aScore">/</div>
-    <iv class="bScore">/</div>
+    <div class="bScore">/</div>
     <div class="time" style="display:none"></div>
   </div>
   <div class="match notready">
@@ -126,6 +134,8 @@
   </div>
   <script>
 
+    const BroadcastAnimateDisabled = true;
+
     let timeTmr;
     let matchCtrl = new MatchController();
     let connectCtrl = new ConnectController("server", (data) => {
@@ -146,8 +156,10 @@
         case "revert": {
           matchCtrl.revert();
           refreshUI();
-          $sel(".broadcast").classList.remove("active");
-      		$sel(".broadcast").offsetHeight;
+          if(!BroadcastAnimateDisabled){
+            $sel(".broadcast").classList.remove("active");
+            $sel(".broadcast").offsetHeight;
+          }
       
           break;
         }
@@ -155,8 +167,14 @@
           let beginTime = matchCtrl.match.beginTime;
           let date = $dateString(new Date(beginTime));
           new LocalStorage("current").delete();
-          location.href = `match-result.html?${date}-${beginTime}&board`
+          matchCtrl.match = new Match();
+          refreshUI();
+          $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
+          $sel(".pop-result").classList.add('show')
           break;
+        }
+        case "close-result": {
+          $sel(".pop-result").classList.remove('show')
         }
       }
     })
@@ -164,11 +182,21 @@
     matchCtrl.eventCallback = (e) => {
       if(!e || !e.length)return;
       e = e[0];
-      $sel(".broadcast .mark").innerHTML = `<small>${e.person}</small>${KDAEventCalc.NameToEN[e.name]}<small>${KDAEventCalc.NameToCN[e.name]}</small>`
-      $sel(".broadcast").classList.remove("active");
-      $sel(".broadcast").offsetHeight;
-      $sel(".broadcast").classList.add("active");
+      if(!BroadcastAnimateDisabled){
+        $sel(".broadcast .mark").innerHTML = `<small>${e.person}</small>${KDAEventCalc.NameToEN[e.name]}<small>${KDAEventCalc.NameToCN[e.name]}</small>`
+        $sel(".broadcast").classList.remove("active");
+        $sel(".broadcast").offsetHeight;
+        $sel(".broadcast").classList.add("active");
+      }
     }
+
+    window.addEventListener("click", () => {
+			if(!window._nosleep){
+        window._nosleep = new NoSleep();
+        window._nosleep.enable();
+        $sel(".nosleep").classList.add("active")
+      }
+    })
 
     let personChooser = new ListChooser( async () => {
       let ladder = await new LadderController().seasonLadder();
@@ -239,12 +267,21 @@
       let applyKDA = (person, target) => {
         let kda = matchCtrl.kda(person);
         $sel(target).innerHTML = `${kda.kill}<small>/</small>${kda.death}<small>/${kda.assist}</small>`;
+        $sel(target).parentElement.dataset["kda_score"] = kda.score;
       }
+
       
       applyKDA(matchCtrl.aGroup[0], ".aGroup1 .kda");
       applyKDA(matchCtrl.aGroup[1], ".aGroup2 .kda");
       applyKDA(matchCtrl.bGroup[0], ".bGroup1 .kda");
       applyKDA(matchCtrl.bGroup[1], ".bGroup2 .kda");
+
+      // sort
+      [...$sels("div.match .person")]
+        .sort((a,b) => b.dataset["kda_score"] - a.dataset["kda_score"])
+        .forEach(i => {
+          $sel("div.match").appendChild(i);
+        })
 
       // mvp
       let mvp = matchCtrl.mvp();
@@ -282,6 +319,7 @@
 
       $sel(i + " .goalBtn").addEventListener("click", function(){
         matchCtrl.goal(matchCtrl.match.personGroup[idx]);
+        this.classList.add("active")
         $activeAnimate(this);
         connectSync();
         refreshUI();
@@ -289,6 +327,7 @@
 
       $sel(i + " .lossBtn").addEventListener("click", function(){
         matchCtrl.loss(matchCtrl.match.personGroup[idx]);
+        this.classList.add("active")
         $activeAnimate(this);
         connectSync();
         refreshUI();
@@ -315,7 +354,10 @@
       }
       connectSync("revert");
       refreshUI();
-      $sel(".broadcast").classList.remove("active");
+      
+      if(!BroadcastAnimateDisabled){
+        $sel(".broadcast").classList.remove("active");
+      }
     })
 
     $sel(".endBtn").addEventListener("click", async () => {
@@ -327,13 +369,24 @@
       try{
         let date = await matchCtrl.end();
         connectSync("end");
-        if(date)
-          location.href = `match-result.html?${date}-${beginTime}&board`
+        if(date) {
+
+          new LocalStorage("current").delete();
+          refreshUI();
+          $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
+          $sel(".pop-result").classList.add('show')
+          
+        }
       } catch(e) {
         $alert("sync error " + e);
         throw e;
       }
     });
+
+    $sel(".close-pop-result").addEventListener("click", () => {
+      $sel('.pop-result').classList.remove('show');
+      connectSync("close-result")
+    })
     
     let menu = new Menu();
     matchCtrl.load();

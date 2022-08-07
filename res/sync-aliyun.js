@@ -66,9 +66,19 @@ class AliyunSyncData extends SyncData {
         if(rLadder && rLadder.length)
           data = "," + data;
 
-        await store.append(AliyunSyncData.LadderURL(season, true), new OSS.Buffer(data), {
-          position: rLadder? new Blob([JSON.stringify(rLadder)]).size - 2: 0
-        });
+        for(let retry = 5; retry-- > 0; ) {
+          try {
+            await store.append(AliyunSyncData.LadderURL(season, true), new OSS.Buffer(data), {
+              position: rLadder? new Blob([JSON.stringify(rLadder)]).size - 2: 0
+            });
+          } catch(e) {
+            if(e.name == "ConnectionTimeoutError" && retry > 0) {
+              continue;
+            } else {
+              throw e;
+            }
+          }
+        }
 
         rLadder.splice(rLadder.length, 0, ...unsyncLadder);
       }),
@@ -82,9 +92,19 @@ class AliyunSyncData extends SyncData {
         if(rMatch && rMatch.length)
           data = "," + data;
 
-        await store.append(AliyunSyncData.DataURL(date, true), new OSS.Buffer(data), {
-          position: rMatch? new Blob([JSON.stringify(rMatch)]).size - 2: 0
-        });
+        for(let retry = 5; retry-- > 0; ) {
+          try {
+            await store.append(AliyunSyncData.DataURL(date, true), new OSS.Buffer(data), {
+              position: rMatch? new Blob([JSON.stringify(rMatch)]).size - 2: 0
+            });
+          } catch(e) {
+            if(e.name == "ConnectionTimeoutError" && retry > 0) {
+              continue;
+            } else {
+              throw e;
+            }
+          }
+        }
 
         rMatch.splice(rMatch.length, 0, ...unsyncData);
         
@@ -107,9 +127,20 @@ class AliyunSyncData extends SyncData {
 
     const store = new OSS(this.key);
 
-    let res = data? await store.put(key, new OSS.Buffer(JSON.stringify(data))):
-      await store.delete(key);
-    return res;
+    for(let retry = 5; retry-- > 0; ) {
+
+      try {
+        return data? await store.put(key, new OSS.Buffer(JSON.stringify(data))):
+          await store.delete(key);
+      } catch(e) {
+        if(e.name == "ConnectionTimeoutError" && retry > 0) {
+          continue;
+        } else {
+          throw e;
+        }
+      }
+
+    }
   }
   async load(key) {
     return (await $fetch(AliyunSyncData.OtherURL(key)) || [])[0];
