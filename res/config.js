@@ -6,5 +6,5 @@ let CONFIG = {
     // accessKeyId: "",
     // accessKeySecret: "",
   },
-  DataUrl: "https://kdaladder-dev.oss-cn-guangzhou.aliyuncs.com/"
+  DataUrl: "//kdaladder-dev.oss-cn-guangzhou.aliyuncs.com/"
 }

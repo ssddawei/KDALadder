@@ -71,6 +71,7 @@ class AliyunSyncData extends SyncData {
             await store.append(AliyunSyncData.LadderURL(season, true), new OSS.Buffer(data), {
               position: rLadder? new Blob([JSON.stringify(rLadder)]).size - 2: 0
             });
+            break;
           } catch(e) {
             if(e.name == "ConnectionTimeoutError" && retry > 0) {
               continue;
@@ -97,6 +98,7 @@ class AliyunSyncData extends SyncData {
             await store.append(AliyunSyncData.DataURL(date, true), new OSS.Buffer(data), {
               position: rMatch? new Blob([JSON.stringify(rMatch)]).size - 2: 0
             });
+            break;
           } catch(e) {
             if(e.name == "ConnectionTimeoutError" && retry > 0) {
               continue;
