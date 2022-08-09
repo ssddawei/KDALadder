@@ -740,7 +740,8 @@ class SoundEffect {
   }
   static speak(text) {
     if(SoundEffect.disabled)return;
-
+    if(!window.SpeechSynthesisUtterance)return;
+    
     let msg = new SpeechSynthesisUtterance();
     msg.text = text;
     msg.rate = 0.7;
