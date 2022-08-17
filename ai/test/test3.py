@@ -22,6 +22,11 @@ class HoughBundler:
                         return False
         return True
 
+    def line_magnitude(self, line):
+        x1, y1, x2, y2 = line
+        line_magnitude = math.sqrt(math.pow((x2 - x1), 2) + math.pow((y2 - y1), 2))
+        return line_magnitude
+
     def distance_point_to_line(self, point, line):
         px, py = point
         x1, y1, x2, y2 = line
@@ -55,6 +60,12 @@ class HoughBundler:
 
         return distance_point_to_line
 
+    def distance_point_to_line2(self, p, l):
+        p1 = np.asarray(l[:2])
+        p2 = np.asarray(l[2:])
+        p3 = np.asarray(p)
+        return abs(np.cross(p2-p1,p3-p1)/np.linalg.norm(p2-p1))
+
     def get_distance(self, a_line, b_line):
         dist1 = self.distance_point_to_line(a_line[:2], b_line)
         dist2 = self.distance_point_to_line(a_line[2:], b_line)
@@ -78,7 +89,7 @@ class HoughBundler:
         ret = [np.mean(lines, axis=0, dtype=int)]
         return ret
     def merge_line_segments(self, lines):
-        return self.merge_line_segments2(lines)
+        # return self.merge_line_segments2(lines)
 
         orientation = self.get_orientation(lines[0])
       
@@ -106,6 +117,8 @@ class HoughBundler:
   
         for line_i in [l[0] for l in lines]:
             orientation = self.get_orientation(line_i)
+            # if self.line_magnitude(line_i) < 150:
+            #     continue
             # if vertical
             if 45 < orientation <= 90:
                 lines_vertical.append(line_i)
@@ -118,7 +131,7 @@ class HoughBundler:
 
         # for each cluster in vertical and horizantal lines leave only one line
         for i in [lines_horizontal, lines_vertical]:
-            if len(i) > 0:
+            if len(i) > 0 :
                 groups = self.merge_lines_into_groups(i)
                 merged_lines = []
                 for group in groups:

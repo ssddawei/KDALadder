@@ -2,8 +2,10 @@ import cv2
 import numpy as np
 import os
 import math
+import csv
 
 from test3 import HoughBundler
+from calcM import calcM
 
 def flood_fill(field, x ,y, old, new):
     # we need the x and y of the start position, the old value,
@@ -48,6 +50,7 @@ gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 # 阈值分割得到二值化图片
 # ret, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 ret, binary = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY )
+# ret, binary = cv2.threshold(gray, 190, 255, cv2.THRESH_BINARY )
 # binary = np.invert(binary)
 flood_fill(binary, 0, 0, 0, 2)
 cv2.imwrite("test2-a.jpg", binary)
@@ -86,7 +89,7 @@ min_line_length = 50  # minimum number of pixels making up a line
 max_line_gap = 20  # maximum gap in pixels between connectable line segments
 # lines = cv2.HoughLinesP(edges, rho, theta, threshold, np.array([]),
 #                     min_line_length, max_line_gap)
-lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi / 180, threshold=80, minLineLength=30, maxLineGap=10)
+lines = cv2.HoughLinesP(edges, rho=1, theta=np.pi / 180, threshold=180, minLineLength=100, maxLineGap=50)
 
 # lines = cv2.HoughLines(edges, 1, np.pi/180, 200)
 
@@ -145,7 +148,7 @@ final = cv2.addWeighted(img, 0.8, line_img, 1.0, 0.0)
 
 cv2.imwrite("test2-lines.jpg", final)
 
-def get_orientation( line):
+def get_orientation(line):
     orientation = math.atan2(abs((line[3] - line[1])), abs((line[2] - line[0])))
     return math.degrees(orientation)
 def extend_line_h0(line, height=img.shape[0]):
@@ -186,25 +189,184 @@ def extend_line_w0(line, width=img.shape[1]):
 
     return [[0, ny1, width, ny2]]
 # Merge
-lines = np.int16(list(map(extend_line_w0, lines)))
-print('lines extended = ', lines)
+# lines = np.int16(list(map(extend_line_w0, lines)))
+# print('lines extended = ', lines)
 
 bundler = HoughBundler(min_distance=5,min_angle=1)
 lines = bundler.process_lines(lines)
+# lines = np.int16(list(map(extend_line_w0, lines)))
 
 print('lines merged = ', lines.shape[0])
+
+def get_orientation(line):
+    orientation = math.atan2(((line[3] - line[1])), ((line[2] - line[0])))
+    return math.degrees(orientation)
+
+line_color2 = [255, 255, 0]
 
 line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8) 
 #讲检测的直线叠加到原图
 for line in lines:
+    deg = get_orientation(line[0])
+    if deg < 0:
+        target_line_color = line_color2
+    else:
+        target_line_color = line_color
     for x1, y1, x2, y2 in line:
-        cv2.line(line_img, (x1, y1), (x2, y2), line_color, line_thickness)
+        cv2.line(line_img, (x1, y1), (x2, y2), target_line_color, line_thickness)
         cv2.circle(line_img, (x1, y1), dot_size, dot_color, -1)
         cv2.circle(line_img, (x2, y2), dot_size, dot_color, -1)
 final = cv2.addWeighted(img, 0.8, line_img, 1.0, 0.0)
 
 cv2.imwrite("test2-merge.jpg", final)
 
-# cv2.imshow('oginal', output)
-# cv2.waitKey()
-# cv2.destroyAllWindows()
+
+# lines = np.int16(list(map(extend_line_w0, lines)))
+
+# line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8) 
+# #讲检测的直线叠加到原图
+# for line in lines:
+#     for x1, y1, x2, y2 in line:
+#         cv2.line(line_img, (x1, y1), (x2, y2), line_color, line_thickness)
+#         cv2.circle(line_img, (x1, y1), dot_size, dot_color, -1)
+#         cv2.circle(line_img, (x2, y2), dot_size, dot_color, -1)
+# final = cv2.addWeighted(img, 0.8, line_img, 1.0, 0.0)
+
+# cv2.imwrite("test2-extends.jpg", final)
+
+# dis = bundler.distance_point_to_line([0,0],[1,1,2,2])
+# print("dis = ", dis)
+
+# def distance_l2l(p, l):
+#     p1 = np.asarray(l[:2])
+#     p2 = np.asarray(l[2:])
+#     p3 = np.asarray(p)
+#     return np.cross(p2-p1,p3-p1)/np.linalg.norm(p2-p1)
+
+# dis = distance_l2l([918,  686],[1168, 1016, 1816,  613])
+# print("dis = ", dis)
+
+#######################
+#######################
+
+# 从左下角和右下角分别向中心点寻找最近的两条线
+
+leftLines = []
+rightLines = []
+
+for line in lines:
+    deg = get_orientation(line[0])
+    if deg > 0:
+        leftLines.append(line[0])
+    else:
+        rightLines.append(line[0])
+
+leftLines = sorted(leftLines, key=lambda i: 
+    bundler.distance_point_to_line2([0,img.shape[0]],i))
+rightLines = sorted(rightLines, key=lambda i: 
+    bundler.distance_point_to_line2([img.shape[1],img.shape[0]],i))
+
+# 每边使用两条线进行配对
+lineSet = []
+for iL1 in range(len(leftLines) - 1):
+    for iL2 in range(iL1+1, len(leftLines)):
+        if bundler.get_distance(leftLines[iL1], leftLines[iL2]) < 10: continue
+        for iR1 in range(len(rightLines) - 1):
+            for iR2 in range(iR1+1, len(rightLines)):
+                if bundler.get_distance(rightLines[iR1], rightLines[iR2]) < 10: continue
+                lineSet.append([leftLines[iL1], leftLines[iL2], rightLines[iR1], rightLines[iR2]])
+
+def line_intersection(line1, line2):
+    xdiff = (line1[0] - line1[2], line2[0] - line2[2])
+    ydiff = (line1[1] - line1[3], line2[1] - line2[3])
+
+    def det(a, b):
+        return a[0] * b[1] - a[1] * b[0]
+
+    div = det(xdiff, ydiff)
+    if div == 0:
+       raise Exception('lines do not intersect')
+
+    d = (det(line1[:2], line1[2:]), det(line2[:2], line2[2:]))
+    x = det(d, xdiff) / div
+    y = det(d, ydiff) / div
+    return [x, y]
+
+# print("lineset = ", lineSet)
+# lineSet[0] = np.int16(list(map(extend_line_w0, lineSet[0])))
+
+cross_point = [
+    line_intersection(lineSet[0][0], lineSet[0][2]),
+    line_intersection(lineSet[0][0], lineSet[0][3]),
+    line_intersection(lineSet[0][1], lineSet[0][2]),
+    line_intersection(lineSet[0][1], lineSet[0][3]),
+]
+cross_point = np.array(cross_point, dtype=np.int)
+print("cross_point = ", cross_point)
+
+
+# line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8) 
+# for line in lineSet[0]:
+#     x1, y1, x2, y2 = line
+#     cv2.line(line_img, (x1, y1), (x2, y2), line_color, line_thickness)
+#     cv2.circle(line_img, (x1, y1), dot_size, dot_color, -1)
+#     cv2.circle(line_img, (x2, y2), dot_size, dot_color, -1)
+
+# for p in cross_point:
+#     cv2.circle(line_img, (p[0], p[1]-600), 6, dot_color, -1)
+# final = cv2.addWeighted(img, 0.8, line_img, 1.0, 0.0)
+
+# cv2.imwrite("test2-set.jpg", final)
+
+standardLines = []
+with open('standard.csv') as csvfile:
+    rows = list(csv.reader(csvfile, delimiter=','))
+    for row in rows[1:]:
+        standardLines.append(np.array(row, dtype=np.int))
+
+print("standardLines = ", np.asarray(standardLines))
+
+SLineSet =[[
+    standardLines[-1],
+    standardLines[-3],
+    standardLines[0],
+    standardLines[2],
+]]
+print("SLineSet = ", np.asarray(SLineSet))
+
+Scross_point = [
+    line_intersection(SLineSet[0][0], SLineSet[0][2]),
+    line_intersection(SLineSet[0][0], SLineSet[0][3]),
+    line_intersection(SLineSet[0][1], SLineSet[0][2]),
+    line_intersection(SLineSet[0][1], SLineSet[0][3]),
+]
+Scross_point = np.array(Scross_point, dtype=np.int)
+print("Scross_point = ", Scross_point)
+
+# M = calcM(cross_point, Scross_point)
+cross_point = np.array(cross_point, dtype='float32')
+Scross_point = np.array(Scross_point, dtype='float32')
+M = cv2.getPerspectiveTransform(cross_point, Scross_point)
+
+print("M = ", M)
+
+warped = cv2.warpPerspective(img, M, (1920, 1920))
+cv2.imwrite("test2-warped.jpg", warped)
+
+srcLines = np.array(np.reshape(standardLines, (len(standardLines)*2,2)), dtype='float32')
+print("srcLines = ", srcLines)
+
+lines = cv2.perspectiveTransform(np.asarray([srcLines]), np.linalg.inv(M))
+lines = np.array(np.reshape(lines[0], (int(len(lines[0])/2),4)), dtype="int")
+
+print("warped lines = ", len(lines))
+print("warped lines = ", lines)
+line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8) 
+for line in lines:
+    x1, y1, x2, y2 = line
+    cv2.line(line_img, (x1, y1), (x2, y2), line_color, line_thickness)
+    cv2.circle(line_img, (x1, y1), dot_size, dot_color, -1)
+    cv2.circle(line_img, (x2, y2), dot_size, dot_color, -1)
+final = cv2.addWeighted(img, 0.8, line_img, 1.0, 0.0)
+
+cv2.imwrite("test2-standard.jpg", final)
