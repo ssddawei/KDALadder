@@ -8,7 +8,6 @@
 ## 需要的技术
 - 场地识别
 - 羽毛球追踪
-  - 落点预测
 - 人物追踪
 - 三维重建
 
@@ -37,3 +36,7 @@ T4
 - 两份羽毛球跟踪的论文
 https://www.docin.com/p-2278980712.html
 https://www.doc88.com/p-9913921536756.html
+
+- opencv 通过两幅图片，找到他们之间的三维变换矩阵
+  https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_epipolar_geometry/py_epipolar_geometry.html#epipolar-geometry
+  https://stackoverflow.com/questions/10744671/reconstruction-a-3d-point-from-two-2d-points
