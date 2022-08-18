@@ -193,10 +193,10 @@ def extend_line_w0(line, width=img.shape[1]):
 # print('lines extended = ', lines)
 
 bundler = HoughBundler(min_distance=5,min_angle=1)
-lines = bundler.process_lines(lines)
+mlines = bundler.process_lines(lines)
 # lines = np.int16(list(map(extend_line_w0, lines)))
 
-print('lines merged = ', lines.shape[0])
+print('lines merged = ', mlines.shape[0])
 
 def get_orientation(line):
     orientation = math.atan2(((line[3] - line[1])), ((line[2] - line[0])))
@@ -206,7 +206,7 @@ line_color2 = [255, 255, 0]
 
 line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8) 
 #讲检测的直线叠加到原图
-for line in lines:
+for line in mlines:
     deg = get_orientation(line[0])
     if deg < 0:
         target_line_color = line_color2
@@ -254,7 +254,7 @@ cv2.imwrite("test2-merge.jpg", final)
 leftLines = []
 rightLines = []
 
-for line in lines:
+for line in mlines:
     deg = get_orientation(line[0])
     if deg > 0:
         leftLines.append(line[0])
@@ -291,32 +291,16 @@ def line_intersection(line1, line2):
     x = det(d, xdiff) / div
     y = det(d, ydiff) / div
     return [x, y]
+def get_cross_point(lines):
+    return [
+        line_intersection(lines[0], lines[2]),
+        line_intersection(lines[0], lines[3]),
+        line_intersection(lines[1], lines[2]),
+        line_intersection(lines[1], lines[3]),
+    ]
 
-# print("lineset = ", lineSet)
-# lineSet[0] = np.int16(list(map(extend_line_w0, lineSet[0])))
-
-cross_point = [
-    line_intersection(lineSet[0][0], lineSet[0][2]),
-    line_intersection(lineSet[0][0], lineSet[0][3]),
-    line_intersection(lineSet[0][1], lineSet[0][2]),
-    line_intersection(lineSet[0][1], lineSet[0][3]),
-]
-cross_point = np.array(cross_point, dtype=np.int)
-print("cross_point = ", cross_point)
-
-
-# line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8) 
-# for line in lineSet[0]:
-#     x1, y1, x2, y2 = line
-#     cv2.line(line_img, (x1, y1), (x2, y2), line_color, line_thickness)
-#     cv2.circle(line_img, (x1, y1), dot_size, dot_color, -1)
-#     cv2.circle(line_img, (x2, y2), dot_size, dot_color, -1)
-
-# for p in cross_point:
-#     cv2.circle(line_img, (p[0], p[1]-600), 6, dot_color, -1)
-# final = cv2.addWeighted(img, 0.8, line_img, 1.0, 0.0)
-
-# cv2.imwrite("test2-set.jpg", final)
+# 得到四个交点，用这四个点计算映射矩阵
+corssPointSet = list(map(get_cross_point, lineSet))
 
 standardLines = []
 with open('standard.csv') as csvfile:
@@ -340,29 +324,78 @@ Scross_point = [
     line_intersection(SLineSet[0][1], SLineSet[0][2]),
     line_intersection(SLineSet[0][1], SLineSet[0][3]),
 ]
-Scross_point = np.array(Scross_point, dtype=np.int)
+Scross_point = np.array(Scross_point, dtype='float32')
 print("Scross_point = ", Scross_point)
 
-# M = calcM(cross_point, Scross_point)
-cross_point = np.array(cross_point, dtype='float32')
-Scross_point = np.array(Scross_point, dtype='float32')
-M = cv2.getPerspectiveTransform(cross_point, Scross_point)
+def calcM(crossPoint):
+    crossPoint = np.array(crossPoint, dtype='float32')
+    return cv2.getPerspectiveTransform(crossPoint, Scross_point)
+def calcStandardLines(crossPoint):
+    M = calcM(crossPoint)
+    srcLines = np.array(np.reshape(standardLines, (len(standardLines)*2,2)), dtype='float32')
 
-print("M = ", M)
+    sLines = cv2.perspectiveTransform(np.asarray([srcLines]), np.linalg.inv(M))
+    sLines = np.array(np.reshape(sLines[0], (int(len(sLines[0])/2),4)), dtype="int")
+    return sLines
+def lineOffscreenLen(line, maxWidth, maxHeight):
+    # 计算超出屏幕的部分百分比
+    x1, y1, x2, y2 = line
+    rate = 0
+    if x1 < 0 or x2 < 0:
+        rate += -min(x1, x2) / abs(x2-x1) 
+    elif y1 < 0 or y2 < 0:
+        rate += -min(y1, y2) / abs(y2-y1) 
+    if x1 > maxWidth or x2 > maxWidth:
+        rate += (max(x1, x2) - maxWidth) / abs(x2-x1) 
+    elif y1 > maxHeight or y2 > maxHeight:
+        rate += (max(y1, y2) - maxHeight) / abs(y2-y1) 
+    return rate
+def scoreCalc(crossPoint):
 
-warped = cv2.warpPerspective(img, M, (1920, 1920))
-cv2.imwrite("test2-warped.jpg", warped)
+    sLines = calcStandardLines(crossPoint)
 
-srcLines = np.array(np.reshape(standardLines, (len(standardLines)*2,2)), dtype='float32')
-print("srcLines = ", srcLines)
+    offscreen = []
+    for l in sLines:
+        offscreen.append(lineOffscreenLen(l, img.shape[1], img.shape[0]))
 
-lines = cv2.perspectiveTransform(np.asarray([srcLines]), np.linalg.inv(M))
-lines = np.array(np.reshape(lines[0], (int(len(lines[0])/2),4)), dtype="int")
+    offscreen = sum(offscreen)/len(offscreen)
+    # print("offscreen = ", offscreen)
+    # print("offscreen = ", sum(offscreen)/len(offscreen))
 
-print("warped lines = ", len(lines))
-print("warped lines = ", lines)
+    sLines = np.array([[l] for l in sLines], dtype="int")
+    # print("sLines = ", sLines)
+    # print("lines = ", mlines)
+    # print("sLines = ", len(sLines))
+    # print("lines = ", len(mlines))
+    sLines = np.concatenate((sLines, mlines))
+    linesMerged = bundler.process_lines(sLines)
+    return (offscreen * 100 + 1) * (abs(len(mlines) - len(linesMerged)))
+
+# 对 M 进行评分
+# 1. 在画面内的部分占比
+# 2. 线条去重后，多出来的线条数（越少越匹配）
+scores = []
+
+for idx, cp in enumerate(corssPointSet[:44]):
+    score = scoreCalc(cp)
+    scores.append([idx,score])
+    if score == 0:
+        break
+scores = sorted(scores, key=lambda i: i[1])
+print("scores = ", scores)
+
+calcedStardardLines = calcStandardLines(corssPointSet[scores[0][0]])
+# [[35, 3], [38, 3], [39, 3], [36, 4], [37, 4], [40, 4], [41, 4], [42, 4],
+#[[60, 2], [86, 2], [9, 3], [17, 3], [25, 3], [32, 3], [38, 3], [59, 3], [62, 3], [63, 3], [68, 3], [70, 3], [71, 3], [76, 3], [78, 3], [79, 3], [89, 3], [92, 3], [113, 3], [116, 3], [124, 3], [132, 3], [138, 3], [47, 4], [55, 4], 
+# calcedStardardLines = calcStandardLines(corssPointSet[0])
+# print("score = ", scoreCalc(corssPointSet[59]))
+
+# ？？
+# 考虑尺寸
+# 考虑使用更多的点位，提高 M 的准确率
+
 line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8) 
-for line in lines:
+for line in calcedStardardLines:
     x1, y1, x2, y2 = line
     cv2.line(line_img, (x1, y1), (x2, y2), line_color, line_thickness)
     cv2.circle(line_img, (x1, y1), dot_size, dot_color, -1)
