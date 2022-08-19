@@ -27,7 +27,7 @@ def flood_fill(field, x ,y, old, new):
     flood_fill(field, x, y-1, old, new)
 
 # 读入图片
-img = cv2.imread("b.jpg")
+img = cv2.imread("a.jpg")
 
 # https://blog.csdn.net/weixin_44120025/article/details/122102011
 # K = np.zeros((3, 3))
@@ -262,9 +262,9 @@ for line in mlines:
         rightLines.append(line[0])
 
 leftLines = sorted(leftLines, key=lambda i: 
-    bundler.distance_point_to_line2([0,img.shape[0]],i))
+    bundler.distance_point_to_line([0,img.shape[0]],i))
 rightLines = sorted(rightLines, key=lambda i: 
-    bundler.distance_point_to_line2([img.shape[1],img.shape[0]],i))
+    bundler.distance_point_to_line([img.shape[1],img.shape[0]],i))
 
 # 每边使用两条线进行配对
 lineSet = []
@@ -275,6 +275,21 @@ for iL1 in range(len(leftLines) - 1):
             for iR2 in range(iR1+1, len(rightLines)):
                 if bundler.get_distance(rightLines[iR1], rightLines[iR2]) < 10: continue
                 lineSet.append([leftLines[iL1], leftLines[iL2], rightLines[iR1], rightLines[iR2]])
+
+def printLine(lines, filename):
+    line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8) 
+    # #讲检测的直线叠加到原图
+    for line in lines:
+        x1, y1, x2, y2 = line
+        cv2.line(line_img, (x1, y1), (x2, y2), line_color, line_thickness)
+        cv2.circle(line_img, (x1, y1), dot_size, dot_color, -1)
+        cv2.circle(line_img, (x2, y2), dot_size, dot_color, -1)
+    final = cv2.addWeighted(img, 0.8, line_img, 1.0, 0.0)
+
+    cv2.imwrite(filename, final)
+
+printLine(leftLines[0:4], "test2-left.jpg")
+printLine(rightLines[0:4], "test2-right.jpg")
 
 def line_intersection(line1, line2):
     xdiff = (line1[0] - line1[2], line2[0] - line2[2])
@@ -292,15 +307,21 @@ def line_intersection(line1, line2):
     y = det(d, ydiff) / div
     return [x, y]
 def get_cross_point(lines):
-    return [
-        line_intersection(lines[0], lines[2]),
-        line_intersection(lines[0], lines[3]),
-        line_intersection(lines[1], lines[2]),
-        line_intersection(lines[1], lines[3]),
-    ]
+    ret = []
+    for i in lines[:int(len(lines)/2)]:
+        for j in lines[int(len(lines)/2):]:
+            ret.append(line_intersection(i, j))
+    return ret
+    # return [
+    #     line_intersection(lines[0], lines[2]),
+    #     line_intersection(lines[0], lines[3]),
+    #     line_intersection(lines[1], lines[2]),
+    #     line_intersection(lines[1], lines[3]),
+    # ]
 
 # 得到四个交点，用这四个点计算映射矩阵
 corssPointSet = list(map(get_cross_point, lineSet))
+print("corssPointSet = ", np.asarray(corssPointSet))
 
 standardLines = []
 with open('standard.csv') as csvfile:
@@ -310,28 +331,64 @@ with open('standard.csv') as csvfile:
 
 print("standardLines = ", np.asarray(standardLines))
 
-SLineSet =[[
-    standardLines[-1],
-    standardLines[-3],
-    standardLines[0],
-    standardLines[2],
-]]
-print("SLineSet = ", np.asarray(SLineSet))
-
-Scross_point = [
-    line_intersection(SLineSet[0][0], SLineSet[0][2]),
-    line_intersection(SLineSet[0][0], SLineSet[0][3]),
-    line_intersection(SLineSet[0][1], SLineSet[0][2]),
-    line_intersection(SLineSet[0][1], SLineSet[0][3]),
+SLineSet =[
+# 左上角矩形
+    [
+        standardLines[-2],
+        standardLines[-4],
+        standardLines[1],
+        standardLines[3],
+    ],
+# 左上角最大矩形
+    [
+        standardLines[-7],
+        standardLines[-6],
+        standardLines[3],
+        standardLines[4],
+    ],
+# 左上角两个矩形
+    # [
+    #     # standardLines[-2],
+    #     # standardLines[-4],
+    #     standardLines[-7],
+    #     standardLines[-6],
+    #     # standardLines[1],
+    #     # standardLines[3],
+    #     standardLines[3],
+    #     standardLines[4],
+    # ],
 ]
+print("SLineSet = ", np.asarray(SLineSet))
+Scross_point = list(map(get_cross_point, SLineSet))
+
 Scross_point = np.array(Scross_point, dtype='float32')
 print("Scross_point = ", Scross_point)
 
+# M =  [[1.08433481e+03 0.00000000e+00 9.23899379e+02]
+#  [0.00000000e+00 1.44395319e+02 4.92158299e+02]
+#  [0.00000000e+00 0.00000000e+00 1.00000000e+00]]
+# M =  [[ 1.86969389e-01  1.25285042e-01 -4.39081715e+02]
+#  [ 2.08050410e-01 -1.60330178e+00  7.64957189e+02]
+#  [ 1.88111183e-05 -2.15842946e-03  1.00000000e+00]]
 def calcM(crossPoint):
-    crossPoint = np.array(crossPoint, dtype='float32')
-    return cv2.getPerspectiveTransform(crossPoint, Scross_point)
+    crossPoint = np.array([
+        [[j] for j in i] for i in crossPoint
+    ], dtype='float32')
+    sp = np.array([
+        [[*j, 0] for j in i] for i in Scross_point
+    ], dtype='float32')
+    print("sp = ", sp)
+    print("crossPoint = ", crossPoint)
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(sp, crossPoint, gray.shape[::-1], None, None)
+    R = cv2.Rodrigues(rvecs[0])[0]
+    t = tvecs[0]
+    Rt = np.concatenate([R,t], axis=-1) # [R|t]
+    P = np.matmul(mtx,Rt) # A[R|t]
+    return np.linalg.inv(np.delete(P, 2, 1))
+    return cv2.getPerspectiveTransform(crossPoint[0], Scross_point[0])
 def calcStandardLines(crossPoint):
     M = calcM(crossPoint)
+    print("M = ", M)
     srcLines = np.array(np.reshape(standardLines, (len(standardLines)*2,2)), dtype='float32')
 
     sLines = cv2.perspectiveTransform(np.asarray([srcLines]), np.linalg.inv(M))
@@ -350,10 +407,35 @@ def lineOffscreenLen(line, maxWidth, maxHeight):
     elif y1 > maxHeight or y2 > maxHeight:
         rate += (max(y1, y2) - maxHeight) / abs(y2-y1) 
     return rate
+
+
+bundler = HoughBundler(min_distance=10,min_angle=2)
+def line_intersect(s_lineset, lineset):
+    score = [0] * len(s_lineset)
+    notmatch = 0
+    for l2 in lineset:
+        matched = 0
+        for idx, l1 in enumerate(s_lineset):
+            d1 = get_orientation(l1)
+            d2 = get_orientation(l2)
+            dis = bundler.get_distance(l1, l2)
+            if abs(d1 - d2) < 5 and dis < 30:
+                score[idx] += 1
+                matched = 1
+                break
+        if not matched:
+            notmatch += 1
+    print("score = ", score)
+    print("notmatch = ", notmatch)
+    # score.append(notmatch)
+    return np.var(score) + notmatch
+        
+
 def scoreCalc(crossPoint):
 
     sLines = calcStandardLines(crossPoint)
 
+    return line_intersect(sLines, np.array([l[0] for l in mlines], dtype="int"))
     offscreen = []
     for l in sLines:
         offscreen.append(lineOffscreenLen(l, img.shape[1], img.shape[0]))
@@ -369,30 +451,55 @@ def scoreCalc(crossPoint):
     # print("lines = ", len(mlines))
     sLines = np.concatenate((sLines, mlines))
     linesMerged = bundler.process_lines(sLines)
-    return (offscreen * 100 + 1) * (abs(len(mlines) - len(linesMerged)))
+    # return (offscreen * 100 + 1) * (abs(len(mlines) - len(linesMerged)))
+    return abs(len(mlines) - len(linesMerged)) + offscreen
 
 # 对 M 进行评分
 # 1. 在画面内的部分占比
 # 2. 线条去重后，多出来的线条数（越少越匹配）
-scores = []
+# scores = []
 
-for idx, cp in enumerate(corssPointSet[:44]):
-    score = scoreCalc(cp)
-    scores.append([idx,score])
-    if score == 0:
-        break
-scores = sorted(scores, key=lambda i: i[1])
-print("scores = ", scores)
+# for idx, cp in enumerate(corssPointSet[:144]):
+#     score = scoreCalc(cp)
+#     scores.append([idx,score])
+#     if score == 0:
+#         break
+# scores = sorted(scores, key=lambda i: i[1])
+# print("scores = ", scores)
 
-calcedStardardLines = calcStandardLines(corssPointSet[scores[0][0]])
+# calcedStardardLines = calcStandardLines(corssPointSet[scores[0][0]])
+
 # [[35, 3], [38, 3], [39, 3], [36, 4], [37, 4], [40, 4], [41, 4], [42, 4],
 #[[60, 2], [86, 2], [9, 3], [17, 3], [25, 3], [32, 3], [38, 3], [59, 3], [62, 3], [63, 3], [68, 3], [70, 3], [71, 3], [76, 3], [78, 3], [79, 3], [89, 3], [92, 3], [113, 3], [116, 3], [124, 3], [132, 3], [138, 3], [47, 4], [55, 4], 
-# calcedStardardLines = calcStandardLines(corssPointSet[0])
-# print("score = ", scoreCalc(corssPointSet[59]))
+
+# l = [leftLines[5],leftLines[11],rightLines[3],rightLines[5]]
+l = [
+    [leftLines[1],leftLines[5],rightLines[1],rightLines[3]],
+    [leftLines[5],leftLines[11],rightLines[3],rightLines[5]]
+]
+c = list(map(get_cross_point, l))
+# c = [get_cross_point(i) for i in l]
+# c = [
+#     # get_cross_point([leftLines[1],leftLines[3],rightLines[1],rightLines[3]]),
+#     # get_cross_point([leftLines[3],leftLines[4],rightLines[3],rightLines[4]])
+#     get_cross_point(l[0]),
+#     get_cross_point(l[1])
+#     # get_cross_point([leftLines[0],leftLines[2],leftLines[3],leftLines[10],rightLines[0],rightLines[2],rightLines[3],rightLines[6]])
+# ]
+
+printLine(
+    l[0] + SLineSet[0], 
+    "test2-inputlines.jpg")
+# c = get_cross_point(leftLines[3:5] + rightLines[3:5])
+calcedStardardLines = calcStandardLines(c)
+print("score = ", scoreCalc(c))
+print("calcedStardardLines = ", calcedStardardLines)
 
 # ？？
 # 考虑尺寸
 # 考虑使用更多的点位，提高 M 的准确率
+# 尝试使用 caliCamera 提供多组数据
+# 尝试一下 3x3 的9个点进行 caliCamera
 
 line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8) 
 for line in calcedStardardLines:
