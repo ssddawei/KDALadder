@@ -75,7 +75,7 @@ def printLine(lines, filename):
   g = 0
   b = 0
   line_color = [r, g, b]
-  line_thickness = 1
+  line_thickness = 3
   dot_color = [0, 255, 0]
   dot_size = 3
   line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8) 
@@ -146,22 +146,34 @@ def getLinePixel(img):
       ret[y][x] = isLinePixel(img, [x, y])
   return ret
 
-def getLinePixel2(img):
-  T = 20
+def getLinePixel2(img, T):
+  # T = 30
+  # T = int(max(img.shape[1],img.shape[0])/500)
+
+  T = int(T)
   Threshold = 50
   diffThreshold = 20
 
   ret = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8) 
-  matrix = np.asarray(img)
+  matrix = np.asarray(img, dtype=np.int)
   leftImg = np.roll(matrix, T, axis=1)
   rightImg = np.roll(matrix, -T, axis=1)
   topImg = np.roll(matrix, T, axis=0)
   bottomImg = np.roll(matrix, -T, axis=0)
-  subLeftImg = np.where() matrix - leftImg
-  subRightImg = matrix - rightImg
-  subTopImg = matrix - topImg
-  subBottomImg = matrix - bottomImg
-  return ret
+
+  lowest = (matrix - Threshold).clip(min=0,max=1)
+
+  subLeftImg = ((matrix - leftImg) - diffThreshold).clip(min=0,max=1)
+  subRightImg = ((matrix - rightImg) - diffThreshold).clip(min=0,max=1)
+  subHImg = np.bitwise_and(subLeftImg, subRightImg)
+
+  subTopImg = ((matrix - topImg) - diffThreshold).clip(min=0,max=1)
+  subBottomImg = ((matrix - bottomImg) - diffThreshold).clip(min=0,max=1)
+  subVImg = np.bitwise_and(subTopImg, subBottomImg)
+
+  ret = np.bitwise_or(subHImg, subVImg)
+  ret = np.bitwise_and(lowest, ret)
+  return np.array(ret * 255, np.uint8)
 
 def computeStructureTensorElements(image):
 
@@ -259,11 +271,19 @@ def point_to_line_distance(point, line):
   dy = point[0] - pointOnLine[0]
   return math.sqrt(dx*dx + dy*dy)
 
+def point_to_line_distance2(point, line):
+  p3 = np.array(point)
+  p1 = np.array(line[0:2])
+  p2 = np.array(line[2:4])
+  return np.linalg.norm(abs(np.cross(p2-p1, p1-p3)) / np.linalg.norm(p2-p1))
+
+# print(point_to_line_distance2([0,2],[1,1,2,0]))
 
 def getClosePointsMatrix(line, binaryImage):
   distanceThreshold = 10
 #   Mat M = Mat::zeros(0, 2, CV_32F);
-  M = np.zeros((0, 2), np.float32)
+  # M = np.zeros((0, 2), np.float32)
+  M = []
 
 #   Mat image = rgbImage.clone(); // debug
 
@@ -275,9 +295,9 @@ def getClosePointsMatrix(line, binaryImage):
     for y in range(binaryImage.shape[0]):
 #       if (binaryImage.at<uchar>(y, x) == GlobalParameters().fgValue)
 #       {
-      if binaryImage[y][x] > 70:
+      if binaryImage[y][x] == 255:
 #         float distance = line.getDistance(Point2f(x, y));
-        distance = point_to_line_distance([x, y], line)
+        distance = point_to_line_distance2([x, y], line)
 #         if (distance < parameters.distanceThreshold)
 #         {
         if distance < distanceThreshold:
@@ -290,7 +310,7 @@ def getClosePointsMatrix(line, binaryImage):
           point[0][0] = x
           point[0][1] = y
           M.append(point)
-  return M
+  return np.array(M, np.float32)
 
 def getRefinedParameters(line, binaryImage):
   # Mat A = getClosePointsMatrix(line, binaryImage, rgbImage);
@@ -304,10 +324,158 @@ def getRefinedParameters(line, binaryImage):
   # return Line(p, v);
   return X
 
-# 读入图片
-img = cv2.imread("a-undistort.jpg")
 
+def refineLine(line, binary):
+  T = 4
+  lineImg = np.zeros(binary.shape, np.uint8)
+  x1, y1, x2, y2 = line
+  cv2.line(lineImg, (x1, y1), (x2, y2), 255, T)
+  refinelineImg = cv2.bitwise_and(lineImg, binary)
+  coords = np.flip(np.column_stack(np.where(refinelineImg == 255)), axis = 1)
+
+  lineImg2 = np.zeros(binary.shape, np.uint8)
+  for i in coords:
+    cv2.circle(lineImg2, i, 2, 255, -1)
+
+  vx, vy, x, y = cv2.fitLine(coords, cv2.DIST_L2, 0, 0.01, 0.01)
+  m = 1000
+  rline = [x[0]-m*vx[0], y[0]-m*vy[0], x[0]+m*vx[0], y[0]+m*vy[0]]
+  return np.array(rline, np.int)
+
+def merge_lines(lines):
+  degMax = 1
+  disMax = 5
+
+  groups = []
+  for line in lines:
+    foundMatch = 0
+    for group in groups:
+      for gline in group:
+        deg1 = get_orientation(line)
+        deg2 = get_orientation(gline)
+        if abs(deg1 - deg2) < degMax:
+          dis = point_to_line_distance2(line[0:2], gline)
+          if dis < disMax:
+            group.append(line)
+            foundMatch = 1
+            break
+      if foundMatch: continue
+    if not foundMatch:
+        groups.append([line])
+  result = []
+  for i in groups:
+    vx, vy, x, y = cv2.fitLine(np.array(i).reshape((-1,2)), cv2.DIST_L2, 0, 0.01, 0.01)
+    m = 300
+    line = [x-m*vx[0], y-m*vy[0], x+m*vx[0], y+m*vy[0]]
+    result.append(line)
+  return np.array(result, np.int).reshape((-1,4))
+
+def merge_lines2(lines):
+  degMax = 2
+  disMax = 2
+
+  groups = []
+  for line in lines:
+    foundMatch = 0
+    for group in groups:
+      for gline in group:
+        deg1 = get_orientation(line)
+        deg2 = get_orientation(gline)
+        if abs(deg1 - deg2) < degMax:
+          if deg1 > 0:
+            dis1 = point_to_line_distance2([0, img.shape[0]], line)
+            dis2 = point_to_line_distance2([0, img.shape[0]], gline)
+          else:
+            dis1 = point_to_line_distance2([img.shape[1], img.shape[0]], line)
+            dis2 = point_to_line_distance2([img.shape[1], img.shape[0]], gline)
+          if abs(dis1 - dis2) < disMax:
+            group.append(line)
+            foundMatch = 1
+            break
+      if foundMatch: continue
+    if not foundMatch:
+        groups.append([line])
+  result = []
+  for i in groups:
+    vx, vy, x, y = cv2.fitLine(np.array(i).reshape((-1,2)), cv2.DIST_L2, 0, 0.01, 0.01)
+    m = 300
+    line = [x-m*vx[0], y-m*vy[0], x+m*vx[0], y+m*vy[0]]
+    result.append(line)
+  return np.array(result, np.int).reshape((-1,4))
+
+def generateGroundMask(img):
+  img_small = cv2.resize(img, (int(img.shape[1]/10), int(img.shape[0]/10)))
+  Z = img_small.reshape((-1,3))
+
+  # convert to np.float32
+  Z = np.float32(Z)
+
+  # define criteria, number of clusters(K) and apply kmeans()
+  criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+  K = 5
+  ret,label,center=cv2.kmeans(Z,K,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
+
+  # Now convert back into uint8, and make original image
+  label_unique = np.unique(label, return_counts=1)
+  target_label = 0
+  for idx, val in enumerate(label_unique[1]):
+    if label_unique[1][target_label] < val: target_label = idx
+  cetner2 = np.zeros((5,3), np.float32)
+  cetner2[target_label] = (255,255,255)
+  # cetner2=center
+  cetner2 = np.uint8(cetner2)
+  res = cetner2[label.flatten()]
+  res2 = res.reshape((img_small.shape))
+
+  kernel2 = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
+  res2 = cv2.dilate(res2, kernel2, iterations=2)
+  res2 = cv2.resize(res2, (img.shape[1], img.shape[0]))
+  ret, res2 = cv2.threshold(res2, 160, 255, cv2.THRESH_BINARY )
+  return res2
+
+def polar2cer(line):
+  rho, theta = line
+  a = np.cos(theta) 
+  b = np.sin(theta)
+  x0 = a * rho 
+  y0 = b * rho
+  return [
+    int(x0 + 1000 * (-b)),
+    int(y0 + 1000 * (a)),
+    int(x0 - 1000 * (-b)),
+    int(y0 - 1000 * (a))
+  ]
+
+def extend_line_w0(line, width):
+    # print('extend: ', line)
+    deg = get_orientation(line)
+    if (45 < deg <= 90):
+        return line
+    x1, y1, x2, y2 = line
+    topRate = (x2 - x1) / (x1 - 0)
+    bottomRate = (x2 - x1) / (width - x2)
+    if topRate > 0:
+        ny1 = y1 - (y2 - y1) / topRate 
+    else:
+        ny1 = y1
+    if bottomRate > 0:
+        ny2 = y2 + (y2 - y1) / bottomRate 
+    else:
+        ny2 = y2
+
+    return np.array([0, ny1, width, ny2], np.int)
+# 读入图片
+# img = cv2.imread("c2.png")
+img = cv2.imread("a-undistort.jpg")
+# img = cv2.resize(img, (1600, 1200))
 print("img shape = ", img.shape)
+
+gMask = generateGroundMask(img)
+cv2.imwrite("test2-gMask.jpg", gMask)
+
+img = cv2.bitwise_and(img, gMask)
+cv2.imwrite("test2-masked.jpg", img)
+
 
 # 中值滤波，去噪
 # img = cv2.medianBlur(img, 3)
@@ -327,71 +495,99 @@ lum = np.zeros(ycrcb.shape, dtype=np.uint8)
 cv2.mixChannels([ycrcb], [lum],[0,0])
 lum2 = np.zeros(gray.shape, dtype=np.uint8)
 lum2[:,:] = lum[:,:,0]
+
+lum2 = cv2.medianBlur(lum2, 3)
+
 # print("ycrcb = ", ycrcb)
 # print("lum = ", lum2)
 cv2.imwrite("test2-lum.jpg", cv2.cvtColor(lum2, cv2.COLOR_GRAY2BGR))
-img2 = cv2.imread("test2-pixel.jpg", cv2.IMREAD_GRAYSCALE)
-img2 = getLinePixel2(lum2)
-cv2.imwrite("test2-pixel.jpg", img2)
+# img2 = cv2.imread("test2-pixel.jpg", cv2.IMREAD_GRAYSCALE)
+binary = getLinePixel2(lum2, max(img.shape[:2])/60)
+binary_ex = getLinePixel2(lum2, max(img.shape[:2])/500)
+binary = cv2.bitwise_or(binary, binary_ex)
+cv2.imwrite("test2-pixel.jpg", binary)
 # filter = filterLinePixels(img2, lum2)
 # cv2.imwrite("test2-filter.jpg", filter)
-print("img2 = ", img2)
+print("img2 = ", binary)
 
-canny = cv2.Canny(img2, threshold1=80, threshold2=200, apertureSize=3)
+# https://stackoverflow.com/questions/42798659/how-to-remove-small-connected-objects-using-opencv
+nb_blobs, im_with_separated_blobs, stats, _ = cv2.connectedComponentsWithStats(binary)
+sizes = stats[:, -1]
+# the following lines result in taking out the background which is also considered a component, which I find for most applications to not be the expected output.
+# you may also keep the results as they are by commenting out the following lines. You'll have to update the ranges in the for loop below. 
+sizes = sizes[1:]
+nb_blobs -= 1
+
+# minimum size of particles we want to keep (number of pixels).
+# here, it's a fixed value, but you can set it as you want, eg the mean of the sizes or whatever.
+min_size = 100  
+
+# output image with only the kept components
+binary2 = np.zeros((binary.shape), np.uint8)
+# for every component in the image, keep it only if it's above min_size
+for blob in range(nb_blobs):
+    if sizes[blob] >= min_size:
+        # see description of im_with_separated_blobs above
+        binary2[im_with_separated_blobs == blob + 1] = 255
+
+# kernel2 = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+# binary2 = cv2.dilate(binary2, kernel2, iterations=2)
+
+cv2.imwrite("test2-binary2.jpg", binary2)
+
+
+
+(contours,_) = cv2.findContours(binary2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+
+binary3 = np.zeros((binary.shape), np.uint8)
+
+for contour in contours:
+  # area = cv2.contourArea(contour)
+  # perimeter = cv2.arcLength(contour,True)
+  (x,y),radius = cv2.minEnclosingCircle(contour)
+  if radius > 100 :
+    cv2.drawContours(binary3, [contour], 0, (255,255,255), -1)
+
+binary3 = cv2.bitwise_and(binary, binary3)
+cv2.imwrite("test2-binary3.jpg", binary3)
+
+
+
+canny = cv2.Canny(binary3, threshold1=80, threshold2=200, apertureSize=7)
 cv2.imwrite("test2-canny.jpg", canny)
 
 lines = cv2.HoughLinesP(canny, 
   rho=1, 
-  theta=np.pi / 180, 
-  threshold=180, 
-  minLineLength=80, 
-  maxLineGap=80)
+  theta=np.pi / 360, 
+  threshold=10, 
+  minLineLength=100, 
+  maxLineGap=10)
 lines = [i[0] for i in lines]
+
+# lines = cv2.HoughLines(canny, 
+#   1, 
+#   np.pi / 180, 
+#   150, 
+#   None, 
+#   0,
+#   0)
+# lines = [polar2cer(i[0]) for i in lines]
+
+lines = [extend_line_w0(i, img.shape[1]) for i in lines]
+
 print("lines = ", lines)
 printLine(lines, "test2-lines.jpg")
 
-lines2 = list(map(lambda x: getRefinedParameters(x, lum2), lines))
-print("lines2 = ", lines2)
-printLine(lines, "test2-lines2.jpg")
+rLines = [refineLine(i,canny) for i in lines]
+printLine(rLines, "test2-rLines.jpg")
 
-exit()
-
-# 阈值分割得到二值化图片
-# ret, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
-ret, binary = cv2.threshold(gray, 160, 255, cv2.THRESH_BINARY )
-# ret, binary = cv2.threshold(gray, 160, 255, cv2.THRESH_BINARY )
-# binary = gray
-# flood_fill(binary, 0, 0, 0, 2)
-cv2.imwrite("test2-a.jpg", binary)
-
-
-binary = img2
-
-# 膨胀操作
-kernel2 = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-bin_clo = cv2.dilate(binary, kernel2, iterations=2)
-
-# edges = cv2.Canny(binary, 55, 110)
-edges = cv2.Canny(binary, threshold1=50, threshold2=200, apertureSize=7)
-cv2.imwrite("test2-edges.jpg", edges)
-
-#HoughLinesP方法判断哪些边缘是直线
-lines = cv2.HoughLinesP(gray, 
-  rho=1, 
-  theta=np.pi / 180, 
-  threshold=90, 
-  minLineLength=80, 
-  maxLineGap=50)
-printLine([i[0] for i in lines], "test2-lines.jpg")
-
-# Merge
-
-bundler = HoughBundler(min_distance=15,min_angle=1)
-mlines = bundler.process_lines(lines)
-mlines = [i[0] for i in mlines]
-# print("mlines = ", mlines)
+mlines = merge_lines(rLines)
 
 printLine(mlines, "test2-merge.jpg")
+
+mlines = merge_lines2(rLines)
+
+printLine(mlines, "test2-merge2.jpg")
 
 #######################
 #######################
@@ -421,8 +617,8 @@ leftLines = sorted(leftLines, key=lambda i:
 rightLines = sorted(rightLines, key=lambda i: 
     distance_by_arrow([img.shape[1], img.shape[0], 0, 0],i))
 
-# leftLines = leftLines[0:10]
-# rightLines = rightLines[0:5]
+leftLines = leftLines[0:20]
+rightLines = rightLines[0:20]
 
 # 每边使用两条线进行配对
 lineSet = []
@@ -469,7 +665,7 @@ SLineSet =[
 # 左上角最大矩形
     [
         standardLines[-10],
-        standardLines[-6],
+        standardLines[-1],
         standardLines[0],
         standardLines[4],
     ],
@@ -506,15 +702,50 @@ def calcM(crossPoint):
     ], dtype='float32')
     print("sp = ", sp)
     print("crossPoint = ", crossPoint)
-    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(sp[1:], crossPoint[1:], gray.shape[::-1], None, None)
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(sp.reshape((1,-1,3)), crossPoint.reshape((1,-1,2)), gray.shape[::-1], None, None)
     R = cv2.Rodrigues(rvecs[0])[0]
     t = tvecs[0]
     Rt = np.concatenate([R,t], axis=-1) # [R|t]
     P = np.matmul(mtx,Rt) # A[R|t]
     return np.linalg.inv(np.delete(P, 2, 1))
     
+def calcM3(crossPoint):
+    crossPoint = np.array([
+        [j for j in i] for i in crossPoint
+    ], dtype='float32')
+    sp = np.array([
+        [[*j, 0] for j in i] for i in Scross_point
+    ], dtype='float32')
+    print("sp = ", sp)
+    print("crossPoint = ", crossPoint)
+    ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(sp.reshape((1,-1,3)), crossPoint.reshape((1,-1,2)), gray.shape[::-1], None, None)
+    K = mtx
+    T = tvecs[0]
+    R = cv2.Rodrigues(rvecs[0])[0]
+    Hr = np.matmul(np.matmul(K, np.linalg.inv(R)), np.linalg.inv(K))
+    C = np.matmul(-np.linalg.inv(R), T)
+    Cz = C[2]
+    l = np.array([[1,0],[0,1],[0,0]])
+    Ht = np.concatenate((l, np.matmul(-K, C/Cz)), axis=1)
+    return np.linalg.inv(np.matmul(Ht, Hr))
+    
+def calcM4(crossPoint):
+  crossPoint = np.array([
+      [j for j in i] for i in crossPoint
+  ], dtype='float32')
+  sp = np.array([
+      [[*j, 0] for j in i] for i in Scross_point
+  ], dtype='float32')
+  # M,_ = cv2.findHomography(sp.reshape((1,-1,3)), crossPoint.reshape((1,-1,2)))
+  M,_ = cv2.findHomography(sp[0].reshape((1,-1,3)), crossPoint.reshape((1,-1,2)))
+  return np.linalg.inv(M)
+  
+def calcM2(crossPoint):
+    return cv2.getPerspectiveTransform(
+        np.array(crossPoint[0], dtype='float32'),
+        np.array(Scross_point[0], dtype='float32'))
 def calcStandardLines(crossPoint):
-    M = calcM(crossPoint)
+    M = calcM4(crossPoint)
     # print("M = ", M)
     srcLines = np.array(np.reshape(standardLines, (len(standardLines)*2,2)), dtype='float32')
 
@@ -561,28 +792,14 @@ def line_intersect(s_lineset, lineset):
         
 
 def scoreCalc(crossPoint):
-
-    sLines = calcStandardLines(crossPoint)
-
-    # offscreen = []
-    # for l in sLines:
-    #     offscreen.append(lineOffscreenLen(l, img.shape[1], img.shape[0]))
-
-    # offscreen = sum(offscreen)/len(offscreen)
-
-    return line_intersect(sLines, [i[0] for i in lines]) # + offscreen
-    # print("offscreen = ", offscreen)
-    # print("offscreen = ", sum(offscreen)/len(offscreen))
-
-    sLines = np.array([[l] for l in sLines], dtype="int")
-    # print("sLines = ", sLines)
-    # print("lines = ", mlines)
-    # print("sLines = ", len(sLines))
-    # print("lines = ", len(mlines))
-    sLines = np.concatenate((sLines, mlines))
-    linesMerged = bundler.process_lines(sLines)
-    # return (offscreen * 100 + 1) * (abs(len(mlines) - len(linesMerged)))
-    return abs(len(mlines) - len(linesMerged)) + offscreen
+  sLines = calcStandardLines(crossPoint)  
+  lineImg = np.zeros((binary.shape), np.uint8)
+  for l in sLines:
+    cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
+  
+  crossImg = cv2.bitwise_and(lineImg, binary3)
+  score = len(np.where(crossImg == 255)[0])
+  return score
 
 # 对 M 进行评分
 # 1. 在画面内的部分占比
@@ -599,13 +816,13 @@ def f(param):
     subScores.append([int(idx + offset),score])
   return subScores
 
-# THREAD = 10
-# SPLIT = 45
-# with Pool(THREAD) as p:
-#   arr = []
-#   for i in range(THREAD):
-#     arr.append((i * SPLIT, corssPointSet[i * SPLIT: (i+1) * SPLIT]))
-#   scores = np.concatenate(p.map(f, arr))
+THREAD = 10
+SPLIT = 25
+with Pool(THREAD) as p:
+  arr = []
+  for i in range(THREAD):
+    arr.append((i * SPLIT, corssPointSet[i * SPLIT: (i+1) * SPLIT]))
+  scores = np.concatenate(p.map(f, arr))
         
 # for idx, cp in enumerate(corssPointSet[:300]):
 #     score = scoreCalc(cp)
@@ -615,34 +832,33 @@ def f(param):
 #     if score < 10:
 #         break
 
-# scores = sorted(scores, key=lambda i: i[1])
-# print("scores = ", scores)
-# print("idx = ", scores[0][0])
-# calcedStardardLines = calcStandardLines(corssPointSet[int(scores[0][0])])
+scores = sorted(scores, key=lambda i: -i[1])
+print("scores = ", scores)
+print("idx = ", scores[0][0])
+calcedStardardLines = calcStandardLines(corssPointSet[int(scores[0][0])])
 
-# l = [leftLines[5],leftLines[11],rightLines[3],rightLines[5]]
-l = [
-    [leftLines[1],leftLines[3],rightLines[0],rightLines[2]],
-    [leftLines[0],leftLines[6],rightLines[0],rightLines[4]],
-    # [leftLines[2],leftLines[5],rightLines[1],rightLines[6]],
-]
-c = list(map(get_cross_point, l))
-c = [get_cross_point(i) for i in l]
-c = [
-    # get_cross_point([leftLines[1],leftLines[3],rightLines[1],rightLines[3]]),
-    # get_cross_point([leftLines[3],leftLines[4],rightLines[3],rightLines[4]])
-    get_cross_point(l[0]),
-    get_cross_point(l[1])
-    # get_cross_point([leftLines[0],leftLines[2],leftLines[3],leftLines[10],rightLines[0],rightLines[2],rightLines[3],rightLines[6]])
-]
+# l = [
+#     # c2.png
+#     # [leftLines[2],leftLines[4],rightLines[0],rightLines[2]],
+#     # [leftLines[2],leftLines[8],rightLines[0],rightLines[4]],
+#     # a-undistort.jpg
+#     [leftLines[0],leftLines[2],rightLines[0],rightLines[2]],
+#     [leftLines[0],leftLines[5],rightLines[0],rightLines[4]],
+# ]
+# # c = list(map(get_cross_point, l))
+# # c = [get_cross_point(i) for i in l]
+# c = [
+#     get_cross_point(l[0]),
+#     get_cross_point(l[1])
+# ]
 
-printLine(
-    l[1] + SLineSet[1], 
-    "test2-inputlines.jpg")
-# c = get_cross_point(leftLines[1:4] + rightLines[1:4])
-calcedStardardLines = calcStandardLines(c)
-print("score = ", scoreCalc(c))
-print("calcedStardardLines = ", calcedStardardLines)
+# printLine(
+#     l[0] + l[1] + SLineSet[0]+ SLineSet[1], 
+#     "test2-inputlines.jpg")
+# # c = get_cross_point(leftLines[1:4] + rightLines[1:4])
+# calcedStardardLines = calcStandardLines(c)
+# # print("score = ", scoreCalc(c))
+# print("calcedStardardLines = ", calcedStardardLines)
 
 # ？？
 # 考虑尺寸
