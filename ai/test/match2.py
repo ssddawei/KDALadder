@@ -1,14 +1,19 @@
+import enum
 import cv2
 import numpy as np
 import os
 import math
 import csv
+import itertools
+import time
 from multiprocessing import Pool
 
 from test3 import HoughBundler
-from calcM import calcM
 
-os.chdir("/opt/test")
+if __name__ != '__main__':
+  exit()
+
+os.chdir('E:\\git\\kdaladder\\ai\\test')
 
 def flood_fill(field, x ,y, old, new):
   # we need the x and y of the start position, the old value,
@@ -465,8 +470,8 @@ def extend_line_w0(line, width):
 
     return np.array([0, ny1, width, ny2], np.int)
 # 读入图片
-# img = cv2.imread("c2.png")
-img = cv2.imread("a-undistort.jpg")
+# img = cv2.imread("sample/c2.png")
+img = cv2.imread("sample/a-undistort.jpg")
 # img = cv2.resize(img, (1600, 1200))
 print("img shape = ", img.shape)
 
@@ -581,9 +586,9 @@ printLine(lines, "test2-lines.jpg")
 rLines = [refineLine(i,canny) for i in lines]
 printLine(rLines, "test2-rLines.jpg")
 
-mlines = merge_lines(rLines)
+# mlines = merge_lines(rLines)
 
-printLine(mlines, "test2-merge.jpg")
+# printLine(mlines, "test2-merge.jpg")
 
 mlines = merge_lines2(rLines)
 
@@ -612,39 +617,22 @@ def distance_by_arrow(arrow, line):
     )
   return dis
 
+# leftLines = sorted(leftLines, key=lambda i: 
+#     distance_by_arrow([0, img.shape[0], img.shape[1], 0],i))
+# rightLines = sorted(rightLines, key=lambda i: 
+#     distance_by_arrow([img.shape[1], img.shape[0], 0, 0],i))
+
 leftLines = sorted(leftLines, key=lambda i: 
-    distance_by_arrow([0, img.shape[0], img.shape[1], 0],i))
+    point_to_line_distance2([0, img.shape[0]],i))
 rightLines = sorted(rightLines, key=lambda i: 
-    distance_by_arrow([img.shape[1], img.shape[0], 0, 0],i))
+    point_to_line_distance2([img.shape[1], img.shape[0]],i))
 
-leftLines = leftLines[0:20]
-rightLines = rightLines[0:20]
+leftLines = leftLines[0:15]
+rightLines = rightLines[0:15]
 
-# 每边使用两条线进行配对
-lineSet = []
-for iL1 in range(len(leftLines) - 1):
-    for iL2 in range(iL1+1, len(leftLines)):
-        # if bundler.get_distance(leftLines[iL1], leftLines[iL2]) < 10: continue
-        for iR1 in range(len(rightLines) - 1):
-            for iR2 in range(iR1+1, len(rightLines)):
-                # if bundler.get_distance(rightLines[iR1], rightLines[iR2]) < 10: continue
-                lineSet.append([leftLines[iL1], leftLines[iL2], rightLines[iR1], rightLines[iR2]])
-
-lineSet = sorted(lineSet, key=lambda i: 
-    distance_by_arrow([0, img.shape[0], img.shape[1], 0],i[0]) +
-    distance_by_arrow([0, img.shape[0], img.shape[1], 0],i[1]) +
-    distance_by_arrow([img.shape[1], img.shape[0], 0, 0],i[2]) +
-    distance_by_arrow([img.shape[1], img.shape[0], 0, 0],i[3])
-  )
 
 printLine(leftLines, "test2-left.jpg")
 printLine(rightLines, "test2-right.jpg")
-# printLine(leftLines[0:5], "test2-left.jpg")
-# printLine(rightLines[0:5], "test2-right.jpg")
-
-# 得到四个交点，用这四个点计算映射矩阵
-corssPointSet = list(map(get_cross_point, lineSet))
-print("corssPointSet = ", np.asarray(corssPointSet))
 
 standardLines = []
 with open('standard.csv') as csvfile:
@@ -654,45 +642,6 @@ with open('standard.csv') as csvfile:
 
 print("standardLines = ", np.asarray(standardLines))
 
-SLineSet =[
-# 左上角矩形
-    [
-        standardLines[-10],
-        standardLines[-8],
-        standardLines[0],
-        standardLines[2],
-    ],
-# 左上角最大矩形
-    [
-        standardLines[-10],
-        standardLines[-1],
-        standardLines[0],
-        standardLines[4],
-    ],
-# 左上角两个矩形
-    # [
-    #     # standardLines[-2],
-    #     # standardLines[-4],
-    #     standardLines[-7],
-    #     standardLines[-6],
-    #     # standardLines[1],
-    #     # standardLines[3],
-    #     standardLines[3],
-    #     standardLines[4],
-    # ],
-]
-print("SLineSet = ", np.asarray(SLineSet))
-Scross_point = list(map(get_cross_point, SLineSet))
-
-Scross_point = np.array(Scross_point, dtype='float32')
-print("Scross_point = ", Scross_point)
-
-# M =  [[1.08433481e+03 0.00000000e+00 9.23899379e+02]
-#  [0.00000000e+00 1.44395319e+02 4.92158299e+02]
-#  [0.00000000e+00 0.00000000e+00 1.00000000e+00]]
-# M =  [[ 1.86969389e-01  1.25285042e-01 -4.39081715e+02]
-#  [ 2.08050410e-01 -1.60330178e+00  7.64957189e+02]
-#  [ 1.88111183e-05 -2.15842946e-03  1.00000000e+00]]
 def calcM(crossPoint):
     crossPoint = np.array([
         [j for j in i] for i in crossPoint
@@ -729,23 +678,17 @@ def calcM3(crossPoint):
     Ht = np.concatenate((l, np.matmul(-K, C/Cz)), axis=1)
     return np.linalg.inv(np.matmul(Ht, Hr))
     
-def calcM4(crossPoint):
-  crossPoint = np.array([
-      [j for j in i] for i in crossPoint
-  ], dtype='float32')
-  sp = np.array([
-      [[*j, 0] for j in i] for i in Scross_point
-  ], dtype='float32')
+def calcM4(modelCrossPoint, crossPoint):
   # M,_ = cv2.findHomography(sp.reshape((1,-1,3)), crossPoint.reshape((1,-1,2)))
-  M,_ = cv2.findHomography(sp[0].reshape((1,-1,3)), crossPoint.reshape((1,-1,2)))
+  M,_ = cv2.findHomography(np.float32(modelCrossPoint), np.float32(crossPoint))
   return np.linalg.inv(M)
   
 def calcM2(crossPoint):
     return cv2.getPerspectiveTransform(
         np.array(crossPoint[0], dtype='float32'),
         np.array(Scross_point[0], dtype='float32'))
-def calcStandardLines(crossPoint):
-    M = calcM4(crossPoint)
+def calcStandardLines(modelCrossPoint, crossPoint):
+    M = calcM4(modelCrossPoint, crossPoint)
     # print("M = ", M)
     srcLines = np.array(np.reshape(standardLines, (len(standardLines)*2,2)), dtype='float32')
 
@@ -791,79 +734,91 @@ def line_intersect(s_lineset, lineset):
     return notmatch
         
 
-def scoreCalc(crossPoint):
-  sLines = calcStandardLines(crossPoint)  
+def scoreCalc(modelCrossPoint, crossPoint):
+  sLines = calcStandardLines(modelCrossPoint, crossPoint)  
   lineImg = np.zeros((binary.shape), np.uint8)
+  # for l in sLines[0:4]:
+  #   cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
+  # for l in sLines[12:16]:
+  #   cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
   for l in sLines:
     cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
   
-  crossImg = cv2.bitwise_and(lineImg, binary3)
+  crossImg = cv2.bitwise_and(lineImg, canny)
   score = len(np.where(crossImg == 255)[0])
   return score
 
-# 对 M 进行评分
-# 1. 在画面内的部分占比
-# 2. 线条去重后，多出来的线条数（越少越匹配）
-scores = []
 
-print("corssPointSet size = ", len(corssPointSet))
-def f(param):
-  offset, crossPointSubset = param
-  subScores = []
-  print("corssPointSet size = ", len(crossPointSubset))
-  for idx, cp in enumerate(crossPointSubset):
-    score = scoreCalc(cp)
-    subScores.append([int(idx + offset),score])
-  return subScores
+def fitModel(preMatchLines, modelLines, imgLines):
+  '''
+  preMatchLines: 已有的配对
+  modelLines: 要配对的model lines
+  imgLines: 要配对的图片 lines
 
-THREAD = 10
-SPLIT = 25
-with Pool(THREAD) as p:
-  arr = []
-  for i in range(THREAD):
-    arr.append((i * SPLIT, corssPointSet[i * SPLIT: (i+1) * SPLIT]))
-  scores = np.concatenate(p.map(f, arr))
-        
-# for idx, cp in enumerate(corssPointSet[:300]):
-#     score = scoreCalc(cp)
-#     scores.append([idx,score])
-#     # if score == 0:
-#     #     break
-#     if score < 10:
-#         break
+  return:
+    matchLines: 配对成功的 lines
+    standardLines: 结果 lines
+  '''
+  pmLeftLines, pmRightLines = list(preMatchLines[0])
+  pLeftLines, pRightLines = list(preMatchLines[1])
+  mLeftLines, mRightLines = list(modelLines)
+  leftLines, rightLines = list(imgLines)
 
-scores = sorted(scores, key=lambda i: -i[1])
-print("scores = ", scores)
-print("idx = ", scores[0][0])
-calcedStardardLines = calcStandardLines(corssPointSet[int(scores[0][0])])
+  mlength = len(pmLeftLines) + len(mLeftLines)
+  
+  # 对左右两边的线条进行组合
+  leftLinesCom = list(itertools.combinations(range(len(leftLines)), mlength))
+  leftLinesCom = sorted(leftLinesCom, key = lambda i: max(i))
+  leftLinesCom = [[leftLines[j] for j in i] for i in leftLinesCom]
 
-# l = [
-#     # c2.png
-#     # [leftLines[2],leftLines[4],rightLines[0],rightLines[2]],
-#     # [leftLines[2],leftLines[8],rightLines[0],rightLines[4]],
-#     # a-undistort.jpg
-#     [leftLines[0],leftLines[2],rightLines[0],rightLines[2]],
-#     [leftLines[0],leftLines[5],rightLines[0],rightLines[4]],
-# ]
-# # c = list(map(get_cross_point, l))
-# # c = [get_cross_point(i) for i in l]
-# c = [
-#     get_cross_point(l[0]),
-#     get_cross_point(l[1])
-# ]
+  rightLinesCom = list(itertools.combinations(range(len(rightLines)), mlength))
+  rightLinesCom = sorted(rightLinesCom, key = lambda i: max(i))
+  rightLinesCom = [[rightLines[j] for j in i] for i in rightLinesCom]
 
-# printLine(
-#     l[0] + l[1] + SLineSet[0]+ SLineSet[1], 
-#     "test2-inputlines.jpg")
-# # c = get_cross_point(leftLines[1:4] + rightLines[1:4])
-# calcedStardardLines = calcStandardLines(c)
-# # print("score = ", scoreCalc(c))
-# print("calcedStardardLines = ", calcedStardardLines)
+  # 从小到大的组合两个数组，目的是优先检测低索引的组合
+  lineSet = itertools.product(range(len(leftLinesCom)), range(len(rightLinesCom)))
+  lineSet = sorted(lineSet, key = lambda i: max(i))
+  lineSet = [(leftLinesCom[i[0]], rightLinesCom[i[1]]) for i in lineSet]
 
-# ？？
-# 考虑尺寸
-# 考虑使用更多的点位，提高 M 的准确率
-# 尝试使用 caliCamera 提供多组数据
-# 尝试一下 3x3 的9个点进行 caliCamera
+  # 获取imglines交点
+  imgCrossSet = list(map(lambda i:
+    [line_intersection(j[0], j[1]) for j in itertools.product(i[0], i[1])], lineSet
+  ))
+  # 获取modellines交点
+  modelCross = [line_intersection(j[0], j[1]) for j in itertools.product(pmLeftLines + mLeftLines, pmRightLines + mRightLines)]
+  
 
+  # 计算分数
+  # scores = [(idx, scoreCalc(modelCross, i)) for idx,i in enumerate(imgCrossSet)]
+  scores = []
+  best = 0
+  for idx,i in enumerate(imgCrossSet):
+    score = scoreCalc(modelCross, i)
+    scores.append((idx, score))
+    if score > best:
+      best = score
+      calcedStardardLines = calcStandardLines(modelCross, imgCrossSet[int(idx)])
+      print("found best: ", idx)
+      printLine(list(calcedStardardLines) + list(np.reshape(lineSet[idx],(-1,4))), "test2-best.jpg")
+      # time.sleep(1)
+     
+  scores = sorted(scores, key=lambda i: -i[1])
+  calcedStardardLines = calcStandardLines(modelCross, imgCrossSet[int(scores[0][0])])
+  return calcedStardardLines
+    
+ModelLines =[
+# 左上角矩形
+    [
+        standardLines[-10],
+        standardLines[-8],
+        standardLines[-5],
+    ],
+    [
+        standardLines[0],
+        standardLines[2],
+        standardLines[4],
+    ]
+]
+
+calcedStardardLines = fitModel([[[],[]],[[],[]]], ModelLines, [leftLines, rightLines])
 printLine(calcedStardardLines, "test2-standard.jpg")
