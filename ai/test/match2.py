@@ -282,6 +282,10 @@ def point_to_line_distance2(point, line):
   p2 = np.array(line[2:4])
   return np.linalg.norm(abs(np.cross(p2-p1, p1-p3)) / np.linalg.norm(p2-p1))
 
+def point_to_line_distance3(point, line):
+  dis1 = math.sqrt(abs(point[0] - line[0]) ** 2 + abs(point[1] - line[1]) ** 2)
+  dis2 = math.sqrt(abs(point[0] - line[2]) ** 2 + abs(point[1] - line[3]) ** 2)
+  return min(dis1, dis2)
 # print(point_to_line_distance2([0,2],[1,1,2,0]))
 
 def getClosePointsMatrix(line, binaryImage):
@@ -578,7 +582,7 @@ lines = [i[0] for i in lines]
 #   0)
 # lines = [polar2cer(i[0]) for i in lines]
 
-lines = [extend_line_w0(i, img.shape[1]) for i in lines]
+# lines = [extend_line_w0(i, img.shape[1]) for i in lines]
 
 print("lines = ", lines)
 printLine(lines, "test2-lines.jpg")
@@ -593,6 +597,8 @@ printLine(rLines, "test2-rLines.jpg")
 mlines = merge_lines2(rLines)
 
 printLine(mlines, "test2-merge2.jpg")
+
+
 
 #######################
 #######################
@@ -623,12 +629,12 @@ def distance_by_arrow(arrow, line):
 #     distance_by_arrow([img.shape[1], img.shape[0], 0, 0],i))
 
 leftLines = sorted(leftLines, key=lambda i: 
-    point_to_line_distance2([0, img.shape[0]],i))
+    point_to_line_distance3([0, img.shape[0]],i))
 rightLines = sorted(rightLines, key=lambda i: 
-    point_to_line_distance2([img.shape[1], img.shape[0]],i))
+    point_to_line_distance3([img.shape[1], img.shape[0]],i))
 
-leftLines = leftLines[0:15]
-rightLines = rightLines[0:15]
+# leftLines = leftLines[0:5]
+# rightLines = rightLines[0:5]
 
 
 printLine(leftLines, "test2-left.jpg")
@@ -737,10 +743,10 @@ def line_intersect(s_lineset, lineset):
 def scoreCalc(modelCrossPoint, crossPoint):
   sLines = calcStandardLines(modelCrossPoint, crossPoint)  
   lineImg = np.zeros((binary.shape), np.uint8)
-  # for l in sLines[0:4]:
-  #   cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
-  # for l in sLines[12:16]:
-  #   cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
+  # for l in sLines[0:2]:
+  #   cv2.line(lineImg, l[0:2], l[2:4], 255, 2)
+  # for l in sLines[12:14]:
+  #   cv2.line(lineImg, l[0:2], l[2:4], 255, 2)
   for l in sLines:
     cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
   
@@ -748,6 +754,24 @@ def scoreCalc(modelCrossPoint, crossPoint):
   score = len(np.where(crossImg == 255)[0])
   return score
 
+def findBiggestRect(leftLines, rightLines):
+   
+  # 对左右两边的线条进行组合
+  leftLinesCom = [[leftLines[i], leftLines[i+1]] for i in range(len(leftLines)-1)]
+  rightLinesCom = [[rightLines[i], rightLines[i+1]] for i in range(len(rightLines)-1)]
+
+  # 从小到大的组合两个数组，目的是优先检测低索引的组合
+  lineSet = itertools.product(range(len(leftLinesCom)), range(len(rightLinesCom)))
+  lineSet = sorted(lineSet, key = lambda i: max(i))
+  lineSet = [(leftLinesCom[i[0]], rightLinesCom[i[1]]) for i in lineSet]
+
+  imgCrossSet = list(map(lambda i:
+    [line_intersection(j[0], j[1]) for j in itertools.product(i[0], i[1])], lineSet
+  ))
+
+  areaSet = list(map(lambda i:(i[0], cv2.contourArea(np.float32(i[1]))), enumerate(imgCrossSet)))
+  areaSet = sorted(areaSet, key = lambda i: -i[1])
+  return lineSet[areaSet[0][0]]
 
 def fitModel(preMatchLines, modelLines, imgLines):
   '''
@@ -792,6 +816,7 @@ def fitModel(preMatchLines, modelLines, imgLines):
   # scores = [(idx, scoreCalc(modelCross, i)) for idx,i in enumerate(imgCrossSet)]
   scores = []
   best = 0
+  print("imgCrossSet size = ", len(imgCrossSet))
   for idx,i in enumerate(imgCrossSet):
     score = scoreCalc(modelCross, i)
     scores.append((idx, score))
@@ -799,6 +824,7 @@ def fitModel(preMatchLines, modelLines, imgLines):
       best = score
       calcedStardardLines = calcStandardLines(modelCross, imgCrossSet[int(idx)])
       print("found best: ", idx)
+      print("found score: ", best)
       printLine(list(calcedStardardLines) + list(np.reshape(lineSet[idx],(-1,4))), "test2-best.jpg")
       # time.sleep(1)
      
@@ -820,5 +846,8 @@ ModelLines =[
     ]
 ]
 
+binggestRect = findBiggestRect(leftLines, rightLines)
+printLine(np.array(binggestRect).reshape((-1,4)), "test2-biggestRectLines.jpg")
+exit()
 calcedStardardLines = fitModel([[[],[]],[[],[]]], ModelLines, [leftLines, rightLines])
 printLine(calcedStardardLines, "test2-standard.jpg")
