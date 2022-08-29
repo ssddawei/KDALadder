@@ -6,6 +6,7 @@ import math
 import csv
 import itertools
 import time
+import random
 from multiprocessing import Pool
 
 from test3 import HoughBundler
@@ -13,7 +14,8 @@ from test3 import HoughBundler
 if __name__ != '__main__':
   exit()
 
-os.chdir('E:\\git\\kdaladder\\ai\\test')
+# os.chdir('E:\\git\\kdaladder\\ai\\test')
+os.chdir('/opt/test')
 
 def flood_fill(field, x ,y, old, new):
   # we need the x and y of the start position, the old value,
@@ -157,7 +159,7 @@ def getLinePixel2(img, T):
 
   T = int(T)
   Threshold = 50
-  diffThreshold = 20
+  diffThreshold = 10
 
   ret = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8) 
   matrix = np.asarray(img, dtype=np.int)
@@ -474,16 +476,16 @@ def extend_line_w0(line, width):
 
     return np.array([0, ny1, width, ny2], np.int)
 # 读入图片
-# img = cv2.imread("sample/c2.png")
-img = cv2.imread("sample/a-undistort.jpg")
-# img = cv2.resize(img, (1600, 1200))
+img = cv2.imread("sample/b7-2.png")
+# img = cv2.imread("a-undistort.jpg")
+# img = cv2.resize(img, (1280, int(1280*img.shape[0]/img.shape[1])), interpolation = cv2.INTER_LINEAR_EXACT)
 print("img shape = ", img.shape)
 
-gMask = generateGroundMask(img)
-cv2.imwrite("test2-gMask.jpg", gMask)
+# gMask = generateGroundMask(img)
+# cv2.imwrite("test2-gMask.jpg", gMask)
 
-img = cv2.bitwise_and(img, gMask)
-cv2.imwrite("test2-masked.jpg", img)
+# img = cv2.bitwise_and(img, gMask)
+# cv2.imwrite("test2-masked.jpg", img)
 
 
 # 中值滤波，去噪
@@ -500,10 +502,15 @@ cv2.imwrite("test2-gray.jpg", gray)
   # mixChannels(&frame, 1, &luminanceChannel, 1, from_to, 1);
 
 ycrcb = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
-lum = np.zeros(ycrcb.shape, dtype=np.uint8)
-cv2.mixChannels([ycrcb], [lum],[0,0])
+
+cr = np.array(ycrcb[:,:,1], np.int)
+cb = np.array(ycrcb[:,:,2], np.int)
+white = cv2.inRange(cr - cb, -30, 30)
+
 lum2 = np.zeros(gray.shape, dtype=np.uint8)
-lum2[:,:] = lum[:,:,0]
+lum2[:,:] = ycrcb[:,:,0]
+
+lum2 = cv2.bitwise_and(lum2, lum2, mask=white)
 
 lum2 = cv2.medianBlur(lum2, 3)
 
@@ -512,7 +519,7 @@ lum2 = cv2.medianBlur(lum2, 3)
 cv2.imwrite("test2-lum.jpg", cv2.cvtColor(lum2, cv2.COLOR_GRAY2BGR))
 # img2 = cv2.imread("test2-pixel.jpg", cv2.IMREAD_GRAYSCALE)
 binary = getLinePixel2(lum2, max(img.shape[:2])/60)
-binary_ex = getLinePixel2(lum2, max(img.shape[:2])/500)
+binary_ex = getLinePixel2(lum2, max(img.shape[:2])/600)
 binary = cv2.bitwise_or(binary, binary_ex)
 cv2.imwrite("test2-pixel.jpg", binary)
 # filter = filterLinePixels(img2, lum2)
@@ -533,33 +540,64 @@ min_size = 100
 
 # output image with only the kept components
 binary2 = np.zeros((binary.shape), np.uint8)
+blobDrawing = np.zeros((img.shape), np.uint8)
 # for every component in the image, keep it only if it's above min_size
 for blob in range(nb_blobs):
     if sizes[blob] >= min_size:
         # see description of im_with_separated_blobs above
         binary2[im_with_separated_blobs == blob + 1] = 255
 
+        coords = np.flip(np.column_stack(np.where(im_with_separated_blobs == blob+1)), axis = 1)
+        (x,y),radius = cv2.minEnclosingCircle(coords)
+        # area = cv2.contourArea(coords)
+        if radius > max(binary.shape[:2])/20 :#and area < (binary.shape[0]*binary.shape[0])/20:
+            blobDrawing[im_with_separated_blobs == blob + 1] = (
+              random.randint(0,255),random.randint(0,255),random.randint(0,255))
+
+cv2.imwrite("test2-blobDrawing.jpg", blobDrawing)
+exit()
 # kernel2 = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-# binary2 = cv2.dilate(binary2, kernel2, iterations=2)
+# # binary2 = cv2.dilate(binary2, kernel2, iterations=2)
+# binary2 = cv2.erode(binary2, kernel2, iterations=int(max(binary.shape[:2])/120/4))
 
 cv2.imwrite("test2-binary2.jpg", binary2)
 
+binary2 = cv2.resize(binary2,np.int32((binary2.shape[1]/2,binary2.shape[0]/2)))
+binary = cv2.resize(binary,np.int32((binary.shape[1]/2,binary.shape[0]/2)))
 
-
-(contours,_) = cv2.findContours(binary2, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+(contours,hierarchy) = cv2.findContours(binary2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+hierarchy = hierarchy[0]
 
 binary3 = np.zeros((binary.shape), np.uint8)
 
-for contour in contours:
+# Draw contours
+drawing = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
+for i in range(len(contours)):
+    # if hierarchy[i][2] > 0:
+    #   continue
+    (x,y),radius = cv2.minEnclosingCircle(contours[i])
+    if radius < max(binary.shape[:2])/20 :
+      continue
+    color = random.randint(0,256)
+    if hierarchy[i][2] < 0 and hierarchy[i][3] < 0:
+        cv2.drawContours(drawing, contours, i, (0, 0, color), -1)
+    else:
+        cv2.drawContours(drawing, contours, i, (0, color, 0), -1)
+
+    # color = (random.randint(0,256), random.randint(0,256), random.randint(0,256))
+    # cv2.drawContours(drawing, contours, i, color, -1)
+cv2.imwrite("test2-contours.jpg", drawing)
+for i in range(len(contours)):
   # area = cv2.contourArea(contour)
   # perimeter = cv2.arcLength(contour,True)
-  (x,y),radius = cv2.minEnclosingCircle(contour)
-  if radius > 100 :
-    cv2.drawContours(binary3, [contour], 0, (255,255,255), -1)
+  (x,y),radius = cv2.minEnclosingCircle(contours[i])
+  if radius > max(binary.shape[:2])/2 :
+    cv2.drawContours(binary3, contours, i, 255, 2)
 
-binary3 = cv2.bitwise_and(binary, binary3)
+# binary3 = cv2.bitwise_and(binary2, binary3)
 cv2.imwrite("test2-binary3.jpg", binary3)
 
+exit()
 
 
 canny = cv2.Canny(binary3, threshold1=80, threshold2=200, apertureSize=7)
@@ -569,7 +607,7 @@ lines = cv2.HoughLinesP(canny,
   rho=1, 
   theta=np.pi / 360, 
   threshold=10, 
-  minLineLength=100, 
+  minLineLength=10, 
   maxLineGap=10)
 lines = [i[0] for i in lines]
 
@@ -633,8 +671,8 @@ leftLines = sorted(leftLines, key=lambda i:
 rightLines = sorted(rightLines, key=lambda i: 
     point_to_line_distance3([img.shape[1], img.shape[0]],i))
 
-# leftLines = leftLines[0:5]
-# rightLines = rightLines[0:5]
+leftLines = leftLines[0:15]
+rightLines = rightLines[0:15]
 
 
 printLine(leftLines, "test2-left.jpg")
@@ -826,7 +864,7 @@ def fitModel(preMatchLines, modelLines, imgLines):
       print("found best: ", idx)
       print("found score: ", best)
       printLine(list(calcedStardardLines) + list(np.reshape(lineSet[idx],(-1,4))), "test2-best.jpg")
-      # time.sleep(1)
+      time.sleep(1)
      
   scores = sorted(scores, key=lambda i: -i[1])
   calcedStardardLines = calcStandardLines(modelCross, imgCrossSet[int(scores[0][0])])
@@ -835,19 +873,19 @@ def fitModel(preMatchLines, modelLines, imgLines):
 ModelLines =[
 # 左上角矩形
     [
-        standardLines[-10],
+        # standardLines[-10],
         standardLines[-8],
         standardLines[-5],
     ],
     [
-        standardLines[0],
+        # standardLines[0],
         standardLines[2],
         standardLines[4],
     ]
 ]
 
-binggestRect = findBiggestRect(leftLines, rightLines)
-printLine(np.array(binggestRect).reshape((-1,4)), "test2-biggestRectLines.jpg")
-exit()
+# binggestRect = findBiggestRect(leftLines, rightLines)
+# printLine(np.array(binggestRect).reshape((-1,4)), "test2-biggestRectLines.jpg")
+# exit()
 calcedStardardLines = fitModel([[[],[]],[[],[]]], ModelLines, [leftLines, rightLines])
 printLine(calcedStardardLines, "test2-standard.jpg")
