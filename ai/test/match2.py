@@ -14,8 +14,8 @@ from test3 import HoughBundler
 if __name__ != '__main__':
   exit()
 
-# os.chdir('E:\\git\\kdaladder\\ai\\test')
-os.chdir('/opt/test')
+os.chdir('E:\\git\\kdaladder\\ai\\test')
+# os.chdir('/opt/test')
 
 def flood_fill(field, x ,y, old, new):
   # we need the x and y of the start position, the old value,
@@ -159,7 +159,7 @@ def getLinePixel2(img, T):
 
   T = int(T)
   Threshold = 50
-  diffThreshold = 10
+  diffThreshold = 20
 
   ret = np.zeros((img.shape[0], img.shape[1]), dtype=np.uint8) 
   matrix = np.asarray(img, dtype=np.int)
@@ -423,7 +423,7 @@ def generateGroundMask(img):
 
   # define criteria, number of clusters(K) and apply kmeans()
   criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-  K = 5
+  K = 10
   ret,label,center=cv2.kmeans(Z,K,None,criteria,10,cv2.KMEANS_RANDOM_CENTERS)
 
   # Now convert back into uint8, and make original image
@@ -431,7 +431,7 @@ def generateGroundMask(img):
   target_label = 0
   for idx, val in enumerate(label_unique[1]):
     if label_unique[1][target_label] < val: target_label = idx
-  cetner2 = np.zeros((5,3), np.float32)
+  cetner2 = np.zeros((K,3), np.float32)
   cetner2[target_label] = (255,255,255)
   # cetner2=center
   cetner2 = np.uint8(cetner2)
@@ -475,11 +475,44 @@ def extend_line_w0(line, width):
         ny2 = y2
 
     return np.array([0, ny1, width, ny2], np.int)
+
+    
+def detect_horizon_line(image_grayscaled):
+    """Detect the horizon's starting and ending points in the given image
+    The horizon line is detected by applying Otsu's threshold method to
+    separate the sky from the remainder of the image.
+    :param image_grayscaled: grayscaled image to detect the horizon on, of
+     shape (height, width)
+    :type image_grayscale: np.ndarray of dtype uint8
+    :return: the (x1, x2, y1, y2) coordinates for the starting and ending
+     points of the detected horizon line
+    :rtype: tuple(int)
+    """
+
+    msg = ('`image_grayscaled` should be a grayscale, 2-dimensional image '
+           'of shape (height, width).')
+    assert image_grayscaled.ndim == 2, msg
+    image_blurred = cv2.GaussianBlur(image_grayscaled, ksize=(3, 3), sigmaX=0)
+
+    _, image_thresholded = cv2.threshold(
+        image_blurred, thresh=0, maxval=1,
+        type=cv2.THRESH_BINARY+cv2.THRESH_OTSU
+    )
+    image_thresholded = image_thresholded - 1
+    image_closed = cv2.morphologyEx(image_thresholded, cv2.MORPH_CLOSE,
+                                    kernel=np.ones((9, 9), np.uint8))
+
+    horizon_x1 = 0
+    horizon_x2 = image_grayscaled.shape[1] - 1
+    horizon_y1 = max(np.where(image_closed[:, horizon_x1] == 0)[0])
+    horizon_y2 = max(np.where(image_closed[:, horizon_x2] == 0)[0])
+
+    return horizon_x1, horizon_x2, horizon_y1, horizon_y2
 # 读入图片
-img = cv2.imread("sample/b7-2.png")
-# img = cv2.imread("a-undistort.jpg")
+# img = cv2.imread("sample/b7-2.png")
+img = cv2.imread("sample/a-undistort.jpg")
 # img = cv2.resize(img, (1280, int(1280*img.shape[0]/img.shape[1])), interpolation = cv2.INTER_LINEAR_EXACT)
-print("img shape = ", img.shape)
+# print("img shape = ", img.shape)
 
 # gMask = generateGroundMask(img)
 # cv2.imwrite("test2-gMask.jpg", gMask)
@@ -494,13 +527,6 @@ gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 cv2.imwrite("test2-gray.jpg", gray)
 
-
-  # Mat imgYCbCr;
-  # cvtColor(frame, imgYCbCr, CV_RGB2YCrCb);
-  # Mat luminanceChannel(frame.rows, frame.cols, CV_8UC1);
-  # const int from_to[2] = {0, 0};
-  # mixChannels(&frame, 1, &luminanceChannel, 1, from_to, 1);
-
 ycrcb = cv2.cvtColor(img, cv2.COLOR_BGR2YCrCb)
 
 cr = np.array(ycrcb[:,:,1], np.int)
@@ -510,17 +536,21 @@ white = cv2.inRange(cr - cb, -30, 30)
 lum2 = np.zeros(gray.shape, dtype=np.uint8)
 lum2[:,:] = ycrcb[:,:,0]
 
-lum2 = cv2.bitwise_and(lum2, lum2, mask=white)
+# lum2 = cv2.bitwise_and(lum2, lum2, mask=white)
 
 lum2 = cv2.medianBlur(lum2, 3)
 
-# print("ycrcb = ", ycrcb)
-# print("lum = ", lum2)
 cv2.imwrite("test2-lum.jpg", cv2.cvtColor(lum2, cv2.COLOR_GRAY2BGR))
+
+
 # img2 = cv2.imread("test2-pixel.jpg", cv2.IMREAD_GRAYSCALE)
 binary = getLinePixel2(lum2, max(img.shape[:2])/60)
 binary_ex = getLinePixel2(lum2, max(img.shape[:2])/600)
 binary = cv2.bitwise_or(binary, binary_ex)
+
+
+binary = cv2.bitwise_and(binary, binary, mask=white)
+
 cv2.imwrite("test2-pixel.jpg", binary)
 # filter = filterLinePixels(img2, lum2)
 # cv2.imwrite("test2-filter.jpg", filter)
@@ -545,70 +575,73 @@ blobDrawing = np.zeros((img.shape), np.uint8)
 for blob in range(nb_blobs):
     if sizes[blob] >= min_size:
         # see description of im_with_separated_blobs above
-        binary2[im_with_separated_blobs == blob + 1] = 255
 
         coords = np.flip(np.column_stack(np.where(im_with_separated_blobs == blob+1)), axis = 1)
         (x,y),radius = cv2.minEnclosingCircle(coords)
         # area = cv2.contourArea(coords)
-        if radius > max(binary.shape[:2])/20 :#and area < (binary.shape[0]*binary.shape[0])/20:
-            blobDrawing[im_with_separated_blobs == blob + 1] = (
-              random.randint(0,255),random.randint(0,255),random.randint(0,255))
+        if radius > max(binary.shape[:2])/10 :#and area < (binary.shape[0]*binary.shape[0])/20:
+          binary2[im_with_separated_blobs == blob + 1] = 255
+          blobDrawing[im_with_separated_blobs == blob + 1] = (
+            random.randint(0,255),random.randint(0,255),random.randint(0,255))
 
 cv2.imwrite("test2-blobDrawing.jpg", blobDrawing)
-exit()
+
 # kernel2 = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
-# # binary2 = cv2.dilate(binary2, kernel2, iterations=2)
+# binary2 = cv2.dilate(binary2, kernel2, iterations=int(max(binary.shape[:2])/120))
 # binary2 = cv2.erode(binary2, kernel2, iterations=int(max(binary.shape[:2])/120/4))
+
 
 cv2.imwrite("test2-binary2.jpg", binary2)
 
-binary2 = cv2.resize(binary2,np.int32((binary2.shape[1]/2,binary2.shape[0]/2)))
-binary = cv2.resize(binary,np.int32((binary.shape[1]/2,binary.shape[0]/2)))
 
-(contours,hierarchy) = cv2.findContours(binary2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-hierarchy = hierarchy[0]
+# binary2 = cv2.resize(binary2,np.int32((binary2.shape[1]/2,binary2.shape[0]/2)))
+# binary = cv2.resize(binary,np.int32((binary.shape[1]/2,binary.shape[0]/2)))
 
-binary3 = np.zeros((binary.shape), np.uint8)
+# (contours,hierarchy) = cv2.findContours(binary2, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
+# hierarchy = hierarchy[0]
 
-# Draw contours
-drawing = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-for i in range(len(contours)):
-    # if hierarchy[i][2] > 0:
-    #   continue
-    (x,y),radius = cv2.minEnclosingCircle(contours[i])
-    if radius < max(binary.shape[:2])/20 :
-      continue
-    color = random.randint(0,256)
-    if hierarchy[i][2] < 0 and hierarchy[i][3] < 0:
-        cv2.drawContours(drawing, contours, i, (0, 0, color), -1)
-    else:
-        cv2.drawContours(drawing, contours, i, (0, color, 0), -1)
+# binary3 = np.zeros((binary.shape), np.uint8)
 
-    # color = (random.randint(0,256), random.randint(0,256), random.randint(0,256))
-    # cv2.drawContours(drawing, contours, i, color, -1)
-cv2.imwrite("test2-contours.jpg", drawing)
-for i in range(len(contours)):
-  # area = cv2.contourArea(contour)
-  # perimeter = cv2.arcLength(contour,True)
-  (x,y),radius = cv2.minEnclosingCircle(contours[i])
-  if radius > max(binary.shape[:2])/2 :
-    cv2.drawContours(binary3, contours, i, 255, 2)
+# # Draw contours
+# drawing = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
+# for i in range(len(contours)):
+#     # if hierarchy[i][2] > 0:
+#     #   continue
+#     (x,y),radius = cv2.minEnclosingCircle(contours[i])
+#     if radius < max(binary.shape[:2])/20 :
+#       continue
+#     color = random.randint(0,256)
+#     if hierarchy[i][2] < 0 and hierarchy[i][3] < 0:
+#         cv2.drawContours(drawing, contours, i, (0, 0, color), -1)
+#     else:
+#         cv2.drawContours(drawing, contours, i, (0, color, 0), -1)
 
-# binary3 = cv2.bitwise_and(binary2, binary3)
-cv2.imwrite("test2-binary3.jpg", binary3)
+#     # color = (random.randint(0,256), random.randint(0,256), random.randint(0,256))
+#     # cv2.drawContours(drawing, contours, i, color, -1)
+# cv2.imwrite("test2-contours.jpg", drawing)
+# for i in range(len(contours)):
+#   # area = cv2.contourArea(contour)
+#   # perimeter = cv2.arcLength(contour,True)
+#   (x,y),radius = cv2.minEnclosingCircle(contours[i])
+#   if radius > max(binary.shape[:2])/2 :
+#     cv2.drawContours(binary3, contours, i, 255, 2)
 
-exit()
+# # binary3 = cv2.bitwise_and(binary2, binary3)
+# cv2.imwrite("test2-binary3.jpg", binary3)
+
+# exit()
 
 
-canny = cv2.Canny(binary3, threshold1=80, threshold2=200, apertureSize=7)
+canny = cv2.Canny(binary2, threshold1=80, threshold2=200, apertureSize=7)
 cv2.imwrite("test2-canny.jpg", canny)
+
 
 lines = cv2.HoughLinesP(canny, 
   rho=1, 
-  theta=np.pi / 360, 
-  threshold=10, 
-  minLineLength=10, 
-  maxLineGap=10)
+  theta=np.pi / 180, 
+  threshold=50, 
+  minLineLength=50, 
+  maxLineGap=50)
 lines = [i[0] for i in lines]
 
 # lines = cv2.HoughLines(canny, 
@@ -782,13 +815,13 @@ def scoreCalc(modelCrossPoint, crossPoint):
   sLines = calcStandardLines(modelCrossPoint, crossPoint)  
   lineImg = np.zeros((binary.shape), np.uint8)
   # for l in sLines[0:2]:
-  #   cv2.line(lineImg, l[0:2], l[2:4], 255, 2)
+  #   cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
   # for l in sLines[12:14]:
-  #   cv2.line(lineImg, l[0:2], l[2:4], 255, 2)
+  #   cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
   for l in sLines:
     cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
   
-  crossImg = cv2.bitwise_and(lineImg, canny)
+  crossImg = cv2.bitwise_and(lineImg[int(lineImg.shape[0]/2):], binary2[int(lineImg.shape[0]/2):])
   score = len(np.where(crossImg == 255)[0])
   return score
 
@@ -873,14 +906,14 @@ def fitModel(preMatchLines, modelLines, imgLines):
 ModelLines =[
 # 左上角矩形
     [
-        # standardLines[-10],
+        standardLines[-10],
         standardLines[-8],
-        standardLines[-5],
+        # standardLines[-5],
     ],
     [
-        # standardLines[0],
+        standardLines[0],
         standardLines[2],
-        standardLines[4],
+        # standardLines[4],
     ]
 ]
 
