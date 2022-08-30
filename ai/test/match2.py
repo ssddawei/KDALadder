@@ -14,8 +14,8 @@ from test3 import HoughBundler
 if __name__ != '__main__':
   exit()
 
-os.chdir('E:\\git\\kdaladder\\ai\\test')
-# os.chdir('/opt/test')
+# os.chdir('E:\\git\\kdaladder\\ai\\test')
+os.chdir('/opt/test')
 
 def flood_fill(field, x ,y, old, new):
   # we need the x and y of the start position, the old value,
@@ -510,7 +510,7 @@ def detect_horizon_line(image_grayscaled):
     return horizon_x1, horizon_x2, horizon_y1, horizon_y2
 # 读入图片
 # img = cv2.imread("sample/b7-2.png")
-img = cv2.imread("sample/a-undistort.jpg")
+img = cv2.imread("a.jpg")
 # img = cv2.resize(img, (1280, int(1280*img.shape[0]/img.shape[1])), interpolation = cv2.INTER_LINEAR_EXACT)
 # print("img shape = ", img.shape)
 
@@ -704,8 +704,8 @@ leftLines = sorted(leftLines, key=lambda i:
 rightLines = sorted(rightLines, key=lambda i: 
     point_to_line_distance3([img.shape[1], img.shape[0]],i))
 
-leftLines = leftLines[0:15]
-rightLines = rightLines[0:15]
+# leftLines = leftLines[0:35]
+# rightLines = rightLines[0:35]
 
 
 printLine(leftLines, "test2-left.jpg")
@@ -812,7 +812,15 @@ def line_intersect(s_lineset, lineset):
         
 
 def scoreCalc(modelCrossPoint, crossPoint):
-  sLines = calcStandardLines(modelCrossPoint, crossPoint)  
+  sLines = calcStandardLines(modelCrossPoint, crossPoint) 
+
+  rect = cv2.boundingRect(np.array(sLines).reshape((-1,2)))
+  # area = cv2.contourArea(np.array(sLines).reshape((-1,2)))
+  area = rect[2] * rect[3]
+  imgArea = img.shape[0] * img.shape[1]
+  if area < imgArea / 2 or area > imgArea * 1.2 :
+    return 0
+
   lineImg = np.zeros((binary.shape), np.uint8)
   # for l in sLines[0:2]:
   #   cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
@@ -821,8 +829,11 @@ def scoreCalc(modelCrossPoint, crossPoint):
   for l in sLines:
     cv2.line(lineImg, l[0:2], l[2:4], 255, 4)
   
-  crossImg = cv2.bitwise_and(lineImg[int(lineImg.shape[0]/2):], binary2[int(lineImg.shape[0]/2):])
+  crossImg = cv2.bitwise_and(binary2, binary2, mask = lineImg)
   score = len(np.where(crossImg == 255)[0])
+
+  # if score > 10000:
+  #   print("area: ", area)
   return score
 
 def findBiggestRect(leftLines, rightLines):
@@ -857,51 +868,78 @@ def fitModel(preMatchLines, modelLines, imgLines):
   pmLeftLines, pmRightLines = list(preMatchLines[0])
   pLeftLines, pRightLines = list(preMatchLines[1])
   mLeftLines, mRightLines = list(modelLines)
-  leftLines, rightLines = list(imgLines)
+  iLeftLines, iRightLines = list(imgLines)
 
-  mlength = len(pmLeftLines) + len(mLeftLines)
+  lLength = len(mLeftLines)
+  rLength = len(mRightLines)
   
   # 对左右两边的线条进行组合
-  leftLinesCom = list(itertools.combinations(range(len(leftLines)), mlength))
-  leftLinesCom = sorted(leftLinesCom, key = lambda i: max(i))
-  leftLinesCom = [[leftLines[j] for j in i] for i in leftLinesCom]
+  if lLength > 1:
+    leftLinesCom = list(itertools.combinations(range(len(iLeftLines)), lLength))
+    leftLinesCom = sorted(leftLinesCom, key = lambda i: max(i))
+    leftLinesCom = [[iLeftLines[j] for j in i] for i in leftLinesCom]
+  else:
+    leftLinesCom = [[i] for i in iLeftLines]
 
-  rightLinesCom = list(itertools.combinations(range(len(rightLines)), mlength))
-  rightLinesCom = sorted(rightLinesCom, key = lambda i: max(i))
-  rightLinesCom = [[rightLines[j] for j in i] for i in rightLinesCom]
+  if rLength > 1:
+    rightLinesCom = list(itertools.combinations(range(len(iRightLines)), rLength))
+    rightLinesCom = sorted(rightLinesCom, key = lambda i: max(i))
+    rightLinesCom = [[iRightLines[j] for j in i] for i in rightLinesCom]
+  else:
+    rightLinesCom = [[i] for i in iRightLines]
 
   # 从小到大的组合两个数组，目的是优先检测低索引的组合
-  lineSet = itertools.product(range(len(leftLinesCom)), range(len(rightLinesCom)))
-  lineSet = sorted(lineSet, key = lambda i: max(i))
-  lineSet = [(leftLinesCom[i[0]], rightLinesCom[i[1]]) for i in lineSet]
+  lineSetIdx = itertools.product(range(len(leftLinesCom)), range(len(rightLinesCom)))
+  lineSetIdx = sorted(lineSetIdx, key = lambda i: max(i))
+  lineSet = [(leftLinesCom[i[0]], rightLinesCom[i[1]]) for i in lineSetIdx]
 
   # 获取imglines交点
   imgCrossSet = list(map(lambda i:
-    [line_intersection(j[0], j[1]) for j in itertools.product(i[0], i[1])], lineSet
+    [line_intersection(j[0], j[1]) for j in itertools.product(list(pLeftLines)+i[0], list(pRightLines)+i[1])], lineSet
   ))
   # 获取modellines交点
-  modelCross = [line_intersection(j[0], j[1]) for j in itertools.product(pmLeftLines + mLeftLines, pmRightLines + mRightLines)]
+  modelCross = [line_intersection(j[0], j[1]) for j in itertools.product(list(pmLeftLines) + mLeftLines, list(pmRightLines) + mRightLines)]
   
 
   # 计算分数
   # scores = [(idx, scoreCalc(modelCross, i)) for idx,i in enumerate(imgCrossSet)]
   scores = []
   best = 0
+  limit = 0
+  LIMIT_MAX = 150 # 找到 best 之后，max 次搜索后停止
   print("imgCrossSet size = ", len(imgCrossSet))
   for idx,i in enumerate(imgCrossSet):
     score = scoreCalc(modelCross, i)
     scores.append((idx, score))
     if score > best:
+      limit = LIMIT_MAX
       best = score
       calcedStardardLines = calcStandardLines(modelCross, imgCrossSet[int(idx)])
-      print("found best: ", idx)
-      print("found score: ", best)
-      printLine(list(calcedStardardLines) + list(np.reshape(lineSet[idx],(-1,4))), "test2-best.jpg")
-      time.sleep(1)
+
+      rect = cv2.boundingRect(np.array(calcedStardardLines).reshape((-1,2)))
+      # area = cv2.contourArea(np.array(calcedStardardLines).reshape((-1,2)))
+      area = rect[2] * rect[3]
+      print("found best: ", idx, " score: ", best, " area: ", area)
+      # print("found score: ", best)
+      # print("found area: ", area)
+      printLine(list(np.reshape(lineSet[idx],(-1,4))) + list(calcedStardardLines) , "test2-best.jpg")
+      # time.sleep(1)
+
+    if best > 0 and limit < 0: break
+    limit -= 1
      
   scores = sorted(scores, key=lambda i: -i[1])
-  calcedStardardLines = calcStandardLines(modelCross, imgCrossSet[int(scores[0][0])])
-  return calcedStardardLines
+  targetIdx = int(scores[0][0])
+  calcedStardardLines = calcStandardLines(modelCross, imgCrossSet[targetIdx])
+
+  targetLineSetIdx = lineSetIdx[targetIdx]
+  targetLeftLinesCom = leftLinesCom[targetLineSetIdx[0]]
+  targetRightLinesCom = rightLinesCom[targetLineSetIdx[1]]
+
+  lIdx = np.where(leftLines == targetLeftLinesCom[-1])[0][0]
+  rIdx = np.where(rightLines == targetRightLinesCom[-1])[0][0]
+
+  return calcedStardardLines, lineSet[targetIdx], lIdx, rIdx
     
 ModelLines =[
 # 左上角矩形
@@ -920,5 +958,39 @@ ModelLines =[
 # binggestRect = findBiggestRect(leftLines, rightLines)
 # printLine(np.array(binggestRect).reshape((-1,4)), "test2-biggestRectLines.jpg")
 # exit()
-calcedStardardLines = fitModel([[[],[]],[[],[]]], ModelLines, [leftLines, rightLines])
+calcedStardardLines, preModel, lIdx, rIdx = fitModel([[[],[]],[[],[]]], ModelLines, [leftLines, rightLines])
+ModelLines2 =[
+# 左上角矩形
+    [
+        # standardLines[-10],
+        # standardLines[-8],
+        standardLines[-6],
+    ],
+    [
+        # standardLines[0],
+        # standardLines[2],
+        standardLines[4],
+    ]
+]
+
+calcedStardardLines, preModel2, lIdx, rIdx = fitModel([ModelLines, preModel], ModelLines2, [leftLines[lIdx+1:], rightLines[rIdx+1:]])
+
+ModelLines3 =[
+# 左上角矩形
+    [
+        # standardLines[-10],
+        # standardLines[-8],
+        standardLines[-4],
+    ],
+    [
+        # standardLines[0],
+        # standardLines[2],
+        standardLines[6],
+    ]
+]
+
+calcedStardardLines, preModel3, lIdx, rIdx = fitModel(
+  [np.concatenate([ModelLines, ModelLines2], axis=1), np.concatenate([preModel, preModel2], axis=1)], 
+  ModelLines3, [leftLines[lIdx+1:], rightLines[rIdx+1:]])
+
 printLine(calcedStardardLines, "test2-standard.jpg")
