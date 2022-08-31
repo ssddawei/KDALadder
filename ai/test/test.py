@@ -1,17 +1,24 @@
+
 import os
+os.chdir('/opt/test')
+
+from findBadmintonCourt import BadmintonCourtFinder
 import cv2
-import csv
-import random
-import pickle
+import utils
 import numpy as np
 
-print("ok")
 
-img = cv2.imread("a.jpeg")
-img2 = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-img2[:,:,0] = 0
-img2[:,:,1] = 0
-img2 = cv2.cvtColor(img, cv2.COLOR_HSV2BGR)
-img2 = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-ret, binary = cv2.threshold(img2, 120, 255, cv2.THRESH_BINARY )
-cv2.imwrite("t2.jpg", binary)
+img = cv2.imread("a-undistort.jpg")
+# img = cv2.imread("sample/b7-2.png")
+
+finder = BadmintonCourtFinder()
+finder.find(img)
+
+img_transform = cv2.warpPerspective(img, finder.M, (1340 + 100, 610 + 100))
+# cv2.imwrite("test2-transform.jpg", img_transform)
+utils.printLine(img_transform, BadmintonCourtFinder.standardLines, "test2-transform.jpg")
+
+modelLines = np.array(np.reshape(BadmintonCourtFinder.standardLines, (len(BadmintonCourtFinder.standardLines)*2,2)), dtype='float32')
+modelLines = cv2.perspectiveTransform(np.asarray([modelLines]), np.linalg.inv(finder.M))
+modelLines = np.array(np.reshape(modelLines[0], (int(len(modelLines[0])/2),4)), dtype="int")
+utils.printLine(img, modelLines, "test2-standard.jpg")
