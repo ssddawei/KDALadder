@@ -284,12 +284,18 @@ class MatchController {
     let assistGroup = this.aGroup.indexOf(person) >= 0? this.aGroup: this.bGroup;
     let assist = assistGroup.filter(i => i != person)[0];
     this.match.scores.push(new GameScore(person, null, assist));
+    if(this.match.scores.length == 1) {
+      this.match.beginTime = Date.now()
+    }
     let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
     event.length && this.onEvent(event);
     SoundEffect.speak(`比分 ${this.scoreText}`);
   }
   loss(person) {
     this.match.scores.push(new GameScore(null, person))
+    if(this.match.scores.length == 1) {
+      this.match.beginTime = Date.now()
+    }
     let event = this.eventCalc.evolve(this.match.scores[this.match.scores.length - 1]);
     event.length && this.onEvent(event);
     SoundEffect.speak(`比分 ${this.scoreText}`);

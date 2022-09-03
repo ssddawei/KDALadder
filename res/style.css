@@ -574,12 +574,16 @@ button:active,button:after,button:before {
   display: none;
 }
 .pop-result .close-pop-result {
-  flex: 1rem;
+  flex: 2rem;
   border-radius: 0.2rem;
   font-size: 0.6rem;
   border: 0;
-  width: 4rem;
-  margin: 0.2rem;
+  width: 2rem;
+  height: 2rem;
+  margin: -0.1rem;
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 .pop-result iframe {
   flex: 100%;

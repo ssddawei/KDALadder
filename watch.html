@@ -186,9 +186,6 @@
 
             if (!timeTmr && matchCtrl.match.scores.length) {
 
-                if (!matchCtrl.match.beginTime)
-                    matchCtrl.match.beginTime = Date.now();
-
                 timeTmr = setInterval(() => {
                     let span = Math.floor((Date.now() - matchCtrl.match.beginTime) / 1000);
                     let minutes = Math.floor(span / 60);
