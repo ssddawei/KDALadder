@@ -1,0 +1,75 @@
+
+<script type="text/javascript" src="res/helper.js"></script>
+<script type="text/javascript" src="res/algorithm.js"></script>
+<script type="text/javascript" src="res/storage.js"></script>
+<script type="text/javascript" src="res/app.js" ></script>
+<script>
+(async ()=>{
+  url = ""
+  
+  data = await(await fetch(url)).text()
+  data = JSON.parse(`[${data}]`)
+  console.log(data)
+
+  OFFSET = data[0].scores[0].timestamp
+
+  ctrl = new MatchController()
+
+  result = ""
+  for(iMatch in data) {
+    score1 = 0
+    score2 = 0
+    kda = []
+
+    match = data[iMatch]
+    ctrl.match = match
+
+    cacheScores = match.scores
+    match.scores = []
+
+    for(iScore in cacheScores) {
+      match.scores = cacheScores.slice(0, +iScore + 1)
+      result += render(ctrl)
+    }
+  }
+
+  console.log(result)
+  download(result, "match.cmd", "text")
+
+  function render(ctrl) {
+    let match = ctrl.match
+
+    let TS = ((match.scores.at(-1).timestamp - OFFSET)/1000).toFixed(1)
+    let kda = match.personGroup.map(person=>({person,...ctrl.kda(person)}))
+    kda = kda.sort((a,b) => b.score - a.score)
+
+    let result = ""
+
+    result += `${TS} drawtext@score1_draw reinit 'text=${ctrl.aScore}';\n`
+    result += `${TS} drawtext@score2_draw reinit 'text=${ctrl.bScore}';\n`
+
+    for(i in kda) {
+      result += `${TS} drawtext@person${i}_draw reinit 'text=${kda[i].person}';\n`
+      result += `${TS} drawtext@kda${i}_draw reinit 'text=${kda[i].kill}/${kda[i].death}';\n`
+    }
+    return result
+  }
+  function download(data, filename, type) {
+    var file = new Blob([data], {type: type});
+    if (window.navigator.msSaveOrOpenBlob) // IE10+
+        window.navigator.msSaveOrOpenBlob(file, filename);
+    else { // Others
+        var a = document.createElement("a"),
+                url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(function() {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);  
+        }, 0); 
+    }
+  }
+})()
+</script>
