@@ -139,23 +139,23 @@
 
       let result = ""
 
-      result += `${TS} drawtext@score1_draw reinit 'text=${ctrl.aScore}';\n`
-      result += `${TS} drawtext@score2_draw reinit 'text=${ctrl.bScore}';\n`
+      result += `${TS} drawtext@score1_draw reinit 'text=${ctrl.aScore}',`
+      result += `drawtext@score2_draw reinit 'text=${ctrl.bScore}',`
 
       for(i in kda) {
-        result += `${TS} drawtext@person${i}_draw reinit 'text=${kda[i].person}';\n`
-        result += `${TS} drawtext@kda${i}_draw reinit 'text=${kda[i].kill}/${kda[i].death}';\n`
+        result += `drawtext@person${i}_draw reinit 'text=${kda[i].person}',`
+        result += `drawtext@kda${i}_draw reinit 'text=${kda[i].kill}/${kda[i].death}',`
       }
 
       maxScore = ladder[0].score || 1
       for(i in ladder) {
-        result += `${TS} drawtext@ladder_p${i} reinit 'text=${ladder[i].person}';\n`
-        result += `${TS} drawtext@ladder_kda${i} reinit 'text=${ladder[i].kill}/${ladder[i].death}/${ladder[i].assist}';\n`
-        result += `${TS} drawbox@ladder_box${i} w '(iw-x)*${(ladder[i].score/maxScore).toFixed(2)*0.8||0.01}';\n`
-        result += `${TS} drawbox@ladder_box${i} c 'pink';\n`
+        result += `drawtext@ladder_p${i} reinit 'text=${ladder[i].person}',`
+        result += `drawtext@ladder_kda${i} reinit 'text=${ladder[i].kill}/${ladder[i].death}/${ladder[i].assist}',`
+        result += `drawbox@ladder_box${i} w '(iw-x)*${(ladder[i].score/maxScore).toFixed(2)*0.8||0.01}',`
+        result += `drawbox@ladder_box${i} c 'pink',`
       }
 
-      result += `${TS} drawbox@ladder_box h 'w*${ladder.length}/4';\n`
+      result += `drawbox@ladder_box h 'w*${ladder.length}/4';\n`
 
       return result
     }
