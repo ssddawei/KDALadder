@@ -154,8 +154,8 @@
         result += `drawbox@ladder_box${i} w '(iw-x)*${(ladder[i].score/maxScore).toFixed(2)*0.8||0.01}',`
         result += `drawbox@ladder_box${i} c 'pink',`
       }
-
-      result += `drawbox@ladder_box h 'w*${ladder.length}/4';\n`
+      result += `drawbox@ladder_box h 'w*${ladder.length}/4',`
+      result += `drawbox@progress w 'iw*${TS/TOTAL*1000}';\n`
 
       return result
     }
