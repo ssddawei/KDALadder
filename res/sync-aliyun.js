@@ -15,7 +15,8 @@ class AliyunSyncData extends SyncData {
   get key(){
     let key = window.localStorage.getItem("key");
     if(key){
-      return JSON.parse(key);
+      return Object.assign(JSON.parse(key), CONFIG.AliyunOSSKey);
+      // return JSON.parse(key);
     }
   }
   saveKey(keyString) {
@@ -144,8 +145,8 @@ class AliyunSyncData extends SyncData {
 
     }
   }
-  async load(key) {
-    return (await $fetch(AliyunSyncData.OtherURL(key)) || [])[0];
+  async load(key, param) {
+    return (await $fetch(AliyunSyncData.OtherURL(key), param) || [])[0];
   }
   async sync() {
 

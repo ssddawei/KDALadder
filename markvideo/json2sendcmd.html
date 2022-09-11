@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title></title>
+  <script type="text/javascript" src="../res/config.js"></script>
+  <script type="text/javascript" src="../res/helper.js"></script>
+  <script type="text/javascript" src="../res/algorithm.js"></script>
+  <script type="text/javascript" src="../res/storage.js"></script>
+  <script type="text/javascript" src="../res/storage-localstorage.js"></script>
+  <script type="text/javascript" src="../res/sync.js"></script>
+  <script type="text/javascript" src="../res/sync-aliyun.js"></script>
+  <script type="text/javascript" src="../res/app.js" ></script>
+  <link rel="stylesheet" href="../res/style.css">
+  <style>
+    body { margin: 0.1rem }
+    h1 { font-size: 1rem }
+    .box { line-height: 1rem }
+  </style>
+</head>
+<body>
+  <script id="DataListItem" type="text/template">
+    <div class="item" data-data="{{data}}">
+      <div class="data">{{data}}</div>
+      <div class="subtitle">{{subtitle}}</div>
+    </div>
+  </script>
+  <div class="dataList">
+    <div class="list"></div>
+    <div class="item cancelBtn">
+      <div class="name">取消</div>
+    </div>
+  </div>
+  <h1>比赛视频生成</h1>
+  <h2 class="box">
+    第一分时间戳(s)：<input id="OFFSET" /> <br>
+    总时长(s)：<input id="DURATION" /> <br>
+    <button onclick="choose()">点击下载cmd数据</button>
+  </h2>
+  <div class="command">
+
+  </div>
+</body>
+</html>
+
+<script>
+  let ladderCtrl = new LadderController()
+  ladderCtrl.seasonLadder();
+
+  (async ()=>{
+    $sel(".command").innerText = await ( await fetch("ffmpeg.text") ).text()
+  })()
+
+  let matchChooser = new ListChooser(() => {
+    let remote = new LocalStorage("remote");
+    let allDates = Array.from(
+      new Set(
+        Object.values(remote.ladder).reduce((pre,nxt) => pre.concat(nxt), []) // all ladders
+          .map(i => $dateString(new Date(i.beginTime))) // map to dateString
+          .concat($dateString(new Date()))
+      )
+    );
+    return allDates;
+  });
+
+  async function choose(){
+    let matchDate = await matchChooser.choose() || matchDate;
+    process(matchDate)
+  }
+  async function process(matchDate){
+
+    TOTAL = +$sel("#DURATION").value * 1000
+    OFFSET = +$sel("#OFFSET").value * 1000
+
+    let data = await ladderCtrl.dateMatch(matchDate);
+    console.log(data)
+
+    OFFSET = data[0].scores[0].timestamp - OFFSET
+    TOTAL = TOTAL || (data.at(-1).scores.at(-1).timestamp - OFFSET)
+
+    ctrl = new MatchController()
+
+    // match mark
+    markResult = ''
+    for(iMatch in data) {
+      match = data[iMatch]
+      ctrl.match = match
+      startPoint = ((match.scores[0].timestamp - OFFSET) / TOTAL).toFixed(3)
+      duration = ((match.scores.at(-1).timestamp - match.scores[0].timestamp) / TOTAL).toFixed(3)
+      vs = `${match.personGroup[0]} ${match.personGroup[1]} vs ${match.personGroup[2]} ${match.personGroup[3]}`
+      vs += ` (${ctrl.aScore}\\:${ctrl.bScore})`
+      markResult += `0 drawbox@bottom_m${iMatch} x 'iw*${startPoint}', drawbox@bottom_m${iMatch} w 'iw*${duration}', drawtext@m${iMatch}_text reinit 'text=${vs}:x=w*${startPoint}';\n`
+    }
+
+    // score board
+
+    ladder = []
+
+    result = ""
+    for(iMatch in data) {
+      score1 = 0
+      score2 = 0
+      kda = []
+
+      match = data[iMatch]
+      ctrl.match = match
+
+      cacheScores = match.scores
+      match.scores = []
+
+      for(iScore in cacheScores) {
+        match.scores = cacheScores.slice(0, +iScore + 1)
+
+        // get ladder
+        ladder[iMatch] = ctrl.ladder()
+        totalLadder = ladder.reduce((pre, nxt) => {
+          nxt.ladder.forEach(kda => {
+            MatchController.LadderEvolve(pre.ladder, kda.person, kda);
+          })
+          return pre;
+        }, {ladder:[]})
+
+        result += render(ctrl, totalLadder.ladder)
+      }
+    }
+
+    console.log(markResult + result)
+    download(markResult + result, "match.cmd", "text")
+
+    function render(ctrl, ladder) {
+      let match = ctrl.match
+
+      let TS = ((match.scores.at(-1).timestamp - OFFSET)/1000).toFixed(1)
+      let kda = match.personGroup.map(person=>({person,...ctrl.kda(person)}))
+      kda = kda.sort((a,b) => b.score - a.score)
+
+      let result = ""
+
+      result += `${TS} drawtext@score1_draw reinit 'text=${ctrl.aScore}',`
+      result += `drawtext@score2_draw reinit 'text=${ctrl.bScore}',`
+
+      for(i in kda) {
+        result += `drawtext@person${i}_draw reinit 'text=${kda[i].person}',`
+        result += `drawtext@kda${i}_draw reinit 'text=${kda[i].kill}/${kda[i].death}',`
+      }
+
+      maxScore = ladder[0].score || 1
+      for(i in ladder) {
+        result += `drawtext@ladder_p${i} reinit 'text=${ladder[i].person}',`
+        result += `drawtext@ladder_kda${i} reinit 'text=${ladder[i].kill}/${ladder[i].death}/${ladder[i].assist}',`
+        result += `drawbox@ladder_box${i} w '(iw-x)*${(ladder[i].score/maxScore).toFixed(2)*0.8||0.01}',`
+        result += `drawbox@ladder_box${i} c 'pink',`
+      }
+      result += `drawbox@ladder_box h 'w*${ladder.length}/4',`
+      result += `drawbox@progress w 'iw*${TS/TOTAL*1000}';\n`
+
+      return result
+    }
+    function download(data, filename, type) {
+      var file = new Blob([data], {type: type});
+      if (window.navigator.msSaveOrOpenBlob) // IE10+
+          window.navigator.msSaveOrOpenBlob(file, filename);
+      else { // Others
+          var a = document.createElement("a"),
+                  url = URL.createObjectURL(file);
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function() {
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);  
+          }, 0); 
+      }
+    }
+  }
+</script>
