@@ -30,6 +30,9 @@ T4
 性能优于 yolov5 的目标检测，跟踪
 里面有使用 JDE(Joint Detection and Embedding) 检测与跟踪一体化算法（FairMOT），可以做到实时检测跟踪
 
+- https://github.com/litinglin/swintrack
+一个性能优异的目标跟踪器
+
 - https://github.com/PaddlePaddle/PaddleSpeech#SpeechToText
 百度大脑的飞桨包含一个语音识别开源项目
 
