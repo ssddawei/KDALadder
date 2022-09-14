@@ -43,3 +43,10 @@ https://www.doc88.com/p-9913921536756.html
 - opencv 通过两幅图片，找到他们之间的三维变换矩阵
   https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_calib3d/py_epipolar_geometry/py_epipolar_geometry.html#epipolar-geometry
   https://stackoverflow.com/questions/10744671/reconstruction-a-3d-point-from-two-2d-points
+
+- 带阻力抛物线
+  - https://www.bilibili.com/read/cv9152884/
+- 解常微分方程
+  - https://blog.csdn.net/ouening/article/details/80673288
+  - https://vlight.me/2018/05/01/Numerical-Python-Ordinary-Differential-Equations/
+  - 
