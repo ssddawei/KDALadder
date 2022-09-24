@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KDALadder</title>
+  <script>
+    (async ()=>{
+        await fetch("/v1/group/new",{
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                groupCode: "test",
+                groupName: "groupA"
+            })
+        })
+        await fetch("/v1/group/info",{
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                groupCode: "test",
+                newGroupCode: "test2",
+                groupName: "groupB"
+            })
+        })
+        await fetch("/v1/group/match",{
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                groupCode: "test2",
+                matchData: {
+                    beginTime: Date.now(),
+                    data: [1,2,3]
+                },
+                ladderData: {
+                    beginTime: Date.now(),
+                    ladder: [11,22,33]
+                }
+            })
+        })
+    })()
+  </script>
+</head>
+<body>
+  <h1> KDALadder </h1>
+</body>
+</html>
