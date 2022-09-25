@@ -83,24 +83,32 @@ class StorageLocalfile extends Storage {
     }
     async saveMatch(groupCode, matchData, ladderData) {
         let groupPath = await this._findPath(groupCode);
-        let matchDataPath = path.join(groupPath, `data-${helper.dateString(new Date(matchData.beginTime))}.json`);
-        let ladderDataPath = path.join(groupPath, `ladder-${helper.seasonString(new Date(ladderData.beginTime))}.json`);
-        // save match
-        let dataStr = JSON.stringify(matchData)
-        if(!await fs.access(matchDataPath).catch(err => true)) { // if exist
-            dataStr = "," + dataStr;
+        if(matchData) {
+            let matchDataPath = path.join(groupPath, `data-${helper.dateString(new Date(matchData.beginTime))}.json`);       
+            
+            // save match
+            let dataStr = JSON.stringify(matchData)
+            if(!await fs.access(matchDataPath).catch(err => true)) { // if exist
+                dataStr = "," + dataStr;
+            }
+            
+            // append to file
+            await fs.appendFile(matchDataPath, dataStr);
+    
         }
 
-        await fs.appendFile(matchDataPath, dataStr);
-        
-        // save ladder
-        dataStr = JSON.stringify(ladderData)
-        if(!await fs.access(ladderDataPath).catch(err => true)) { // if exist
-            dataStr = "," + dataStr;
-        }
+        if(ladderData) {
+            let ladderDataPath = path.join(groupPath, `ladder-${helper.seasonString(new Date(ladderData.beginTime))}.json`);
 
-        // append to file
-        await fs.appendFile(ladderDataPath, dataStr);
+            // save ladder
+            dataStr = JSON.stringify(ladderData)
+            if(!await fs.access(ladderDataPath).catch(err => true)) { // if exist
+                dataStr = "," + dataStr;
+            }
+
+            // append to file
+            await fs.appendFile(ladderDataPath, dataStr);
+        }
     }
 }
 

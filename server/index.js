@@ -3,6 +3,7 @@ import Koa from 'koa'
 import Router from '@koa/router'
 import Websocket from 'koa-websocket'
 import KoaBody from 'koa-body'
+import Cors from '@koa/cors'
 
 import GroupController from './app.js'
 
@@ -83,7 +84,9 @@ app.use(async (ctx, next) => {
     }
 })
 
+app.use(Cors());
 app.use(router.routes()).use(router.allowedMethods());
+app.ws.use(Cors());
 app.ws.use(wsRouter.routes()).use(wsRouter.allowedMethods());
 
 app.listen(80);

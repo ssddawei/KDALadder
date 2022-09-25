@@ -408,22 +408,7 @@ class MatchController {
     if(!this.ready || !this.started) return;
 
     let storage = new LocalStorage();
-    let sync = new AliyunSyncData(storage, new LocalStorage("remote"));
-
-    // check sync key
-    if(!sync.key) {
-      let key = await $prompt("同步到云端，请输入密钥");
-      if(!key) {
-        if(!await $confirm("不保存到云端，确认？")){
-          return;
-        }
-      } else {
-        if(!sync.saveKey(key)){
-          await $alert("密钥格式错误");
-          return;
-        }
-      }
-    }
+    let sync = new ServerSyncData(storage, new LocalStorage("remote"));
 
     let now = new Date();
 
@@ -455,9 +440,9 @@ class MatchController {
 }
 
 class LadderController {
-  // syncData = new AliyunSyncData(null, new LocalStorage("remote"));
+  // syncData = new ServerSyncData(null, new LocalStorage("remote"));
   constructor() {
-    this.syncData = new AliyunSyncData(null, new LocalStorage("remote"));
+    this.syncData = new ServerSyncData(null, new LocalStorage("remote"));
   }
   get storage() {
     return this.syncData.local
@@ -524,7 +509,7 @@ class LadderController {
   }
 
   async sync() {
-    await this.syncData.sync();
+    await this.syncData.loadRemote();
   }
 }
 
@@ -549,18 +534,6 @@ class ConnectController {
           localStorage.removeItem("connect-status");
           this.refreshUI();
           return;
-        }
-      }
-      // check sync key
-      if(!new AliyunSyncData().key) {
-        let key = await $prompt("多端连接，请输入密钥");
-        if(!key) {
-          return;
-        } else {
-          if(!new AliyunSyncData().saveKey(key)){
-            await $alert("密钥格式错误");
-            return;
-          }
         }
       }
 

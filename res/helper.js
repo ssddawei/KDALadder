@@ -22,8 +22,10 @@ let $kdaString = (kda, long) => {
 }
 let $fetch = async function(){
   let response = await fetch.apply(window, arguments)
-  if(response.status == 404){
+  if(response.status == 404) {
     return null;
+  } else if(response.status != 200) {
+    throw response.statusText
   }
   
   let text = await response.text();
