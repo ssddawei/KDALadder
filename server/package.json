@@ -6,6 +6,7 @@
     "koa": "^2.13.4",
     "koa-body": "^5.0.0",
     "koa-route": "^3.2.0",
+    "koa-static": "^5.0.0",
     "koa-websocket": "^7.0.0",
     "md5": "^2.3.0"
   }

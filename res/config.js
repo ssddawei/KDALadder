@@ -1,4 +1,5 @@
 let CONFIG = {
+  ServerUrl: "http://localhost:8080",
   AliyunOSSKey: {
     region: "oss-cn-guangzhou",
     bucket: "kdaladder-dev",

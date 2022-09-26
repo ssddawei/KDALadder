@@ -18,7 +18,7 @@ let $kdaString = (kda, long) => {
   if(long)
     return `${kda.score.toFixed(1)} ${kda.kill}/${kda.death}/${kda.assist} ${(kda.win/(kda.win+kda.loss)*100).toFixed(1)}%(${kda.win}/${kda.loss})`
   else
-  return `${kda.kill} / ${kda.death} / ${kda.assist}`
+    return `${kda.kill} / ${kda.death} / ${kda.assist}`
 }
 let $fetch = async function(){
   let response = await fetch.apply(window, arguments)
@@ -27,10 +27,14 @@ let $fetch = async function(){
   } else if(response.status != 200) {
     throw response.statusText
   }
-  
+  let toArray = arguments[1] && arguments[1].toArray;
   let text = await response.text();
-  let json = text[0] == '['? text: '[' + text + ']';
-  return JSON.parse(json);
+  let json = toArray? `[${text}]`: text;
+  if(!json) {
+    return 
+  } else {
+    return JSON.parse(json);
+  }
 }
 let $queryValue = function(key) {
   let querystr = location.search.slice(1);

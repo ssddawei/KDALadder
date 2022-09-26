@@ -35,16 +35,38 @@
             },
             body: JSON.stringify({
                 groupCode: "test2",
-                matchData: {
+                matchData: [{
                     beginTime: Date.now(),
                     data: [1,2,3]
-                },
-                ladderData: {
+                }],
+                ladderData: [{
                     beginTime: Date.now(),
                     ladder: [11,22,33]
-                }
+                }]
             })
         })
+
+        let ws = new WebSocket("ws://" + location.host);
+        let loginResult = false
+        ws.addEventListener("open", ()=>{
+            ws.send("test2")
+        });
+        ws.addEventListener("message", (msg)=>{
+            console.log("message", msg)
+            if(!loginResult) {
+                loginResult = true
+                ws.send(JSON.stringify({
+                    sync: true,
+                    subgroup:"tt1",
+                    action: "test",
+                    data: "data1"
+                }))
+            }
+        })
+        ws.addEventListener("close", (code, reason)=>{
+            console.log("onclose", code, reason)
+        });
+        
     })()
   </script>
 </head>
