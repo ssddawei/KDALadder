@@ -33,7 +33,7 @@ class GroupController {
         this.wsClients = {} // all websocket clients
     }
     async register(groupName, groupCode, inviteCode) {
-        await storage.createGroup(groupName, groupCode);
+        return await storage.createGroup(groupName, groupCode);
     }
     async login(groupCode) {
         let groupCodeHashPath = await storage.findPath(groupCode);

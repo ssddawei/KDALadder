@@ -26,21 +26,48 @@
     <div class="switchBtnBox"><button class="switchBtn">创建团体</button></div>
   </div>
   <div class="registerBox">
-    <h2>创建团体</h2>
+    <h1>创建团体</h1>
     <ul>
       <li><label for="groupName">团体名号</label><input type="text" id="groupName" /></li>
       <li><label for="groupCode">暗号</label><input type="password" id="groupCode" /></li>
       <li><label for="inviteCode">邀请码</label><input type="text" id="inviteCode" /></li>
       <li><button id="registerBtn">确认创建</button></li>
     </ul>
+    <div class="switchBtnBox"><button class="switchBtn">进入团体</button></div>
   </div>
-  <div class="switchBtnBox"><button class="switchBtn">进入团体</button></div>
+  <div class="infoBox">
+    <h1>我的团体</h1>
+    <ul>
+      <li><label for="groupName">团体名号</label><input type="text" id="groupName" /></li>
+      <li><label for="groupCode">暗号</label><input type="password" id="groupCode" /></li>
+      <li><label for="inviteCode">邀请码</label><input type="text" id="inviteCode" /></li>
+      <li><button id="registerBtn">确认修改</button></li>
+    </ul>
+    <div class="switchBtnBox"><button class="switchBtn">离开团体</button></div>
+  </div>
   <script>
-    $sel(".loginBtn").addEventListener("click", () => {
-      
+    let groupCtrl = new GroupController();
+
+    $sel("#loginBtn").addEventListener("click", async () => {
+      let groupCode = $sel(".loginBox #groupCode").value;
+      await groupCtrl.login(groupCode);
+      location.href = "ladder.html"
     })
-    $sel(".registerBtn").addEventListener("click", () => {
-      
+    $sel("#registerBtn").addEventListener("click", async () => {
+      let groupCode = $sel(".registerBox #groupCode").value;
+      let groupName = $sel("#groupName").value;
+      let inviteCode = $sel("#inviteCode").value;
+      await groupCtrl.register(groupCode, groupName, inviteCode);
+      location.href = "ladder.html"
+    })
+
+    $sel(".loginBox .switchBtn").addEventListener("click", () => {
+      $sel(".registerBox").style.display = "block";
+      $sel(".loginBox").style.display = "none";
+    })
+    $sel(".registerBox .switchBtn").addEventListener("click", () => {
+      $sel(".loginBox").style.display = "block";
+      $sel(".registerBox").style.display = "none";
     })
   </script>
 </body>

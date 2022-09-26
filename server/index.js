@@ -37,7 +37,10 @@ function apiDoneWithEmpty(ctx) {
 router.post("/v1/group/new", async (ctx, next) => {
     let groupData = ctx.request.body;
 
-    await groupCtrl.register(groupData.groupName, groupData.groupCode, groupData.inviteCode);
+    ctx.body = {
+        groupCodeHashPath: await groupCtrl.register(groupData.groupName, groupData.groupCode, groupData.inviteCode)
+    }
+    
 })
 
 // 验证 groupCode，返回目录名
@@ -77,6 +80,7 @@ app.use(async (ctx, next) => {
             apiDoneWithEmpty(ctx);
         }
     } catch (err) {
+        console.log("onError", err)
         // will only respond with JSON
         ctx.status = err.statusCode || err.status || 500;
         ctx.body = {

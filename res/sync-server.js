@@ -10,7 +10,7 @@ class ServerAPI {
   }
   call(url, params) {
     params = params || {}
-    if(this.groupCode)
+    if(!params.groupCode)
       params.groupCode = this.groupCode;
     return $fetch(url, {
       method: "POST",
@@ -31,10 +31,20 @@ class ServerAPI {
       groupCode
     })
   }
+  register(groupCode, groupName, inviteCode) {
+    return this.call(new URL("/v1/group/new", this.ServerURL).toString(), {
+      groupCode, groupName, inviteCode
+    })
+  }
+  postInfo(groupName, groupCode) {
+    return this.call(new URL("/v1/group/info", this.ServerURL).toString(), {
+      newGroupCode: groupCode, groupName
+    })
+  }
 }
 class ServerSyncData extends SyncData {
 
-  constructor(storage, remoteCacheStorage) {
+  constructor(storage = null, remoteCacheStorage = new LocalStorage("remote")) {
     super(storage, remoteCacheStorage)
     this.api = new ServerAPI()
     this.autologin()
@@ -51,6 +61,16 @@ class ServerSyncData extends SyncData {
       this.api.groupCode = groupCode;
       this.groupCodeHashPath = groupCodeHashPath;
     }
+  }
+  async register(groupCode, groupName, inviteCode) {
+    let groupCodeHashPath = (await this.api.register(groupCode, groupName, inviteCode)).groupCodeHashPath;
+    this.api.groupCode = groupCode;
+    this.groupCodeHashPath = groupCodeHashPath;
+    localStorage.setItem("gc", btoa(JSON.stringify(
+      {
+        groupCode, groupCodeHashPath
+      }
+    )));
   }
   async login(groupCode) {
     let groupCodeHashPath = (await this.api.login(groupCode)).groupCodeHashPath;

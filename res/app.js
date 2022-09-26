@@ -221,7 +221,16 @@ KDAEventCalc.NameToEN = {
 }
 
 class GroupController {
+  constructor() {
+    this.sync = new ServerSyncData()
+  }
+  async register(groupCode, groupName, inviteCode) {
+    let result = await this.sync.register(groupCode, groupName, inviteCode)
+  }
+  async login(groupCode) {
+    let result = await this.sync.login(groupCode);
 
+  }
 }
 
 class MatchController {

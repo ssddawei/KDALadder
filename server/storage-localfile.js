@@ -14,7 +14,7 @@ class StorageLocalfile extends Storage {
         let allGroupIDs = await fs.readdir(StorageRoot).catch(err => []);
 
         if(allGroupIDs.find(i => i.split("-")[1] == groupCodeHash)) {
-            throw "group already exists"
+            throw new Error("group already exists")
         }
 
         let id = 0;
@@ -33,7 +33,7 @@ class StorageLocalfile extends Storage {
         if(name) {
             return path.join(StorageRoot, name);
         } else {
-            throw "group not found"
+            throw new Error("group not found")
         }
     }
     async _updateGroupIndex() {
@@ -59,7 +59,7 @@ class StorageLocalfile extends Storage {
 
         await this._updateGroupIndex();
 
-        return groupID
+        return `${groupID}-${groupCodeHash}`
     }
     async updateGroup(oldGroupCode, newGroupCode, groupName) {
         let groupPath = await this.findPath(oldGroupCode);
@@ -69,7 +69,7 @@ class StorageLocalfile extends Storage {
         let newGroupPath = `${groupID}-${groupCodeHash}`;
 
         if(await this.findPath(newGroupCode).catch(err => false)) {
-            throw "group already exists"
+            throw new Error("group already exists")
         }
         await fs.rename(groupPath, newGroupPath);
 
