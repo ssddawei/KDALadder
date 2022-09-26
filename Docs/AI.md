@@ -50,3 +50,7 @@ https://www.doc88.com/p-9913921536756.html
   - https://blog.csdn.net/ouening/article/details/80673288
   - https://vlight.me/2018/05/01/Numerical-Python-Ordinary-Differential-Equations/
   - 
+
+- kornia
+  - 可微机器视觉库
+  - 考虑使用 kornia 来加速 opencv，以及利用一下它的一些 ai 方法
