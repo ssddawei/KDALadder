@@ -220,6 +220,10 @@ KDAEventCalc.NameToEN = {
     "first-blood": "FirstBlood",
 }
 
+class GroupController {
+
+}
+
 class MatchController {
   // _match = new Match();
   // eventCalc = new KDAEventCalc();
@@ -410,6 +414,8 @@ class MatchController {
     let storage = new LocalStorage();
     let sync = new ServerSyncData(storage, new LocalStorage("remote"));
 
+    await sync.login("test2")
+
     let now = new Date();
 
     // add win/loss score
@@ -457,7 +463,7 @@ class LadderController {
         .replace("season1", "1-1")
         .replace("season2", "4-1")
         .replace("season3", "7-1")
-        .replace("season4", "10-1")
+        .replace("season4", "10-1") 
       await this.syncData.loadRemote(new Date(dateOfSession));
       ladder = this.remote.ladder[season];
     }
@@ -509,7 +515,7 @@ class LadderController {
   }
 
   async sync() {
-    await this.syncData.loadRemote();
+    await this.syncData.loadRemote(new Date());
   }
 }
 
