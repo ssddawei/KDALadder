@@ -65,21 +65,31 @@ class StorageLocalfile extends Storage {
         let groupPath = await this.findPath(oldGroupCode);
         let groupID = groupPath.split("-")[0];
 
-        let groupCodeHash = md5(newGroupCode + SALT)
-        let newGroupPath = `${groupID}-${groupCodeHash}`;
+        if(newGroupCode && newGroupCode != oldGroupCode) {
+            let groupCodeHash = md5(newGroupCode + SALT)
+            let newGroupPath = `${groupID}-${groupCodeHash}`;
 
-        if(await this.findPath(newGroupCode).catch(err => false)) {
-            throw new Error("group already exists")
+            if(await this.findPath(newGroupCode).catch(err => false)) {
+                throw new Error("group already exists")
+            }
+            await fs.rename(groupPath, newGroupPath);
+            groupPath = newGroupPath
         }
-        await fs.rename(groupPath, newGroupPath);
 
         if(groupName) {
-            let groupNamePath = path.join(newGroupPath, "name");
+            let groupNamePath = path.join(groupPath, "name");
             await fs.writeFile(groupNamePath, groupName)
         }
 
         await this._updateGroupIndex();
         
+    }
+    async getGroup(groupCode) {
+        let groupPath = await this.findPath(groupCode);
+        let groupName = (await fs.readFile(path.join(groupPath, "name"), {encoding: "utf-8"})).toString();
+        return {
+            groupName
+        }
     }
     async saveMatch(groupCode, matchData, ladderData) {
         let groupPath = await this.findPath(groupCode);

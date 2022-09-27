@@ -53,10 +53,16 @@ router.post("/v1/group/hash", async (ctx, next) => {
 })
 
 // 更新 group 信息
-router.post("/v1/group/info", async (ctx, next) => {
+router.post("/v1/group/update", async (ctx, next) => {
     let groupData = ctx.request.body;
 
     await groupCtrl.updateNameOrCode(groupData.groupCode, groupData.groupName, groupData.newGroupCode);
+})
+
+router.post("/v1/group/info", async (ctx, next) => {
+    let groupData = ctx.request.body;
+
+    ctx.body = await groupCtrl.getInfo(groupData.groupCode);
 })
 
 // 保存赛局

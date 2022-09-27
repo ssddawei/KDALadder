@@ -46,6 +46,9 @@ class GroupController {
     async updateNameOrCode(oldGroupCode, groupName, groupCode) {
         await storage.updateGroup(oldGroupCode, groupCode ,groupName);
     }
+    async getInfo(groupCode) {
+        return await storage.getGroup(groupCode);
+    }
     async saveMatch(groupCode, matchData, ladderData) {
         await storage.saveMatch(groupCode, matchData, ladderData);
     }
@@ -61,6 +64,12 @@ class GroupController {
 
             // use md5 as clientID
             let clientID = md5(userAgent + ip);
+
+            // tailing "-1" when existed
+            while(groupClients[clientID]) {
+                if(!__idx) { var __idx = 1 }
+                clientID = md5(userAgent + ip) + `-${__idx}`
+            }
 
             ws.send(clientID)
 
@@ -105,7 +114,7 @@ class GroupController {
     }
     async boradcastClientMessage(targetClients, fromCid, msg) {
         // console.log("client message", clientID, msg)
-        if(msg.sync) {
+        if(msg.sync == undefined || msg.sync) {
             // send to all groupClients without self
             targetClients.map(clientWS => {
                 clientWS.send(JSON.stringify(msg));

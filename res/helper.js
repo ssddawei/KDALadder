@@ -25,7 +25,12 @@ let $fetch = async function(){
   if(response.status == 404) {
     return null;
   } else if(response.status != 200) {
-    throw response.statusText
+    let message = response.statusText;
+    try {
+      message = (await response.json()).message;
+    } catch(_) {
+    }
+    throw message
   }
   let toArray = arguments[1] && arguments[1].toArray;
   let text = await response.text();

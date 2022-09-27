@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="res/style.css">
 </head>
 <body class="group">
-  <div class="loginBox">
+  <div class="loginBox groupBox">
     <h1>进入团体</h1>
     <ul>
       <li><label for="groupCode">暗号</label><input type="password" id="groupCode" /></li>
@@ -25,7 +25,7 @@
     </ul>
     <div class="switchBtnBox"><button class="switchBtn">创建团体</button></div>
   </div>
-  <div class="registerBox">
+  <div class="registerBox groupBox">
     <h1>创建团体</h1>
     <ul>
       <li><label for="groupName">团体名号</label><input type="text" id="groupName" /></li>
@@ -35,30 +35,55 @@
     </ul>
     <div class="switchBtnBox"><button class="switchBtn">进入团体</button></div>
   </div>
-  <div class="infoBox">
+  <div class="infoBox groupBox">
     <h1>我的团体</h1>
     <ul>
       <li><label for="groupName">团体名号</label><input type="text" id="groupName" /></li>
       <li><label for="groupCode">暗号</label><input type="password" id="groupCode" /></li>
-      <li><label for="inviteCode">邀请码</label><input type="text" id="inviteCode" /></li>
-      <li><button id="registerBtn">确认修改</button></li>
+      <li><button id="updateBtn">确认修改</button></li>
     </ul>
-    <div class="switchBtnBox"><button class="switchBtn">离开团体</button></div>
+    <div class="switchBtnBox"><button class="switchBtn leaveBtn">离开团体</button></div>
   </div>
   <script>
     let groupCtrl = new GroupController();
 
+    async function refreshUI() {
+      if(groupCtrl.online) {
+        let groupInfo = await groupCtrl.info();
+        $sel(".infoBox #groupName").value = groupInfo.groupName;
+        $sel(".infoBox #groupCode").value = groupCtrl.sync.api.groupCode;
+      }
+    }
+
+    if(groupCtrl.online) {
+      $sel(".infoBox").style.display = "block";
+      refreshUI();
+    } else {
+      $sel(".loginBox").style.display = "block";
+    }
+
     $sel("#loginBtn").addEventListener("click", async () => {
       let groupCode = $sel(".loginBox #groupCode").value;
-      await groupCtrl.login(groupCode);
-      location.href = "ladder.html"
+      try {
+        await groupCtrl.login(groupCode);
+        location.href = "ladder.html"
+      } catch(err) {
+        console.log(err)
+        $alert(err)
+      }
     })
     $sel("#registerBtn").addEventListener("click", async () => {
       let groupCode = $sel(".registerBox #groupCode").value;
-      let groupName = $sel("#groupName").value;
-      let inviteCode = $sel("#inviteCode").value;
+      let groupName = $sel(".registerBox #groupName").value;
+      let inviteCode = $sel(".registerBox #inviteCode").value;
       await groupCtrl.register(groupCode, groupName, inviteCode);
       location.href = "ladder.html"
+    })
+    $sel("#updateBtn").addEventListener("click", async () => {
+      let groupCode = $sel(".infoBox #groupCode").value;
+      let groupName = $sel(".infoBox #groupName").value;
+      await groupCtrl.updateInfo(groupName, groupCode);
+      refreshUI()
     })
 
     $sel(".loginBox .switchBtn").addEventListener("click", () => {

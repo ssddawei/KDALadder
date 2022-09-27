@@ -224,12 +224,24 @@ class GroupController {
   constructor() {
     this.sync = new ServerSyncData()
   }
+  get online() {
+    return this.sync.online;
+  }
   async register(groupCode, groupName, inviteCode) {
     let result = await this.sync.register(groupCode, groupName, inviteCode)
   }
   async login(groupCode) {
     let result = await this.sync.login(groupCode);
 
+  }
+  async info() {
+    return await this.sync.info();
+  }
+  async updateInfo(groupName, groupCode) {
+    let result = await this.sync.updateInfo(groupName, groupCode);
+    if(groupCode) {
+      await this.login(groupCode);
+    }
   }
 }
 
@@ -423,8 +435,6 @@ class MatchController {
     let storage = new LocalStorage();
     let sync = new ServerSyncData(storage, new LocalStorage("remote"));
 
-    await sync.login("test2")
-
     let now = new Date();
 
     // add win/loss score
@@ -543,13 +553,13 @@ class ConnectController {
     $sel(".connect").addEventListener("click", async () => {
 
       if(this.status == "done" ||this.status == "loading"){
-        if(await $confirm("确定断开？")){
+        // if(await $confirm("确定断开？")){
           this.conn && this.conn.close()
           this.conn == undefined;
           localStorage.removeItem("connect-status");
           this.refreshUI();
           return;
-        }
+        // }
       }
 
       this.connect();
@@ -565,9 +575,9 @@ class ConnectController {
     $sel(".connect").classList.remove("loading");
     $sel(".connect").classList.remove("error");
     $sel(".connect").classList.remove("done");
-    if(typeof(this.status) == "string")
+    if(this.status && typeof(this.status) == "string")
       $sel(".connect").classList.add(this.status);
-    else if(typeof(this.status) == "object")
+    else if(this.status && typeof(this.status) == "object")
       $sel(".connect").classList.add(...this.status);
 
   }
@@ -582,44 +592,24 @@ class ConnectController {
     }
 
     // create ConnectWebrtc, set receiveCallback, errorCallback
-    let conn = this.conn = new ConnectWebrtc(new AliyunSyncData(), 
+    this.conn = new ConnectWebsocket(ServerSyncData.key.groupCode, 
       (msg) => {
-        this.refreshUI("done");
-        this.onData && this.onData({action: "connect"});
-        if(msg.indexOf("hi") == 0)return;
+        if(msg.indexOf("hi") == 0) {
+          this.refreshUI("done");
+          this.onData && this.onData({action: "connect"});
+          return;
+        }
         
         let data = JSON.parse(msg);
         this.onData && this.onData(data);
       }, (err) => {
-        this.refreshUI(["error", "done"]);
-        this.connect(); // retry
+        if(err.code != 1000) {
+          this.refreshUI(["error", "done"]);
+          setTimeout(()=>{this.connect()}, 1000); // retry
+        } else {
+          this.refreshUI();
+        }
       });
-
-    try{
-
-      // invoke offer/answer to connect Client/Server
-      if(this.mode == "server")
-        await conn.offer();
-      else if(this.mode == "client")
-        await conn.answer();
-      else
-        throw new Error("wrong mode: " + mode)
-
-      conn.send("hi " + this.mode);
-
-    } catch(e) {
-      if(conn != this.conn) {
-        // conn released
-      }
-      else if(e && e.message == "timeout") {
-        this.refreshUI();
-      } else if(e && e.message == "canceled") {
-        // conn canceled
-      } else {
-        $alert("连接失败: " + e)
-        this.refreshUI("error");
-      }
-    }
 
 
   }

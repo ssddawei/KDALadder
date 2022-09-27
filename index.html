@@ -5,11 +5,57 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KDALadder</title>
+  <script type="text/javascript" src="res/config.js"></script>
+  <script type="text/javascript" src="res/helper.js"></script>
+  <script type="text/javascript" src="res/algorithm.js"></script>
+  <script type="text/javascript" src="res/storage.js"></script>
+  <script type="text/javascript" src="res/storage-localstorage.js"></script>
+  <script type="text/javascript" src="res/sync.js"></script>
+  <script type="text/javascript" src="res/sync-server.js"></script>
+  <script type="text/javascript" src="res/app.js"></script>
+  <link rel="stylesheet" href="res/icomoon/style.css">
+  <link rel="stylesheet" href="res/style.css">
 </head>
-<body>
-  <h1> KDALadder </h1>
-  <script type="text/javascript">
-    location.href="ladder.html"
+<body class="index">
+  <div class="topmenu">
+    <div class="item active" data-target=".mainLadder">
+      总榜
+    </div>
+    <div class="item" data-target=".groupLadder">团体榜</div>
+    <div class="item" data-target=".groupHistory">赛局记录</div>
+  </div>
+  <div class="indexBody">
+    <div class="bodyItem mainLadder active">
+      <iframe title="main ladder" src="ladder.html" style="width: 100%; height: 100%; border: 0"></iframe>
+    </div>
+    <div class="bodyItem groupLadder">2</div>
+    <div class="bodyItem groupHistory">3</div>
+  </div>
+  <div class="botmenu">
+    <button class="newMatch">
+      <img alt="new" src="res/svg/badminton.svg" />
+      <span class="new">new</span>
+    </button>
+    <button class="myGroup">
+      <img alt="team" src="res/svg/team.svg" />
+      <span class="new">我的团体</span>
+    </button>
+  </div>
+
+  <script>
+    $sels(".topmenu .item").forEach(e => e.addEventListener("click", function(){
+      $sels(".topmenu .item").forEach(e => e.classList.remove("active"));
+      $sels(".indexBody .bodyItem").forEach(e => e.classList.remove("active"));
+      this.classList.add("active");
+      $sel(this.dataset.target).classList.add("active")
+    }))
+
+    $sel(".newMatch").addEventListener("click", () => {
+      location.href = "match.html"
+    })
+    $sel(".myGroup").addEventListener("click", () => {
+      location.href = "group.html"
+    })
   </script>
 </body>
 </html>

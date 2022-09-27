@@ -37,9 +37,12 @@ class ServerAPI {
     })
   }
   postInfo(groupName, groupCode) {
-    return this.call(new URL("/v1/group/info", this.ServerURL).toString(), {
+    return this.call(new URL("/v1/group/update", this.ServerURL).toString(), {
       newGroupCode: groupCode, groupName
     })
+  }
+  getInfo() {
+    return this.call(new URL("/v1/group/info", this.ServerURL).toString())
   }
 }
 class ServerSyncData extends SyncData {
@@ -55,12 +58,25 @@ class ServerSyncData extends SyncData {
   DataURL(date) {
     return new URL(`${this.groupCodeHashPath}/data-${date}.json`,DEFAULT_SERVER_URL).toString();
   }
+  static get key() {
+    try{
+      return JSON.parse(atob(localStorage.getItem("gc")));
+    } catch(_) {
+      return {}
+    }
+  }
+  static set key(value) {
+    localStorage.setItem("gc", btoa(JSON.stringify(value)))
+  }
   autologin() {
-    if(localStorage.getItem("gc")) {
-      let {groupCode, groupCodeHashPath} = JSON.parse(atob(localStorage.getItem("gc")));
+    if(ServerSyncData.key) {
+      let {groupCode, groupCodeHashPath} = ServerSyncData.key;
       this.api.groupCode = groupCode;
       this.groupCodeHashPath = groupCodeHashPath;
     }
+  }
+  get online() {
+    return !!this.groupCodeHashPath;
   }
   async register(groupCode, groupName, inviteCode) {
     let groupCodeHashPath = (await this.api.register(groupCode, groupName, inviteCode)).groupCodeHashPath;
@@ -76,11 +92,15 @@ class ServerSyncData extends SyncData {
     let groupCodeHashPath = (await this.api.login(groupCode)).groupCodeHashPath;
     this.api.groupCode = groupCode;
     this.groupCodeHashPath = groupCodeHashPath;
-    localStorage.setItem("gc", btoa(JSON.stringify(
-      {
-        groupCode, groupCodeHashPath
-      }
-    )));
+    ServerSyncData.key = {
+      groupCode, groupCodeHashPath
+    }
+  }
+  async info() {
+    return await this.api.getInfo();
+  }
+  async updateInfo(groupName, groupCode) {
+    return await this.api.postInfo(groupName, groupCode);
   }
   async loadRemote(date) {
     let seasonStr = $seasonString(date);
