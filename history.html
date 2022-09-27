@@ -31,49 +31,12 @@
     }
   </style>
 </head>
-<body class="ladder">
+<body class="ladder history">
 
-  <script id="DataListItem" type="text/template">
-    <div class="item" data-data="{{data}}">
-      <div class="data">{{data}}</div>
-      <div class="subtitle">{{subtitle}}</div>
-    </div>
-  </script>
-  <div class="dataList">
-    <div class="list"></div>
-    <div class="item cancelBtn">
-      <div class="name">取消</div>
-    </div>
-  </div>
 
-  <div class="menu">
-    <button class="newMatchBtn" onclick="location.href='match.html'">新赛事</button>
-    <button class="clearCacheBtn">清除缓存</button>
-  </div>
 
-  <button class="menuBtn">M<small>enu</small></button>
-
-  <div class="box ladderBox">
-    <h1># KDA 天梯排名</h1>
-    <small>2022-season1</small>
-    <script id="LadderItem" type="text/template">
-      <div class="item">
-        <div class="name">{{name}}</div>
-        <div class="score" style="width:{{width}}%"><span>{{score}}</span></div>
-      </div>
-    </script>
-
-    <div title="总分 &nbsp; 击杀 / 失误 / 助攻 / &nbsp;  胜率% ( 胜场数 / 败场数 )" class="ladder-help place-holder-owner">
-      <i class="icon-medal"></i> &nbsp; <i class="icon-kda-k"></i> / <i class="icon-kda-d"></i> / <i class="icon-kda-a"></i> / &nbsp;  <i class="icon-win"></i>% ( <i class="icon-win"></i> / <i class="icon-loss"></i> )
-    </div>
-    <div class="ladder-help place-holder">
-      总分 &nbsp; 击杀 / 失误 / 助攻 / &nbsp;  胜率% ( 胜场数 / 败场数 )
-    </div>
-    <div class="ladder">
-    </div>
-  </div>
   <div class="box matchBox">
-    <h1> # 赛事记录 <small class="boxDate"></small></h1>
+    <h2> # 日期 <small class="boxDate"></small></h2>
     <script id="MatchItem" type="text/template">
       <div class="item" onclick="location.href='match-result.html?{{index}}-{{beginTime}}'">
         <div class="title">{{title}}</div>
@@ -101,30 +64,9 @@
     async function refreshUI() {
 
       var tmpl;
-      let ladder = ladderDate.indexOf("season") >= 0? 
-        await ladderCtrl.seasonLadder(ladderDate): 
-        await ladderCtrl.dateLadder(ladderDate);
-
       let data = await ladderCtrl.dateMatch(matchDate);
 
       $sel(".boxDate").innerHTML = matchDate;
-      $sel(".ladderBox > small").innerHTML = ladderDate;
-
-      if(ladder) {
-
-        // ladder 
-        tmpl = $sel("#LadderItem").innerHTML;
-
-        let maxScore = ladder.ladder[0].score;
-        $sel("div.ladder").innerHTML = ladder.ladder.map(i => {
-          let width = Math.floor(i.score / maxScore * 100 * 0.7);
-          let item = tmpl.replace("{{name}}", i.person)
-            .replace(/{{score}}/g, $kdaString(i, true))
-            .replace("{{width}}", width)
-          return item;
-        }).join("");
-
-      }
 
       // match
       if(data) {
@@ -146,47 +88,6 @@
 
     }
 
-
-    let matchChooser = new ListChooser(() => {
-      let remote = new LocalStorage("remote");
-      let allDates = Array.from(
-        new Set(
-          Object.values(remote.ladder).reduce((pre,nxt) => pre.concat(nxt), []) // all ladders
-            .map(i => $dateString(new Date(i.beginTime))) // map to dateString
-            .concat($dateString(new Date()))
-        )
-      );
-      return allDates;
-    });
-
-    let ladderChooser = new ListChooser(() => {
-      let remote = new LocalStorage("remote");
-      let allDates = Array.from(
-        new Set(
-          Object.values(remote.ladder).reduce((pre,nxt) => pre.concat(nxt), []) // all ladders
-            .map(i => $dateString(new Date(i.beginTime))) // map to dateString
-            .concat($dateString(new Date()))  // add today
-            .concat(Object.keys(remote.ladder)) // add seasonString
-            .concat($seasonString(new Date()))  // add current season
-        )
-      ).sort((a,b)=>b.localeCompare(a));
-      return allDates;
-    });
-
-    $sel(".matchBox > h1").addEventListener("click", async ()=>{
-      matchDate = await matchChooser.choose() || matchDate;
-      refreshUI();
-    });
-    $sel(".ladderBox > h1").addEventListener("click", async ()=>{
-      ladderDate = await ladderChooser.choose() || ladderDate;
-      refreshUI();
-    });
-    $sel(".clearCacheBtn").addEventListener("click", ()=>{
-      localStorage.clear();
-      $alert("The Cache was fucking cleared, you win.")
-    })
-
-    let menu = new Menu();
     ladderCtrl.sync().then(refreshUI);
   </script>
 </body>
