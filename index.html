@@ -17,7 +17,7 @@
   <link rel="stylesheet" href="res/style.css">
 </head>
 <body class="index">
-  <div class="ladderBox active">
+  <div class="bodyItem ladderBox active">
     <div class="topmenu">
       <div class="item active" data-target=".mainLadder">
         总榜
@@ -28,7 +28,7 @@
     </div>
     <div class="indexBody">
       <div class="bodyItem mainLadder active">
-        <iframe title="main ladder" src="ladder.html" style="width: 100%; height: 100%; border: 0"></iframe>
+        <iframe title="main ladder" src="ladder.html?hall" style="width: 100%; height: 100%; border: 0"></iframe>
       </div>
       <div class="bodyItem groupLadder">
         <iframe title="main ladder" src="ladder.html" style="width: 100%; height: 100%; border: 0"></iframe>
@@ -38,7 +38,7 @@
       </div>
     </div>
   </div>
-  <div class="groupBox"> 
+  <div class="bodyItem groupBox"> 
     <iframe title="main ladder" src="group.html" style="width: 100%; height: 100%; border: 0"></iframe>
   </div>
 
@@ -56,6 +56,26 @@
       <span>我的团体</span>
     </button>
   </div>
+
+  <!-- ListChooser -->
+  <script id="DataListItem" type="text/template">
+    <div class="item" data-data="{{data}}">
+      <div class="data">{{data}}</div>
+      <div class="subtitle">{{subtitle}}</div>
+    </div>
+  </script>
+  <div class="dataList">
+    <div class="list"></div>
+    <div class="item cancelBtn">
+      <div class="name">取消</div>
+    </div>
+  </div>
+
+  <div class="pop-result">
+    <iframe src="" title="result"></iframe>
+    <button class="close-pop-result">关闭</button>
+  </div>
+
   <script>
     $sels(".topmenu .item").forEach(e => e.addEventListener("click", function(){
       $sels(".topmenu .item").forEach(e => e.classList.remove("active"));
@@ -79,6 +99,24 @@
       $sel(".myGroup").classList.add("active");
       $sel(".groupBox").classList.add("active");
     })
+
+
+    $sel(".close-pop-result").addEventListener("click", () => {
+      $sel('.pop-result').classList.remove('show');
+      $popHistoryBack();
+    })
+
+    window.popResult = (url) => {
+      $sel(".pop-result iframe").src = url
+      $sel(".pop-result").classList.add('show')
+      $pushHistoryBack(()=>{
+        $sel('.pop-result').classList.remove('show');
+      })
+    }
+
+    window.ListChooser = ListChooser;
+    
+
   </script>
 </body>
 </html>

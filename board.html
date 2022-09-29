@@ -15,6 +15,7 @@
   <script type="text/javascript" src="res/connect-ws.js"></script>
   <script type="text/javascript" src="res/app.js"></script>
   <script type="text/javascript" src="res/nosleep.min.js"></script>
+  <link rel="stylesheet" href="res/icomoon/style.css">
   <link rel="stylesheet" href="res/style.css">
   <style>
     .match {
@@ -39,7 +40,7 @@
 </head>
 <body class="board">
   <script id="DataListItem" type="text/template">
-    <div class="item" data-data="{{data}}">
+    <div class="item {{active}}" data-data="{{data}}">
       <div class="data">{{data}}</div>
       <div class="subtitle">{{subtitle}}</div>
     </div>
@@ -55,15 +56,19 @@
   </div>
   
   <div class="menu">
-    <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
-    <button class="endBtn">结束</button>
-    <button class="revertBtn">撤销</button>
-    <button class="musicBtn">音效</button>
-    <button onclick="document.body.requestFullscreen();">全屏</button>
+    <button class="ladderBtn" onclick="location.href='index.html'"><em class="icon-back"></em>kdaladder.top</button>
+    <div class="sep"></div>
+    <button class="endBtn"><em class="icon-flag"></em>结束</button>
+    <button class="revertBtn"><em class="icon-revert"></em>撤销</button>
+    <div class="sep"></div>
+    <button class="channelBtn"><em class="icon-sync"></em>切换信道(<span class="subgroup"></span>)</button>
+    <button onclick="location.replace('match.html')"><em class="icon-airplay"></em>普通模式</button>
+    <button class="musicBtn"><em class="icon-music"></em>音效开关</button>
+    <button class="CDBtn"><em class="icon-cd"></em>CD开关</button>
+    <button onclick="document.body.requestFullscreen();"><em class="icon-fullscreen"></em>全屏</button>
   </div>
   <button class="menuBtn">
     M<small>enu</small>
-    <em class="icon-music"></em>
   </button>
 
   <div class="pop-result">
@@ -310,6 +315,7 @@
         $sel(personToTarget(loser)).classList.add("loser");
       }
 
+      $sels(".subgroup").forEach(i=>i.innerHTML = connectCtrl.subgroup);
 
       matchCtrl.save();
     }
@@ -386,6 +392,20 @@
     $sel(".close-pop-result").addEventListener("click", () => {
       $sel('.pop-result').classList.remove('show');
       connectSync("close-result")
+    })
+
+
+    let channelChooser = new ListChooser( async () => {
+      return [1,2,3,4,5,6,7,8].map(p => ({
+        data: p,
+        active: p == connectCtrl.subgroup,
+        subtitle: `信道${p}`
+      }))
+    }, true);
+    $sel(".channelBtn").addEventListener("click", async () => {
+      $sel("div.dataList .newItemBtn").style.display = "none";
+      connectCtrl.subgroup = await channelChooser.choose() || connectCtrl.subgroup;
+      refreshUI();
     })
     
     let menu = new Menu();

@@ -45,15 +45,8 @@
   </style>
 </head>
 <body class="result">
-  <div class="menu">
-    <button class="ladderBtn" onclick="location.href='ladder.html'">天梯</button>
-    <button class="newMatchBtn" onclick="
-      location.href=location.search.indexOf('board')? 'board.html': 'match.html'">新赛事</button>
-  </div>
-
-  <button class="menuBtn">M<small>enu</small></button>
   <h1>
-    # 比赛记录
+    # 赛局记录
   </h1>
   <div class="title">
     <span class="beginTime"></span>
@@ -113,12 +106,6 @@
         let splitIdx = query.lastIndexOf("-");
         this.date = query.slice(0, splitIdx);
         this.beginTime = query.slice(splitIdx+1);
-
-        let embedded = $queryValue("embedded");
-        if(embedded !== undefined) {
-          $sel(".menuBtn").style.display = "none";
-        }
-
       }
       async load() {
         let matches = await new LadderController().dateMatch(this.date, this.beginTime);//new LocalStorage("remote");
@@ -215,8 +202,6 @@
         return item;
       }).join("")
     }
-
-    let menu = new Menu();
 
     ctrl.load().then(refreshUI);
 

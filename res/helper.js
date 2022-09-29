@@ -33,7 +33,10 @@ let $fetch = async function(){
     throw message
   }
   let toArray = arguments[1] && arguments[1].toArray;
+  let toString = arguments[1] && arguments[1].toString === true;
   let text = await response.text();
+  if(toString)
+    return text;
   let json = toArray? `[${text}]`: text;
   if(!json) {
     return 
@@ -73,6 +76,22 @@ let $activeAnimate = function(target) {
   target.style.animation = 'none';
   target.offsetHeight; /* trigger reflow */
   target.style.animation = ''; 
+}
+
+let $pushHistoryBack = (callback) => {
+  if(!window.__pushHistoryBack) {
+    window.__pushHistoryBack = []
+    window.addEventListener("popstate", (e) => {
+      let backCb = window.__pushHistoryBack.pop()
+      backCb && backCb();
+    })
+  }
+  window.__pushHistoryBack.push(callback);
+  history.pushState('', '');
+}
+
+let $popHistoryBack = () => {
+  window.__pushHistoryBack.pop()
 }
 
 let $prompt = async function(title){

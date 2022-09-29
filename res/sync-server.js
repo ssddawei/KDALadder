@@ -58,6 +58,15 @@ class ServerSyncData extends SyncData {
   DataURL(date) {
     return new URL(`${this.groupCodeHashPath}/data-${date}.json`,DEFAULT_SERVER_URL).toString();
   }
+  GroupLadderURL(season, groupCodeHashPath) {
+    return new URL(`${groupCodeHashPath}/ladder-${season}.json`,DEFAULT_SERVER_URL).toString();
+  }
+  GroupIndexURL() {
+    return new URL(`index.json`,DEFAULT_SERVER_URL).toString();
+  }
+  GroupNameURL(groupCodeHashPath) {
+    return new URL(`${groupCodeHashPath}/name`,DEFAULT_SERVER_URL).toString();
+  }
   static get key() {
     try{
       return JSON.parse(atob(localStorage.getItem("gc")));
@@ -112,6 +121,14 @@ class ServerSyncData extends SyncData {
     Object.assign(this.remoteCache.ladder, this.remote.ladder);
     Object.assign(this.remoteCache.data, this.remote.data);
     this.remoteCache.save();
+  }
+  async loadHallLadder(seasonDate) {
+    let seasonStr = $seasonString(seasonDate);
+    let index = await $fetch(this.GroupIndexURL()) || [];
+    let allLadders = await Promise.all(index.map(path => $fetch(this.GroupLadderURL(seasonStr, path), {toArray:true})))
+    let allName = await Promise.all(index.map(path => $fetch(this.GroupNameURL(path), {toString:true})))
+
+    return [allLadders, allName];
   }
   async saveRemote() {
 

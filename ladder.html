@@ -58,12 +58,15 @@
     let ladderCtrl = new LadderController();
     let ladderDate = $seasonString(new Date());
 
+    let isHallLadder =  location.search.slice(1).toLocaleLowerCase().indexOf("hall") >= 0;
+
     async function refreshUI() {
 
       var tmpl;
-      let ladder = ladderDate.indexOf("season") >= 0? 
-        await ladderCtrl.seasonLadder(ladderDate): 
-        await ladderCtrl.dateLadder(ladderDate);
+      let ladder = isHallLadder? await ladderCtrl.seasonHallLadder(): 
+        ladderDate.indexOf("season") >= 0? 
+          await ladderCtrl.seasonLadder(ladderDate): 
+          await ladderCtrl.dateLadder(ladderDate);
 
       $sel(".ladderBox > small").innerHTML = ladderDate;
 
@@ -86,7 +89,24 @@
 
     }
 
+    let ladderChooser = new parent.ListChooser(() => {
+      let remote = new LocalStorage("remote");
+      let allDates = Array.from(
+        new Set(
+          Object.values(remote.ladder).reduce((pre,nxt) => pre.concat(nxt), []) // all ladders
+            .map(i => $dateString(new Date(i.beginTime))) // map to dateString
+            // .concat($dateString(new Date()))  // add today
+            .concat(Object.keys(remote.ladder)) // add seasonString
+            .concat($seasonString(new Date()))  // add current season
+        )
+      ).sort((a,b)=>b.localeCompare(a));
+      return allDates;
+    });
 
+    $sel(".ladderBox > h1").addEventListener("click", async ()=>{
+      ladderDate = await ladderChooser.choose() || ladderDate;
+      refreshUI();
+    });
     ladderCtrl.sync().then(refreshUI);
   </script>
 </body>

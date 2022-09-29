@@ -398,7 +398,7 @@ class MatchController {
     if(storage.data.current)
       this.match = storage.data.current;
   }
-  ladder() {
+  ladder(preLadder) {
     let ladder = new Ladder();
     ladder.beginTime = this.match.beginTime;
     ladder.endTime = this.match.endTime2;
@@ -406,11 +406,15 @@ class MatchController {
     ladder.matchTotalTimeSec = Math.floor((this.match.endTime2 - this.match.beginTime)/1000);
     
     // update to local ladder
-    MatchController.LadderEvolve(ladder.ladder, this.aGroup[0], this.kda(this.aGroup[0]));
-    MatchController.LadderEvolve(ladder.ladder, this.aGroup[1], this.kda(this.aGroup[1]));
-    MatchController.LadderEvolve(ladder.ladder, this.bGroup[0], this.kda(this.bGroup[0]));
-    MatchController.LadderEvolve(ladder.ladder, this.bGroup[1], this.kda(this.bGroup[1]));
+
+    let kdas = this.match.personGroup.map(i=>this.kda(i));
+
+    MatchController.LadderEvolve(ladder.ladder, this.aGroup[0], kdas[0]);
+    MatchController.LadderEvolve(ladder.ladder, this.aGroup[1], kdas[1]);
+    MatchController.LadderEvolve(ladder.ladder, this.bGroup[0], kdas[2]);
+    MatchController.LadderEvolve(ladder.ladder, this.bGroup[1], kdas[3]);
     
+    ladder.preladder = JSON.parse(JSON.stringify(preLadder))
     return ladder;
   }
   onEvent(e) {
@@ -495,6 +499,38 @@ class LadderController {
       return pre;
     }, {ladder:[]})
   }
+  async seasonHallLadder(seasonDate = new Date()) {
+    let [allLadders, allName] = await this.syncData.loadHallLadder(seasonDate);
+
+    // calc each ladder
+    allLadders = allLadders.map(ladder => ladder.reduce((pre, nxt) => {
+      nxt.ladder.forEach(kda => {
+        MatchController.LadderEvolve(pre.ladder, kda.person, kda);
+      })
+      return pre;
+    }, {ladder:[]}) )
+
+    allLadders.forEach((i,idx) => {
+      i.name = allName[idx]
+      i.quality = ALG.GroupQuality(i.ladder)
+    })
+    
+    // calc hall ladder
+    allLadders = allLadders.reduce((pre, nxt) => {
+      nxt.ladder.forEach(kda => {
+        kda.person += "-" + nxt.name;
+        kda.quality = nxt.quality;
+        kda.score *= nxt.quality;
+        pre.ladder.push(kda);
+        // MatchController.LadderEvolve(pre.ladder, kda.person, kda);
+      })
+      return pre;
+    }, {ladder:[]})
+
+    allLadders.ladder.sort((a,b)=>b.score-a.score)
+
+    return allLadders;
+  }
   async dateLadder(date = $dateString(new Date()), beginTime) {
     let season = $seasonString(new Date(date));
     let ladder = this.remote.ladder[season];
@@ -527,7 +563,7 @@ class LadderController {
   }
   async dateMatch(date = $dateString(new Date()), beginTime) {
     let match = this.remote.data[date];
-    if(!match || (beginTime && !match.filter(i=>i.beginTime == beginTime).length)) {
+    if(!match || !match.length || (beginTime && !match.filter(i=>i.beginTime == beginTime).length)) {
       await this.syncData.loadRemote(new Date(date));
     }
     return this.remote.data[date];
@@ -569,6 +605,20 @@ class ConnectController {
       this.connect();
     }
   }
+  set subgroup(val) {
+    let needSendSetSubGroup = this._subgroup != val;
+      
+    this._subgroup = val;
+    localStorage.setItem("__subgroup", val);
+
+    needSendSetSubGroup && this.send("set-subgroup")
+  }
+  get subgroup() {
+    if(!this._subgroup) {
+      this._subgroup = localStorage.getItem("__subgroup") || 1;
+    }
+    return this._subgroup;
+  }
   refreshUI(status) {
     this.status = status;
 
@@ -597,6 +647,7 @@ class ConnectController {
         if(msg.indexOf("hi") == 0) {
           this.refreshUI("done");
           this.onData && this.onData({action: "connect"});
+          this.send("set-subgroup")
           return;
         }
         
@@ -614,7 +665,7 @@ class ConnectController {
 
   }
   send(action, data) {
-    this.status == "done" && this.conn.send(JSON.stringify({action, data}));
+    this.status == "done" && this.conn.send(JSON.stringify({action, data, subgroup: this.subgroup}));
   }
 }
 class Menu {
@@ -628,7 +679,7 @@ class Menu {
     let btn = $sel(".menuBtn");
     let menu = $sel(".menu");
     document.addEventListener("click", function(e){
-      if(e.path.filter(i=>i==btn||i==menu).length == 0){
+      if(e.composedPath().filter(i=>i==btn||i==menu).length == 0){
         $sel(".menu").classList.remove("show");
       }
     })
@@ -641,7 +692,7 @@ class ListChooser {
   constructor(loader) {
     this.loader = loader;
     $sel("div.dataList .list").addEventListener("click", (e) => {
-      let data = e.path.filter(i => i.dataset && i.dataset["data"])[0];
+      let data = e.composedPath().filter(i => i.dataset && i.dataset["data"])[0];
       this.select(data && data.dataset["data"]);
     })
     $sel("div.dataList .cancelBtn").addEventListener("click", () => {
@@ -658,22 +709,28 @@ class ListChooser {
     $sel("div.dataList > .list").innerHTML = datas.map(d => {
       let data = d.data || d;
       let subtitle = d.subtitle || "";
+      let active = d.active? "active": "";
       return tpl.replace(/{{data}}/g, data)
+        .replace("{{active}}", active)
         .replace("{{subtitle}}", subtitle);
     }).join("");
   }
   select(date) {
     this.chooseCallback && this.chooseCallback(date);
     $sel(".dataList").classList.remove("show")
+    $popHistoryBack();
   }
   cancel() {
     this.chooseCallback && this.chooseCallback();
     $sel(".dataList").classList.remove("show")
+    $popHistoryBack();
   }
   choose() {
     this.refreshUI();
     $sel(".dataList").classList.add("show")
 
+    $pushHistoryBack(this.cancel.bind(this))
+    
     return new Promise(done => {
       this.chooseCallback = done;
     })
@@ -747,10 +804,8 @@ class SoundEffect {
     if(!$sel(".musicBtn"))return;
     if(SoundEffect.disabled) {
       $sel(".musicBtn").classList.add("disabled");
-      $sel(".icon-music").style.display="inherit";
     } else {
       $sel(".musicBtn").classList.remove("disabled");
-      $sel(".icon-music").style.display="none";
     }
   }
 }

@@ -38,7 +38,7 @@
   <div class="box matchBox">
     <h2> # 日期 <small class="boxDate"></small></h2>
     <script id="MatchItem" type="text/template">
-      <div class="item" onclick="location.href='match-result.html?{{index}}-{{beginTime}}'">
+      <div class="item" onclick="popResult('match-result.html?{{index}}-{{beginTime}}')">
         <div class="title">{{title}}</div>
         <div class="teamA">
           <div class="person1">{{person1}}</div>
@@ -87,6 +87,27 @@
       }
 
     }
+
+    function popResult(url) {
+      parent.popResult(url);
+    }
+
+    $sel(".matchBox > h2").addEventListener("click", async ()=>{
+      matchDate = await matchChooser.choose() || matchDate;
+      refreshUI();
+    });
+    
+    let matchChooser = new parent.ListChooser(() => {
+      let remote = new LocalStorage("remote");
+      let allDates = Array.from(
+        new Set(
+          Object.values(remote.ladder).reduce((pre,nxt) => pre.concat(nxt), []) // all ladders
+            .map(i => $dateString(new Date(i.beginTime))) // map to dateString
+            .concat($dateString(new Date()))
+        )
+      );
+      return allDates;
+    });
 
     ladderCtrl.sync().then(refreshUI);
   </script>
