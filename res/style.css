@@ -285,7 +285,7 @@ button:active,button:after,button:before {
   }
 }
 .prompt {
-  z-index: 2000;
+  z-index: 3002;
   position: fixed;
   width: 100%;
   height: 100%;
@@ -491,7 +491,7 @@ button:active,button:after,button:before {
   background: rgb(118, 185, 197);
 }
 .dataList .item .data {
-  font-size: 1rem;
+  font-size: 0.5rem;
 }
 .dataList .item .name {
   font-size: 0.5rem;
@@ -1063,12 +1063,22 @@ body.ladder div.box {
   /* background: rgb(255,0,0); */
   width: 100%;
   height: 100%;
-  background: linear-gradient(100deg, rgba(255,0,0,0.1) 0%, rgba(0,184,255,0.1) 100%);
+  background: linear-gradient(100deg, rgba(116, 116, 116, 0.1) 0%, rgba(220, 220, 220, 0.1) 100%);
   padding: 0.3rem ;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
 }
+body.ladder.hall div.box {
+  background: linear-gradient(100deg, rgba(255,0,0,0.1) 0%, rgba(0,184,255,0.1) 100%);
+}
+body.ladder.hall h1.group{
+  display: none
+}
+body.ladder:not(.hall) h1.hall{
+  display: none
+}
+
 body.ladder div.box h2 {
   font-size: 0.5rem;
   line-height: 1;

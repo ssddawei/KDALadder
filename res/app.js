@@ -398,7 +398,7 @@ class MatchController {
     if(storage.data.current)
       this.match = storage.data.current;
   }
-  ladder(preLadder) {
+  ladder() {
     let ladder = new Ladder();
     ladder.beginTime = this.match.beginTime;
     ladder.endTime = this.match.endTime2;
@@ -414,7 +414,6 @@ class MatchController {
     MatchController.LadderEvolve(ladder.ladder, this.bGroup[0], kdas[2]);
     MatchController.LadderEvolve(ladder.ladder, this.bGroup[1], kdas[3]);
     
-    ladder.preladder = JSON.parse(JSON.stringify(preLadder))
     return ladder;
   }
   onEvent(e) {

@@ -31,10 +31,10 @@
     }
   </style>
 </head>
-<body class="ladder">
+<body class="ladder hall">
 
   <div class="box ladderBox">
-    <h1># KDA天梯排名</h1>
+    <h1># 全服KDA天梯排名</h1>
     <small>2022-season1</small>
     <script id="LadderItem" type="text/template">
       <div class="item">
@@ -58,12 +58,11 @@
     let ladderCtrl = new LadderController();
     let ladderDate = $seasonString(new Date());
 
+
     async function refreshUI() {
 
       var tmpl;
-      let ladder = ladderDate.indexOf("season") >= 0? 
-          await ladderCtrl.seasonLadder(ladderDate): 
-          await ladderCtrl.dateLadder(ladderDate);
+      let ladder = await ladderCtrl.seasonHallLadder(ladderDate);
 
       $sel(".ladderBox > small").innerHTML = ladderDate;
 
@@ -97,7 +96,7 @@
             .concat($seasonString(new Date()))  // add current season
         )
       ).sort((a,b)=>b.localeCompare(a));
-      return allDates;
+      return Object.keys(remote.ladder);
     });
 
     $sel(".ladderBox > h1").addEventListener("click", async ()=>{

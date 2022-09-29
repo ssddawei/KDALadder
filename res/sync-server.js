@@ -123,7 +123,7 @@ class ServerSyncData extends SyncData {
     this.remoteCache.save();
   }
   async loadHallLadder(seasonDate) {
-    let seasonStr = $seasonString(seasonDate);
+    let seasonStr = typeof(seasonDate) == "string"? seasonDate: $seasonString(seasonDate);
     let index = await $fetch(this.GroupIndexURL()) || [];
     let allLadders = await Promise.all(index.map(path => $fetch(this.GroupLadderURL(seasonStr, path), {toArray:true})))
     let allName = await Promise.all(index.map(path => $fetch(this.GroupNameURL(path), {toString:true})))
@@ -144,11 +144,16 @@ class ServerSyncData extends SyncData {
           return !rLadder || !rLadder.find(r => r.beginTime == i.beginTime)
         });
         
-        // save to server
-        await this.api.postMatch(null, unsyncData)
+        if(unsyncData.length) {
+          // save to server
+          await this.api.postMatch(null, unsyncData)
 
-        rLadder.splice(rLadder.length, 0, ...unsyncData);
-        this.remoteCache.save();
+          if(!rLadder) {
+            rLadder = this.remote.ladder[season] = [];
+          }
+          rLadder.splice(rLadder.length, 0, ...unsyncData);
+          this.remoteCache.save();
+        }
 
       }),
       ...Object.entries(this.local.data).map(async ([date,match]) => {
@@ -157,11 +162,16 @@ class ServerSyncData extends SyncData {
           return !rMatch || !rMatch.find(r => r.beginTime == i.beginTime)
         });
 
-        // save to server
-        await this.api.postMatch(unsyncData, null)
+        if(unsyncData.length) {
+          // save to server
+          await this.api.postMatch(unsyncData, null)
 
-        rMatch.splice(rMatch.length, 0, ...unsyncData);
-        this.remoteCache.save();
+          if(!rMatch) {
+            rMatch = this.remote.data[date] = [];
+          }
+          rMatch.splice(rMatch.length, 0, ...unsyncData);
+          this.remoteCache.save();
+        }
       })
     ])
 
