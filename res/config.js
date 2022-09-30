@@ -1,4 +1,4 @@
-let CONFIG = {
+export let CONFIG = {
   ServerUrl: `http://${location.hostname}:8080`,
   AliyunOSSKey: {
     region: "oss-cn-guangzhou",

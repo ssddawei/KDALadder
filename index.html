@@ -5,14 +5,6 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KDALadder</title>
-  <script type="text/javascript" src="res/config.js"></script>
-  <script type="text/javascript" src="res/helper.js"></script>
-  <script type="text/javascript" src="res/algorithm.js"></script>
-  <script type="text/javascript" src="res/storage.js"></script>
-  <script type="text/javascript" src="res/storage-localstorage.js"></script>
-  <script type="text/javascript" src="res/sync.js"></script>
-  <script type="text/javascript" src="res/sync-server.js"></script>
-  <script type="text/javascript" src="res/app.js"></script>
   <link rel="stylesheet" href="res/icomoon/style.css">
   <link rel="stylesheet" href="res/style.css">
 </head>
@@ -87,7 +79,10 @@
     <button class="close-pop-result">关闭</button>
   </div>
 
-  <script>
+  <script type="module">
+    import * as App from './res/app.js'
+    Object.assign(window, App);
+
     $sels(".topmenu .item").forEach(e => e.addEventListener("click", function(){
       $sels(".topmenu .item").forEach(e => e.classList.remove("active"));
       $sels(".indexBody .bodyItem").forEach(e => e.classList.remove("active"));
@@ -120,7 +115,7 @@
     if(!localStorage.getItem("__showBegin")) {
       $sel(".begin").style.display = "block"
     }
-    function begin(more) {
+    window.begin = (more) => {
       if(more) {
         popResult("about.html")
       } else {

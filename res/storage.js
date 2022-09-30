@@ -1,11 +1,11 @@
-class Score {
+export class Score {
   // timestamp;
   constructor(TS) {
     this.timestamp = TS || Date.now();
   }
 }
 
-class GameScore extends Score {
+export class GameScore extends Score {
   // kill;
   // death;
   // assist;
@@ -17,7 +17,7 @@ class GameScore extends Score {
   }
 }
 
-class MatchScore extends Score {
+export class MatchScore extends Score {
   // win = [];
   // loss = [];
   constructor(W, L, TS) {
@@ -27,7 +27,7 @@ class MatchScore extends Score {
   }
 }
 
-class Match {
+export class Match {
   // scores = [];
   // beginTime = 0;
   // endTime = 0;
@@ -54,7 +54,7 @@ class Match {
   }
 }
 
-class Ladder {
+export class Ladder {
   // beginTime = 0;
   // endTime = 0;
   // matchCount = 0;
@@ -69,7 +69,7 @@ class Ladder {
   }
 }
 
-class Storage {
+export class Storage {
   // prefix = "";
   // ladder = {};
   // data = {};

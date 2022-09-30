@@ -1,6 +1,9 @@
 // include sync.js
 // include aliyunsdk
 // ali-sdk: https://github.com/ali-sdk/ali-oss
+import { CONFIG } from './config.js';
+import { SyncData } from './sync.js';
+import { LocalStorage } from './storage-localstorage.js';
 
 let DEFAULT_SERVER_URL = CONFIG.ServerUrl;
 class ServerAPI {
@@ -45,7 +48,7 @@ class ServerAPI {
     return this.call(new URL("/v1/group/info", this.ServerURL).toString())
   }
 }
-class ServerSyncData extends SyncData {
+export class ServerSyncData extends SyncData {
 
   constructor(storage = null, remoteCacheStorage = new LocalStorage("remote")) {
     super(storage, remoteCacheStorage)

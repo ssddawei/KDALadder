@@ -1,7 +1,8 @@
 // include storage.js
+import { Storage } from './storage.js'
 let SysLocalStorage = window.localStorage;
 
-class LocalStorage extends Storage {
+export class LocalStorage extends Storage {
   constructor(prefix) {
     super(prefix);
     this.load();

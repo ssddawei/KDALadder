@@ -1,6 +1,11 @@
+import { Match, GameScore } from "./storage.js";
+import { LocalStorage } from "./storage-localstorage.js";
+import { ALG } from "./algorithm.js";
+import { ConnectWebsocket } from "./connect-ws.js";
+import { ServerSyncData } from "./sync-server.js";
+import "./helper.js";
 
-
-class KDAEventCalc {
+export class KDAEventCalc {
   // killing-spree  3kill
   // rampage        4kill
   // unstoppable    5kill
@@ -187,7 +192,7 @@ class KDAEventCalc {
     testFB.currentEvent.length == 0  || console.error("failed");
   }
 }
-
+ 
 KDAEventCalc.Legendary = [null, null, null, "killing-spree", "rampage", "unstoppable", "godlike", "legendary"];
 KDAEventCalc.Pentakill = [null, null, "2sha", "3sha", "4sha", "5sha"];
 KDAEventCalc.Zisha = [null, null, null, "zisha"];
@@ -220,7 +225,7 @@ KDAEventCalc.NameToEN = {
     "first-blood": "FirstBlood",
 }
 
-class GroupController {
+export class GroupController {
   constructor() {
     this.sync = new ServerSyncData()
   }
@@ -245,7 +250,7 @@ class GroupController {
   }
 }
 
-class MatchController {
+export class MatchController {
   // _match = new Match();
   // eventCalc = new KDAEventCalc();
   // eventCallback;
@@ -473,7 +478,7 @@ class MatchController {
   }
 }
 
-class LadderController {
+export class LadderController {
   // syncData = new ServerSyncData(null, new LocalStorage("remote"));
   constructor() {
     this.syncData = new ServerSyncData(null, new LocalStorage("remote"));
@@ -583,7 +588,7 @@ class LadderController {
 /*
   Bind ConnectWebrtc to UI
 */
-class ConnectController {
+export class ConnectController {
   // conn;
   // status;
   // mode;
@@ -674,7 +679,7 @@ class ConnectController {
     this.status == "done" && this.conn.send(JSON.stringify({action, data, subgroup: this.subgroup}));
   }
 }
-class Menu {
+export class Menu {
   constructor() {
     $sel(".menuBtn").addEventListener("click", ()=>{
       $sel(".menu").classList.add("show");
@@ -692,7 +697,7 @@ class Menu {
   }
 }
 
-class ListChooser {
+export class ListChooser {
   // chooseCallback;
   // loader;
   constructor(loader) {
@@ -743,7 +748,7 @@ class ListChooser {
   };
 }
 
-class PlaceHolder {
+export class PlaceHolder {
   constructor() {
     $sels(".place-holder-owner").forEach(i => {
       i.addEventListener("click", () => {
@@ -767,7 +772,7 @@ class PlaceHolder {
 }
 
 
-class SoundEffect {
+export class SoundEffect {
   // static audio = [];
   static get disabled() {
     return !!localStorage.getItem("music-disabled");

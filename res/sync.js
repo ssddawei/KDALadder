@@ -1,4 +1,4 @@
-class SyncData {
+export class SyncData {
   // storage for each date
   // example:
   /*

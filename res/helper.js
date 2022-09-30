@@ -1,12 +1,12 @@
-let $sel = document.querySelector.bind(document);
-let $sels = document.querySelectorAll.bind(document);
-let $timeString = (d) => {
+window.$sel = document.querySelector.bind(document);
+window.$sels = document.querySelectorAll.bind(document);
+window.$timeString = (d) => {
   return `${d.getMonth()+1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}`;
 }
-let $dateString = (d) => {
+window.$dateString = (d) => {
   return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
 }
-let $seasonString = (d) => {
+window.$seasonString = (d) => {
   switch(d.getMonth()) {
     case 0:case 1: case 2: return `${d.getFullYear()}-season1`;
     case 3:case 4: case 5: return `${d.getFullYear()}-season2`;
@@ -14,13 +14,13 @@ let $seasonString = (d) => {
     case 9:case 10: case 11: return `${d.getFullYear()}-season4`;
   }
 }
-let $kdaString = (kda, long) => {
+window.$kdaString = (kda, long) => {
   if(long)
     return `${kda.score.toFixed(1)} ${kda.kill}/${kda.death}/${kda.assist} ${(kda.win/(kda.win+kda.loss)*100).toFixed(1)}%(${kda.win}/${kda.loss})`
   else
     return `${kda.kill} / ${kda.death} / ${kda.assist}`
 }
-let $fetch = async function(){
+window.$fetch = async function(){
   let response = await fetch.apply(window, arguments)
   if(response.status == 404) {
     return null;
@@ -44,7 +44,7 @@ let $fetch = async function(){
     return JSON.parse(json);
   }
 }
-let $queryValue = function(key) {
+window.$queryValue = function(key) {
   let querystr = location.search.slice(1);
   let obj = {};
   querystr.split("&").forEach(i => {
@@ -53,7 +53,7 @@ let $queryValue = function(key) {
   })
   return obj[key];
 }
-let $throttle = function(fun, timeout, overrun) {
+window.$throttle = function(fun, timeout, overrun) {
   let tmr;
   let reset = ()=>{ clearTimeout(tmr); tmr = null };
   {// for reset
@@ -69,16 +69,16 @@ let $throttle = function(fun, timeout, overrun) {
     return fun();
   }
 }
-let $throttleResetAll = function() {
+window.$throttleResetAll = function() {
   $throttle.__all && $throttle.__all.forEach(i=>i());
 }
-let $activeAnimate = function(target) {
+window.$activeAnimate = function(target) {
   target.style.animation = 'none';
   target.offsetHeight; /* trigger reflow */
   target.style.animation = ''; 
 }
 
-let $pushHistoryBack = (callback) => {
+window.$pushHistoryBack = (callback) => {
   if(!window.__pushHistoryBack) {
     window.__pushHistoryBack = []
     window.addEventListener("popstate", (e) => {
@@ -90,11 +90,11 @@ let $pushHistoryBack = (callback) => {
   history.pushState('', '');
 }
 
-let $popHistoryBack = () => {
+window.$popHistoryBack = () => {
   window.__pushHistoryBack.pop()
 }
 
-let $prompt = async function(title){
+window.$prompt = async function(title){
   let tpl = `\
     <div class="dialog">\
       <div class="title">${title}</div>\
@@ -124,7 +124,7 @@ let $prompt = async function(title){
   })
 }
 
-let $confirm = async function(title){
+window.$confirm = async function(title){
   let tpl = `\
     <div class="dialog">\
       <div class="title">${title}</div>\
@@ -154,7 +154,7 @@ let $confirm = async function(title){
   })
 }
 
-let $alert = async function(title){
+window.$alert = async function(title){
   
   let tpl = `\
     <div class="dialog">\

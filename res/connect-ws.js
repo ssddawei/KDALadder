@@ -1,4 +1,5 @@
-class ConnectWebsocket {
+import { CONFIG } from './config.js';
+export class ConnectWebsocket {
   constructor(groupCode, receiveCallback, errorCallback) {
     this.ws = new WebSocket(
       CONFIG.ServerUrl

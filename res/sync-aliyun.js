@@ -1,7 +1,9 @@
 // include sync.js
 // include aliyunsdk
 // ali-sdk: https://github.com/ali-sdk/ali-oss
-class AliyunSyncData extends SyncData {
+import { CONFIG } from './config.js';
+import { SyncData } from './sync.js';
+export class AliyunSyncData extends SyncData {
   static LadderURL(season, relative) {
     return (relative? "": CONFIG.DataUrl) + `ladder-${season}.json`;
   }
