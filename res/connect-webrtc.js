@@ -148,12 +148,12 @@ class ConnectWebrtc {
     do{
       if(timeout <= 0) throw new Error("timeout");
       if(!this.pc) throw new Error("canceled");
-      let curOffer = await this.sync.load("offer.sdp");
+      let curOffer = await this.sync.load("offer.sdp", {cache: "reload"});
       if(JSON.stringify(curOffer) != JSON.stringify(offer)) {
         await this.sync.save("offer.sdp", offer);
       }
       await new Promise(o => setTimeout(o, SPAN)); // sleep 1 sec
-      answer = await this.sync.load("answer.sdp");
+      answer = await this.sync.load("answer.sdp", {cache: "reload"});
       timeout -= SPAN;
     } while(!answer);
 
@@ -229,7 +229,7 @@ class ConnectWebrtc {
       if(timeout <= 0) throw new Error("timeout");
       if(!this.pc) throw new Error("canceled");
       await new Promise(o => setTimeout(o, SPAN)); // sleep 1 sec
-      offer = await this.sync.load("offer.sdp");
+      offer = await this.sync.load("offer.sdp", {cache: "reload"});
       timeout -= SPAN;
     } while(!offer);
 

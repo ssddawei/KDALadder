@@ -214,10 +214,8 @@
 
       if(!timeTmr && matchCtrl.match.scores.length) {
 
-        if(!matchCtrl.match.beginTime)
-          matchCtrl.match.beginTime = Date.now();
-
         timeTmr = setInterval(()=>{
+          if(!matchCtrl.started) return;
           let span = Math.floor((Date.now() - matchCtrl.match.beginTime)/1000);
           let minutes = Math.floor(span / 60);
           let seconds = span % 60;
@@ -395,6 +393,7 @@
         refreshUI();
         connectSync("end")
         if(date) {
+          $sel(".pop-result iframe").src = "about:blank"
           $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
           $sel(".pop-result").classList.add('show')
         }
