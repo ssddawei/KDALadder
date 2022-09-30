@@ -665,9 +665,9 @@ export class ConnectController {
         let data = JSON.parse(msg);
         this.onData && this.onData(data);
       }, (err) => {
-        if(err.code != 1000) {
+        if(err.code && err.code != 1000) {
           this.refreshUI(["error", "done"]);
-          setTimeout(()=>{this.connect()}, 1000); // retry
+          setTimeout(()=>{this.connect()}, 3000); // retry
         } else {
           this.refreshUI();
         }
