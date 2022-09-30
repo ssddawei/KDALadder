@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KDALadder</title>
+  <script type="text/javascript" src="res/config.js"></script>
+  <script type="text/javascript" src="res/helper.js"></script>
+  <script type="text/javascript" src="res/algorithm.js"></script>
+  <script type="text/javascript" src="res/storage.js"></script>
+  <script type="text/javascript" src="res/storage-localstorage.js"></script>
+  <script type="text/javascript" src="res/sync.js"></script>
+  <script type="text/javascript" src="res/sync-server.js"></script>
+  <script type="text/javascript" src="res/app.js"></script>
+  <link rel="stylesheet" href="res/icomoon/style.css">
+  <link rel="stylesheet" href="res/style.css">
+</head>
+<body >
+  
+  <script>
+
+    function download(data, filename, type) {
+      var file = new Blob([data], {type: type});
+      if (window.navigator.msSaveOrOpenBlob) // IE10+
+          window.navigator.msSaveOrOpenBlob(file, filename);
+      else { // Others
+          var a = document.createElement("a"),
+                  url = URL.createObjectURL(file);
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(function() {
+              document.body.removeChild(a);
+              window.URL.revokeObjectURL(url);  
+          }, 0); 
+      }
+    }
+
+    (async()=>{
+      let data = await(await fetch("test/data.json")).json();
+      let ladder = await(await fetch("test/ladder.json")).json();
+      ladder = ladder.filter(i=>{
+        // i.personGroup.indexOf("蒋生")>=0 &&
+        return (i.ladder.find(j=>j.person == "滔" || j.person == "mark" 
+          || j.person == "爽"))
+        
+      })
+
+      download(JSON.stringify(ladder), "ladder.json", "text")
+
+
+      data = data.sort((a,b)=>a.beginTime-b.beginTime)
+      data = data.filter(i=>{
+        // i.personGroup.indexOf("蒋生")>=0 &&
+        return !(i.personGroup.indexOf("滔") >= 0 || i.personGroup.indexOf("mark") >= 0 
+          || i.personGroup.indexOf("爽") >= 0)
+        
+      })
+      console.log(data)
+
+
+      let matchCtrl = new MatchController()
+
+      ladders = []
+      data.forEach(i=>{
+        preLadder = ladders.reduce((pre, nxt) => {
+          nxt.ladder.forEach(kda => {
+            MatchController.LadderEvolve(pre.ladder, kda.person, {...kda});
+          })
+          return pre;
+        }, {ladder:[]})
+
+        matchCtrl.match = i;
+        ladders.push({personGroup:i.personGroup, ...matchCtrl.ladder(preLadder.ladder)})
+      })
+      console.log(ladders)
+
+      ladder = ladders.slice(0, 140).reduce((pre, nxt) => {
+        nxt.ladder.forEach(kda => {
+          MatchController.LadderEvolve(pre.ladder, kda.person, kda);
+        })
+        return pre;
+      }, {ladder:[]})
+
+      ladder.ladder = ladder.ladder.filter(i=>{
+        return i.win + i.loss > 2
+      })
+      console.log(ladder)
+
+      let loser = ["滔", "mark", "爽"]
+      ladder2 = data.slice(0, 140).reduce((pre,nxt)=>{
+        let teamAHasLoser = loser.indexOf(nxt.personGroup[0]) >= 0 || loser.indexOf(nxt.personGroup[1]) >= 0
+        let teamBHasLoser = loser.indexOf(nxt.personGroup[2]) >= 0 || loser.indexOf(nxt.personGroup[3]) >= 0
+
+        let removeLoser = nxt.personGroup.map(i=>loser.indexOf(i) >= 0? "": i);
+
+        removeLoser.forEach((i,idx)=>{
+          if(!i)return;
+          let p = pre.find(j=>j.person == i);
+          if(!p)return;
+          p.withLoser = p.withLoser || 0;
+          p.withLoser += (idx<2?teamAHasLoser:teamBHasLoser)? 1: 0;
+        })
+        return pre;
+      },ladder.ladder)
+      console.log(ladder2)
+
+      ladderStr = ladder.ladder.map(i=>i.person + $kdaString(i, true) + " wl:" + i.withLoser);
+      console.log(ladderStr)
+
+      console.log("mean",mean=ALG.Mean(ladder.ladder.map(i=>i.win/(i.win+i.loss))))
+
+      let sdarr = []
+      ladder.ladder.forEach(i=>{
+        let rate = i.win/(i.win+i.loss)
+        Array.from({length:i.win+i.loss}).forEach(()=>{
+          sdarr.push(rate)
+        })
+      })
+      console.log("SD",sd = ALG.SD(sdarr))
+      console.log("Quality", ALG.GroupQuality(ladder.ladder))
+
+      ladderStr = ladder.ladder.map(i=>{
+        i.score *= (0.5 - sd) / 0.5 
+        return i.person + $kdaString(i, true) + " wl:" + i.withLoser
+      });
+      console.log(ladderStr)
+    })()
+  </script>
+</body>
+</html>

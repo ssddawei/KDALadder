@@ -513,14 +513,15 @@ class LadderController {
       i.name = allName[idx]
       i.quality = ALG.GroupQuality(i.ladder)
     })
-    
+
     // calc hall ladder
     allLadders = allLadders.reduce((pre, nxt) => {
       nxt.ladder.forEach(kda => {
-        kda.person += "-" + nxt.name;
+        kda.group = nxt.name;
         kda.quality = nxt.quality;
         kda.score *= nxt.quality;
-        pre.ladder.push(kda);
+        if(kda.win + kda.loss > 5)
+          pre.ladder.push(kda);
         // MatchController.LadderEvolve(pre.ladder, kda.person, kda);
       })
       return pre;

@@ -24,7 +24,7 @@
       </div>
       <div class="item" data-target=".groupLadder">团体榜</div>
       <div class="item" data-target=".groupHistory">赛局记录</div>
-      <div class="logo">KDALadder.top</div>
+      <div class="logo" onclick="popResult('about.html')">KDALadder.top</div>
     </div>
     <div class="indexBody">
       <div class="bodyItem mainLadder active">
@@ -55,6 +55,17 @@
       <img alt="team" src="res/svg/team.svg" />
       <span>我的团体</span>
     </button>
+  </div>
+  <div class="begin" style="display:none">
+    <div class="box">
+      <h1>KDALadder.top</h1>
+      <small>欢迎来到kda天梯排行榜。在这里，你将会有如下技能：</small>
+      <img alt="begin" src="res/svg/begin-pic2.svg" />
+      <small>接下来：</small>
+      <button onclick="begin()" class="beginBtn">开始使用 ></button>
+      <small>或：</small>
+      <button onclick="begin('more')" class="aboutBtn">了解更多 ></button>
+    </div>
   </div>
 
   <!-- ListChooser -->
@@ -105,6 +116,18 @@
       $sel('.pop-result').classList.remove('show');
       $popHistoryBack();
     })
+
+    if(!localStorage.getItem("__showBegin")) {
+      $sel(".begin").style.display = "block"
+    }
+    function begin(more) {
+      if(more) {
+        popResult("about.html")
+      } else {
+        localStorage.setItem("__showBegin", "false");
+      $sel(".begin").style.display = "none"
+      }
+    }
 
     window.popResult = (url) => {
       $sel(".pop-result iframe").src = url

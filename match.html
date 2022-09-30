@@ -232,10 +232,10 @@
         $sel("div.match").classList.remove("started");
 
       // name
-      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "(empty)";
-      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "(empty)";
-      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "(empty)";
-      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(empty)";
+      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "(选择成员)";
+      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "(选择成员)";
+      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "(选择成员)";
+      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(选择成员)";
       
       // match score
       if($sel(".aScore").innerHTML != matchCtrl.aScore)

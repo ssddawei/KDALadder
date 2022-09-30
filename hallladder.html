@@ -44,10 +44,10 @@
     </script>
 
     <div title="总分 &nbsp; 击杀 / 失误 / 助攻 / &nbsp;  胜率% ( 胜场数 / 败场数 )" class="ladder-help place-holder-owner">
-      <i class="icon-medal"></i> &nbsp; <i class="icon-kda-k"></i> / <i class="icon-kda-d"></i> / <i class="icon-kda-a"></i> / &nbsp;  <i class="icon-win"></i>% ( <i class="icon-win"></i> / <i class="icon-loss"></i> )
+      <i class="icon-medal"></i> &nbsp; <i class="icon-kda-k"></i> / <i class="icon-kda-d"></i> / <i class="icon-kda-a"></i> / &nbsp;  <i class="icon-win"></i>% ( <i class="icon-win"></i> / <i class="icon-loss"></i> ) &nbsp; <i class="icon-rocket"></i>%
     </div>
     <div class="ladder-help place-holder">
-      总分 &nbsp; 击杀 / 失误 / 助攻 / &nbsp;  胜率% ( 胜场数 / 败场数 )
+      总分 &nbsp; 击杀 / 失误 / 助攻 / &nbsp;  胜率% ( 胜场数 / 败场数 )&nbsp; 团体加成
     </div>
     <div class="ladder">
     </div>
@@ -74,8 +74,8 @@
         let maxScore = ladder.ladder[0].score;
         $sel("div.ladder").innerHTML = ladder.ladder.map(i => {
           let width = Math.floor(i.score / maxScore * 100 * 0.7);
-          let item = tmpl.replace("{{name}}", i.person)
-            .replace(/{{score}}/g, $kdaString(i, true))
+          let item = tmpl.replace("{{name}}", i.person + `<small>${i.group}</small>`)
+            .replace(/{{score}}/g, $kdaString(i, true) + ' <em class="icon-rocket"></em>' + (i.quality * 100).toFixed(0) + '%')
             .replace("{{width}}", width)
           return item;
         }).join("");

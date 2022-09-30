@@ -31,8 +31,11 @@ class ALG {
     // 胜率的权重标准差
     let sd = ALG.SD(sdarr);
 
-    // 标准差 0.5 表示差距极大，0 表示没差距
+    // 标准差 0.6 表示差距极大，0 表示没差距
     // 归一化
-    return Math.max(0, 1 - sd / 0.5)
+    let sdRange = [0.1, 0.35];
+    let sdNomalized = (sd - sdRange[0]) / (sdRange[1] - sdRange[0])
+    
+    return Math.max(0, 1 - sdNomalized)
   }
 }

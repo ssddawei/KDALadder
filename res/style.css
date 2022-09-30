@@ -1129,13 +1129,24 @@ body.ladder div.ladder .item .name{
   width: 1.5rem;
   font-size: 0.4rem;
   margin-right: 0.4rem;
+  padding-bottom: 0.2rem;
   box-sizing: content-box;
   display: flex;
   justify-content: left;
   align-items: center;
   overflow: hidden;
   white-space: nowrap;
+  position: relative;
 }
+
+body.ladder div.ladder .item .name small {
+  font-size: 0.4rem;
+  transform: scale(0.5);
+  transform-origin: 0 100%;
+  position: absolute;
+  bottom: 0rem;
+}
+
 body.ladder div.ladder .item .score{
   border-radius: 0.1rem;
   background: rgb(142 186 178);
