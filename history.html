@@ -49,6 +49,7 @@
   </div>
   <script type="module">
     import * as App from './res/app.js'
+    import { LocalStorage } from './res/storage-localstorage.js'
     Object.assign(window, App);
 
     let ladderCtrl = new LadderController();
@@ -82,10 +83,6 @@
 
     }
 
-    function popResult(url) {
-      parent.popResult(url);
-    }
-
     $sel(".matchBox > h2").addEventListener("click", async ()=>{
       matchDate = await matchChooser.choose() || matchDate;
       refreshUI();
@@ -102,6 +99,8 @@
       );
       return allDates;
     });
+
+    window.popResult = parent.popResult;
 
     ladderCtrl.sync().then(refreshUI);
   </script>

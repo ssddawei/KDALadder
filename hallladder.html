@@ -47,6 +47,7 @@
   </div>
   <script type="module">
     import * as App from './res/app.js'
+    import { LocalStorage } from './res/storage-localstorage.js'
     Object.assign(window, App);
     
     let ladderCtrl = new LadderController();
@@ -56,11 +57,14 @@
     async function refreshUI() {
 
       var tmpl;
+
+      $sel("div.ladder").innerHTML = "loading..."
+
       let ladder = await ladderCtrl.seasonHallLadder(ladderDate);
 
       $sel(".ladderBox > small").innerHTML = ladderDate;
 
-      if(ladder) {
+      if(ladder && ladder.ladder.length) {
 
         // ladder 
         tmpl = $sel("#LadderItem").innerHTML;
@@ -74,6 +78,8 @@
           return item;
         }).join("");
 
+      } else {
+        $sel("div.ladder").innerHTML = "暂无数据"
       }
 
 
@@ -81,6 +87,14 @@
 
     let ladderChooser = new parent.ListChooser(() => {
       let remote = new LocalStorage("remote");
+
+      let currentSeason = $seasonString(new Date())
+      let prevSeason = [1,2,3].map(i => {
+        let date = new Date();
+        date.setDate(1);
+        date.setMonth(date.getMonth() - 3 * i)
+        return $seasonString(date);
+      })
       let allDates = Array.from(
         new Set(
           Object.values(remote.ladder).reduce((pre,nxt) => pre.concat(nxt), []) // all ladders
@@ -88,9 +102,10 @@
             // .concat($dateString(new Date()))  // add today
             .concat(Object.keys(remote.ladder)) // add seasonString
             .concat($seasonString(new Date()))  // add current season
+            .concat(prevSeason)
         )
       ).sort((a,b)=>b.localeCompare(a));
-      return Object.keys(remote.ladder);
+      return (allDates);
     });
 
     $sel(".ladderBox > h1").addEventListener("click", async ()=>{

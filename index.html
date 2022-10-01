@@ -91,7 +91,12 @@
     }))
 
     $sel(".newMatch").addEventListener("click", () => {
-      location.href = "match.html"
+      if(!new GroupController().online) {
+        $alert("请先登录")
+        $sel(".myGroup").click();
+      } else {
+        location.href = "match.html"
+      }
     })
     $sel(".ladder").addEventListener("click", () => {
       $sels("body>div").forEach(e => e.classList.remove("active"));
@@ -132,7 +137,6 @@
       })
     }
 
-    window.ListChooser = ListChooser;
     
 
   </script>

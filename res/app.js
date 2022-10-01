@@ -239,6 +239,9 @@ export class GroupController {
     let result = await this.sync.login(groupCode);
 
   }
+  async logout() {
+    this.sync.logout()
+  }
   async info() {
     return await this.sync.info();
   }
@@ -491,7 +494,7 @@ export class LadderController {
   }
   async seasonLadder(season = $seasonString(new Date())) {
     let ladder = this.remote.ladder[season];
-    if(!ladder) {
+    if(true || !ladder) {
       let dateOfSession = season
         .replace("season1", "1-1")
         .replace("season2", "4-1")

@@ -25,9 +25,9 @@ body {
   color: white;
   border-radius: 0 0 0.5rem 0.5rem;
   font-size: 0.3rem;
-  line-height: 0.5rem;
+  line-height: 0.3rem;
   z-index: 1000;
-  padding: 0.2rem ;
+  padding: 0.1rem ;
   margin-left: -1.7rem;
   pointer-events: none;
 }
@@ -1442,6 +1442,7 @@ body.result div.result .score .item .scoreLine.groupB {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0.1rem;
 }
 .group ul li label{
   width: 2rem;
@@ -1454,10 +1455,23 @@ body.result div.result .score .item .scoreLine.groupB {
 }
 .group ul li input{
   width: 6rem;
-  height: .6rem;
   border-radius: 0.2rem;
-  font-size: .5rem;
+  font-size: .6rem;
+  padding: 0.2rem 0.5rem;
+  border: 0;
+  background: #eee
 }
+.group ul li input.gcitem{
+  width: 0.5rem;
+  width: 0.5rem;
+  border-radius: 0.2rem;
+  font-size: .6rem;
+  padding: 0.2rem;
+  margin: 0.1rem;
+  border: 0;
+  background: #eee
+}
+.group ul 
 .group ul li:last-child{
   text-align: center;
   padding: 1rem;
@@ -1470,7 +1484,7 @@ body.result div.result .score .item .scoreLine.groupB {
   font-size: 0.5rem;
   margin: 0.2rem 0.1rem;
   padding: 0.2rem 1rem;
-  animation: none
+  /* animation: none */
 }
 .group .switchBtnBox {
   position: absolute;

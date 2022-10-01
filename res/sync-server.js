@@ -78,7 +78,11 @@ export class ServerSyncData extends SyncData {
     }
   }
   static set key(value) {
-    localStorage.setItem("gc", btoa(JSON.stringify(value)))
+    if(!value) {
+      localStorage.removeItem("gc");
+    } else {
+      localStorage.setItem("gc", btoa(JSON.stringify(value)))
+    }
   }
   autologin() {
     if(ServerSyncData.key) {
@@ -107,6 +111,11 @@ export class ServerSyncData extends SyncData {
     ServerSyncData.key = {
       groupCode, groupCodeHashPath
     }
+  }
+  logout() {
+    this.groupCodeHashPath = null;
+    this.api.groupCode = null;
+    ServerSyncData.key = null
   }
   async info() {
     return await this.api.getInfo();

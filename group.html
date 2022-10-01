@@ -10,58 +10,62 @@
 </head>
 <body class="group">
   <div class="loginBox groupBox">
-    <h1>进入团体</h1>
+    <h1># 进入团体</h1>
     <ul>
       <li><label for="groupCode">暗号</label><input type="password" id="groupCode" /></li>
       <li><button id="loginBtn">进入</button></li>
     </ul>
-    <div class="switchBtnBox"><button class="switchBtn">创建团体</button></div>
+    <div class="switchBtnBox"><button class="switchBtn" style="background:rgb(22, 80, 103)">创建团体</button></div>
   </div>
   <div class="registerBox groupBox">
-    <h1>创建团体</h1>
+    <h1># 创建团体</h1>
     <ul>
       <li><label for="groupName">团体名号</label><input type="text" id="groupName" /></li>
       <li><label for="groupCode">暗号</label><input type="password" id="groupCode" /></li>
-      <li><label for="inviteCode">邀请码</label><input type="text" id="inviteCode" /></li>
+      <!-- <li><label for="inviteCode">邀请码</label><input type="text" id="inviteCode" /></li> -->
       <li><button id="registerBtn">确认创建</button></li>
     </ul>
     <div class="switchBtnBox"><button class="switchBtn">进入团体</button></div>
   </div>
   <div class="infoBox groupBox">
-    <h1>我的团体</h1>
+    <h1># 我的团体</h1>
     <ul>
       <li><label for="groupName">团体名号</label><input type="text" id="groupName" /></li>
       <li><label for="groupCode">暗号</label><input type="password" id="groupCode" /></li>
       <li><button id="updateBtn">确认修改</button></li>
     </ul>
-    <div class="switchBtnBox"><button class="switchBtn leaveBtn">离开团体</button></div>
+    <div class="switchBtnBox"><button class="switchBtn leaveBtn">退出登录</button></div>
   </div>
   <script type="module">
     import * as App from './res/app.js'
     Object.assign(window, App);
     
     let groupCtrl = new GroupController();
+    let isRegistering = false;
 
     async function refreshUI() {
-      if(groupCtrl.online) {
+      $sel(".infoBox").style.display = "none";
+      $sel(".loginBox").style.display = "none";
+      $sel(".registerBox").style.display = "none";
+      if(isRegistering) {
+        $sel(".registerBox").style.display = "block";
+      } else if(groupCtrl.online) {
+        $sel(".infoBox").style.display = "block";
         let groupInfo = await groupCtrl.info();
         $sel(".infoBox #groupName").value = groupInfo.groupName;
         $sel(".infoBox #groupCode").value = groupCtrl.sync.api.groupCode;
+      } else {
+        $sel(".loginBox").style.display = "block";
       }
     }
 
-    if(groupCtrl.online) {
-      $sel(".infoBox").style.display = "block";
-      refreshUI();
-    } else {
-      $sel(".loginBox").style.display = "block";
-    }
 
     $sel("#loginBtn").addEventListener("click", async () => {
       let groupCode = $sel(".loginBox #groupCode").value;
       try {
         await groupCtrl.login(groupCode);
-        location.href = "ladder.html"
+        $sel(".loginBox #groupCode").value = "";
+        refreshUI()
       } catch(err) {
         console.log(err)
         $alert(err)
@@ -70,9 +74,19 @@
     $sel("#registerBtn").addEventListener("click", async () => {
       let groupCode = $sel(".registerBox #groupCode").value;
       let groupName = $sel(".registerBox #groupName").value;
-      let inviteCode = $sel(".registerBox #inviteCode").value;
-      await groupCtrl.register(groupCode, groupName, inviteCode);
-      location.href = "ladder.html"
+      // let inviteCode = $sel(".registerBox #inviteCode").value;
+      try {
+        await groupCtrl.register(groupCode, groupName);
+        $sel(".registerBox #groupCode").value = "";
+        $sel(".registerBox #groupName").value = "";
+        // $sel(".registerBox #inviteCode").value = "";
+      }catch(err) {
+        if(err.indexOf("exists")) {
+          $alert("团体暗号已被使用")
+        }
+      }
+      
+      refreshUI()
     })
     $sel("#updateBtn").addEventListener("click", async () => {
       let groupCode = $sel(".infoBox #groupCode").value;
@@ -82,13 +96,19 @@
     })
 
     $sel(".loginBox .switchBtn").addEventListener("click", () => {
-      $sel(".registerBox").style.display = "block";
-      $sel(".loginBox").style.display = "none";
+      isRegistering = true;
+      refreshUI();
     })
     $sel(".registerBox .switchBtn").addEventListener("click", () => {
-      $sel(".loginBox").style.display = "block";
-      $sel(".registerBox").style.display = "none";
+      isRegistering = false;
+      refreshUI();
     })
+    $sel(".groupBox .leaveBtn").addEventListener("click", () => {
+      groupCtrl.logout();
+      refreshUI()
+    })
+
+    refreshUI()
   </script>
 </body>
 </html>

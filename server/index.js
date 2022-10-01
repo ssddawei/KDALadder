@@ -72,11 +72,11 @@ router.post("/v1/group/match", async (ctx, next) => {
     await groupCtrl.saveMatch(data.groupCode, data.matchData, data.ladderData);
 })
 
-import fs from 'fs'
-router.get("/", async (ctx) => {
-    ctx.body = fs.readFileSync("./index.html")
-    ctx.set("Content-Type", "text/html")
-})
+// import fs from 'fs'
+// router.get("/", async (ctx) => {
+//     ctx.body = fs.readFileSync("./index.html")
+//     ctx.set("Content-Type", "text/html")
+// })
 
 // Error handling
 app.use(async (ctx, next) => {
@@ -97,6 +97,7 @@ app.use(async (ctx, next) => {
 
 app.use(Cors());
 app.use(StaticServe("data"))
+app.use(StaticServe("../"))
 app.use(router.routes()).use(router.allowedMethods());
 app.ws.use(wsRouter.routes()).use(wsRouter.allowedMethods());
 

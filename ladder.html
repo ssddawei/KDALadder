@@ -47,6 +47,7 @@
   </div>
   <script type="module">
     import * as App from './res/app.js'
+    import { LocalStorage } from './res/storage-localstorage.js'
     Object.assign(window, App);
 
     let ladderCtrl = new LadderController();
@@ -54,6 +55,8 @@
 
     async function refreshUI() {
 
+      $sel("div.ladder").innerHTML = "loading..."
+      
       var tmpl;
       let ladder = ladderDate.indexOf("season") >= 0? 
           await ladderCtrl.seasonLadder(ladderDate): 
@@ -61,7 +64,7 @@
 
       $sel(".ladderBox > small").innerHTML = ladderDate;
 
-      if(ladder) {
+      if(ladder && ladder.ladder.length) {
 
         // ladder 
         tmpl = $sel("#LadderItem").innerHTML;
@@ -75,6 +78,8 @@
           return item;
         }).join("");
 
+      } else {
+        $sel("div.ladder").innerHTML = "暂无数据"
       }
 
 
