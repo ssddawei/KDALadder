@@ -85,6 +85,12 @@
 
     }
 
+    let prevSeason = [1,2,3].map(i => {
+      let date = new Date();
+      date.setDate(1);
+      date.setMonth(date.getMonth() - 3 * i)
+      return $seasonString(date);
+    })
     let ladderChooser = new parent.ListChooser(() => {
       let remote = new LocalStorage("remote");
       let allDates = Array.from(
@@ -94,6 +100,7 @@
             // .concat($dateString(new Date()))  // add today
             .concat(Object.keys(remote.ladder)) // add seasonString
             .concat($seasonString(new Date()))  // add current season
+            .concat(prevSeason)
         )
       ).sort((a,b)=>b.localeCompare(a));
       return allDates;
