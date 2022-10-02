@@ -137,6 +137,11 @@
       })
     }
 
+    window.refreshAll = () => { // refresh on login/logout
+      $sel(".groupLadder iframe").contentWindow.location.reload()
+      $sel(".groupHistory iframe").contentWindow.location.reload()
+    }
+
     
 
   </script>

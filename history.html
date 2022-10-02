@@ -58,27 +58,37 @@
 
     async function refreshUI() {
 
-      var tmpl;
-      let data = await ladderCtrl.dateMatch(matchDate);
+      try {
+        $sel("div.matches").innerHTML = "loading..."
 
-      $sel(".boxDate").innerHTML = matchDate;
+        var tmpl;
+        let data = await ladderCtrl.dateMatch(matchDate);
 
-      // match
-      if(data) {
-        tmpl = $sel("#MatchItem").innerHTML;
+        $sel(".boxDate").innerHTML = matchDate;
 
-        $sel("div.matches").innerHTML = data.map((i,idx) => {
-          let matchCtrl = new MatchController(i);
-          let item = tmpl.replace("{{score}}", `${matchCtrl.aScore}:${matchCtrl.bScore}`)
-            .replace("{{index}}",  $dateString(new Date(i.beginTime)))
-            .replace("{{beginTime}}", `${i.beginTime}`)
-            .replace("{{title}}",  $timeString(new Date(i.beginTime)))
-            .replace("{{person1}}", `${i.personGroup[0]} ${matchCtrl.kda(i.personGroup[0]).score.toFixed(1)}`)
-            .replace("{{person2}}", `${i.personGroup[1]} ${matchCtrl.kda(i.personGroup[1]).score.toFixed(1)}`)
-            .replace("{{person3}}", `${i.personGroup[2]} ${matchCtrl.kda(i.personGroup[2]).score.toFixed(1)}`)
-            .replace("{{person4}}", `${i.personGroup[3]} ${matchCtrl.kda(i.personGroup[3]).score.toFixed(1)}`)
-          return item;
-        }).join("");
+        // match
+        if(data) {
+          tmpl = $sel("#MatchItem").innerHTML;
+
+          $sel("div.matches").innerHTML = data.map((i,idx) => {
+            let matchCtrl = new MatchController(i);
+            let item = tmpl.replace("{{score}}", `${matchCtrl.aScore}:${matchCtrl.bScore}`)
+              .replace("{{index}}",  $dateString(new Date(i.beginTime)))
+              .replace("{{beginTime}}", `${i.beginTime}`)
+              .replace("{{title}}",  $timeString(new Date(i.beginTime)))
+              .replace("{{person1}}", `${i.personGroup[0]} ${matchCtrl.kda(i.personGroup[0]).score.toFixed(1)}`)
+              .replace("{{person2}}", `${i.personGroup[1]} ${matchCtrl.kda(i.personGroup[1]).score.toFixed(1)}`)
+              .replace("{{person3}}", `${i.personGroup[2]} ${matchCtrl.kda(i.personGroup[2]).score.toFixed(1)}`)
+              .replace("{{person4}}", `${i.personGroup[3]} ${matchCtrl.kda(i.personGroup[3]).score.toFixed(1)}`)
+            return item;
+          }).join("");
+        } else {
+          $sel("div.matches").innerHTML = "暂无数据"
+        }
+      } catch(err) {
+        if(err && err.message == "need login") {
+          $sel("div.matches").innerHTML = "请登录"
+        }
       }
 
     }
@@ -102,7 +112,7 @@
 
     window.popResult = parent.popResult;
 
-    ladderCtrl.sync().then(refreshUI);
+    refreshUI();
   </script>
 </body>
 </html>

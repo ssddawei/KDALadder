@@ -174,13 +174,32 @@
     
     window.__personSort = JSON.parse(localStorage.getItem("__personSort")||"[]");
     let personChooser = new ListChooser( async () => {
-      let ladder = await new LadderController().seasonLadder();
-      return ladder.ladder.map(p => ({
-        data: p.person,
-        subtitle: `赛季成绩：${p.score.toFixed(1)}`
-      })).sort((a,b) => {
+      let result = [];
+      
+      { // current season
+        let ladder = await new LadderController().seasonLadder();
+        result = result.concat(ladder.ladder.map(p => ({
+          data: p.person,
+          subtitle: `赛季成绩：${p.score.toFixed(2)}`
+        })).filter(i => {
+          return !ladder.ladder.find(j => j.person == i.person)
+        }))
+      }
+      { // pre season
+        let preSeason = new Date();
+        preSeason.setMonth(preSeason.getMonth() - 3);
+        let ladder = await new LadderController().seasonLadder($seasonString(preSeason));
+        result = result.concat(ladder.ladder.map(p => ({
+          data: p.person,
+          subtitle: `上赛季成员`
+        })).filter(i => {
+          return !result.find(j => j.data == i.data)
+        }))
+      }
+      result.sort((a,b) => {
         return window.__personSort.indexOf(b.data) - window.__personSort.indexOf(a.data)
       })
+      return result;
     }, true);
     $sel("div.dataList .newItemBtn").addEventListener("click", async () => {
       let newPerson = await $prompt("输入新成员名字");
@@ -379,6 +398,11 @@
       if(!matchCtrl.started){
         $alert("比赛都没开始，结束你个头。");
         return;
+      }
+      if(!matchCtrl.readyToEnd) {
+        if(!await $confirm("比赛看似还没结束，确定？")) {
+          return;
+        }
       }
       let beginTime = matchCtrl.match.beginTime;
       try{

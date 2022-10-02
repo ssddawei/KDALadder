@@ -124,6 +124,8 @@ export class ServerSyncData extends SyncData {
     return await this.api.postInfo(groupName, groupCode);
   }
   async loadRemote(date) {
+    if(!this.online)
+      throw new Error("need login")
     let seasonStr = $seasonString(date);
     let dateStr = $dateString(date);
     this.remote.ladder[seasonStr] = await $fetch(this.LadderURL(seasonStr), {toArray:true}) || [];
@@ -143,6 +145,9 @@ export class ServerSyncData extends SyncData {
     return [allLadders, allName];
   }
   async saveRemote() {
+
+    if(!this.online)
+      throw new Error("need login")
 
     if(!this.local){
       return;
@@ -193,6 +198,9 @@ export class ServerSyncData extends SyncData {
   }
   async sync() {
 
+    if(!this.online)
+      throw new Error("need login")
+      
     let now = new Date();
 
     await this.loadRemote(now);

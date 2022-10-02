@@ -5,6 +5,8 @@ import Websocket from 'koa-websocket'
 import KoaBody from 'koa-body'
 import Cors from '@koa/cors'
 import StaticServe from 'koa-static'
+import Conditional from 'koa-conditional-get'
+import Etag from 'koa-etag'
 
 import GroupController from './app.js'
 
@@ -82,7 +84,7 @@ router.post("/v1/group/match", async (ctx, next) => {
 app.use(async (ctx, next) => {
     try {
         await next();
-        if(!ctx.body) {
+        if(ctx.status != 304 && !ctx.body) {
             apiDoneWithEmpty(ctx);
         }
     } catch (err) {
@@ -96,6 +98,8 @@ app.use(async (ctx, next) => {
 })
 
 app.use(Cors());
+app.use(Conditional())
+app.use(Etag())
 app.use(StaticServe("data"))
 app.use(StaticServe("../"))
 app.use(router.routes()).use(router.allowedMethods());

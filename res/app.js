@@ -1,4 +1,4 @@
-import { Match, GameScore } from "./storage.js";
+import { Match, GameScore, MatchScore, Ladder } from "./storage.js";
 import { LocalStorage } from "./storage-localstorage.js";
 import { ALG } from "./algorithm.js";
 import { ConnectWebsocket } from "./connect-ws.js";
@@ -606,7 +606,7 @@ export class ConnectController {
         // if(await $confirm("确定断开？")){
           this.conn && this.conn.close()
           this.conn == undefined;
-          localStorage.removeItem("connect-status");
+          localStorage.setItem("connect-status", "close");
           this.refreshUI();
           return;
         // }
@@ -615,7 +615,10 @@ export class ConnectController {
       this.connect();
     });
 
-    if(localStorage.getItem("connect-status") == "done") {
+    let autoStart = localStorage.getItem("connect-status") == "done" ||
+      localStorage.getItem("connect-status") == undefined;
+
+    if(autoStart) {
       this.connect();
     }
   }

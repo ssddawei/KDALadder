@@ -55,32 +55,38 @@
 
     async function refreshUI() {
 
-      $sel("div.ladder").innerHTML = "loading..."
       
-      var tmpl;
-      let ladder = ladderDate.indexOf("season") >= 0? 
-          await ladderCtrl.seasonLadder(ladderDate): 
-          await ladderCtrl.dateLadder(ladderDate);
+      try {
+        $sel("div.ladder").innerHTML = "loading..."
+        let ladder = ladderDate.indexOf("season") >= 0? 
+            await ladderCtrl.seasonLadder(ladderDate): 
+            await ladderCtrl.dateLadder(ladderDate);
+        $sel(".ladderBox > small").innerHTML = ladderDate;
 
-      $sel(".ladderBox > small").innerHTML = ladderDate;
+        if(ladder && ladder.ladder.length) {
 
-      if(ladder && ladder.ladder.length) {
+          // ladder 
+          
+          var tmpl = $sel("#LadderItem").innerHTML;
 
-        // ladder 
-        tmpl = $sel("#LadderItem").innerHTML;
+          let maxScore = ladder.ladder[0].score;
+          $sel("div.ladder").innerHTML = ladder.ladder.map(i => {
+            let width = Math.floor(i.score / maxScore * 100 * 0.7);
+            let item = tmpl.replace("{{name}}", i.person)
+              .replace(/{{score}}/g, $kdaString(i, true))
+              .replace("{{width}}", width)
+            return item;
+          }).join("");
 
-        let maxScore = ladder.ladder[0].score;
-        $sel("div.ladder").innerHTML = ladder.ladder.map(i => {
-          let width = Math.floor(i.score / maxScore * 100 * 0.7);
-          let item = tmpl.replace("{{name}}", i.person)
-            .replace(/{{score}}/g, $kdaString(i, true))
-            .replace("{{width}}", width)
-          return item;
-        }).join("");
-
-      } else {
-        $sel("div.ladder").innerHTML = "暂无数据"
+        } else {
+          $sel("div.ladder").innerHTML = "暂无数据"
+        }
+      } catch(err) {
+        if(err && err.message == "need login") {
+          $sel("div.ladder").innerHTML = "请登录"
+        }
       }
+
 
 
     }
@@ -110,7 +116,8 @@
       ladderDate = await ladderChooser.choose() || ladderDate;
       refreshUI();
     });
-    ladderCtrl.sync().then(refreshUI);
+
+    refreshUI();
   </script>
 </body>
 </html>

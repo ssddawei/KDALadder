@@ -66,6 +66,7 @@
         await groupCtrl.login(groupCode);
         $sel(".loginBox #groupCode").value = "";
         refreshUI()
+        parent.refreshAll();
       } catch(err) {
         console.log(err)
         $alert(err)
@@ -80,6 +81,10 @@
         $sel(".registerBox #groupCode").value = "";
         $sel(".registerBox #groupName").value = "";
         // $sel(".registerBox #inviteCode").value = "";
+        isRegistering = false;
+        refreshUI();
+
+        parent.refreshAll();
       }catch(err) {
         if(err.indexOf("exists")) {
           $alert("团体暗号已被使用")
@@ -106,6 +111,7 @@
     $sel(".groupBox .leaveBtn").addEventListener("click", () => {
       groupCtrl.logout();
       refreshUI()
+      parent.refreshAll();
     })
 
     refreshUI()
