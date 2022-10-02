@@ -1,5 +1,5 @@
 export let CONFIG = {
-  ServerUrl: `http://${location.hostname}:8080`,
+  ServerUrl: `http://${location.host}`,
   AliyunOSSKey: {
     region: "oss-cn-guangzhou",
     bucket: "kdaladder-dev",

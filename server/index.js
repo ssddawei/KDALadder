@@ -105,4 +105,4 @@ app.use(StaticServe("../"))
 app.use(router.routes()).use(router.allowedMethods());
 app.ws.use(wsRouter.routes()).use(wsRouter.allowedMethods());
 
-app.listen(8080);
+app.listen(80);
