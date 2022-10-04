@@ -115,6 +115,8 @@
     $sel(".close-pop-result").addEventListener("click", () => {
       $sel('.pop-result').classList.remove('show');
       $popHistoryBack();
+      let iframe = $sel(".pop-result iframe").contentDocument;
+      iframe.removeChild(iframe.documentElement)
     })
 
     if(!localStorage.getItem("__showBegin")) {
@@ -130,7 +132,7 @@
     }
 
     window.popResult = (url) => {
-      $sel(".pop-result iframe").src = url
+      $sel(".pop-result iframe").src = url;
       $sel(".pop-result").classList.add('show')
       $pushHistoryBack(()=>{
         $sel('.pop-result').classList.remove('show');

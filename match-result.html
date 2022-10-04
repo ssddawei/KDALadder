@@ -104,7 +104,7 @@
         this.beginTime = query.slice(splitIdx+1);
       }
       async load() {
-        let matches = await new LadderController().dateMatch(this.date, this.beginTime);//new LocalStorage("remote");
+        let matches = await new LadderController(parent.token).dateMatch(this.date, this.beginTime);//new LocalStorage("remote");
         // let matches = data[this.date];
         if(matches) {
           let match = matches.filter(i => i.beginTime == this.beginTime)[0];

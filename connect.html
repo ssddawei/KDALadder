@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match</title>
+  <script type="text/javascript" src="res/qrcode.min.js"></script>
+  <link rel="stylesheet" href="res/style.css">
+  <link rel="stylesheet" href="res/icomoon/style.css">
+  <style>
+    body {
+      background: rgb(255,0,0);
+      width: 100%;
+      height: auto;
+      background: white fixed linear-gradient(135deg, rgb(255 255 255 / 20%) 0%, rgb(131 175 109 / 18%) 100%);
+      display: flex;
+      flex-direction: column;
+      color: black;
+      align-items: center;
+      padding: 1rem;
+      padding-bottom: 2rem;
+      box-sizing: border-box;
+    }
+    body * {
+      font-size: 0.4rem;
+    }
+    h1 {
+      font-size: 0.7rem;
+    }
+    button {
+      margin: 0.2rem;
+    }
+    button.connectBtn {
+      border: 0;
+      border-radius: 0.2rem;
+      color: white;
+      padding: 0.2rem 0.4rem;
+      box-shadow: 0rem 0rem 0.1rem rgba(0,0,0,0.5);
+      background: green;
+      font-size: 0.5rem;
+      display: none;
+    }
+    button.disconnectBtn {
+      border: 0;
+      border-radius: 0.2rem;
+      color: white;
+      padding: 0.2rem 0.4rem;
+      box-shadow: 0rem 0rem 0.1rem rgba(0,0,0,0.5);
+      background: red;
+      font-size: 0.5rem;
+      display: none;
+    }
+    button.channelBtn {
+      border: 0;
+      border-radius: 0.2rem;
+      color: white;
+      padding: 0.1rem 0.4rem;
+      box-shadow: 0rem 0rem 0.1rem rgba(0,0,0,0.5);
+      background: black;
+      font-size: 0.3rem;
+    }
+    .connectQRcode {
+      width: 10rem;
+      height: 10rem;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    .connectQRcode * {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1> 多屏同步 </h1>
+  <small>团体内相同信道的终端同步显示比分</small>
+  <button class="connectBtn icon-sync">开始同步</button>
+  <button class="disconnectBtn icon-sync">停止同步</button>
+  <button class="channelBtn">切换信道 (<span id="currentChannel">1</span>)</button>
+  <small>(扫描二维码，直接打开页面)</small>
+  <div class="connectQRcode"></div>
+  <script type="module">
+    import * as App from './res/app.js'
+    Object.assign(window, App);
+
+    let status = parent.connectCtrl.status;
+
+    function refreshUI() {
+      $sel("#currentChannel").innerHTML = parent.connectCtrl.subgroup;
+      if(status == "done") {
+        $sel(".connectBtn").style.display = "none";
+        $sel(".disconnectBtn").style.display = "block";
+      } else if(!status || status == "error") {
+        $sel(".connectBtn").style.display = "block";
+        $sel(".disconnectBtn").style.display = "none";
+      }
+    }
+    parent.connectCtrl.addEventListener("status", (msg) => {
+      status = msg.data;
+      refreshUI();
+    })
+    $sel(".connectBtn").addEventListener("click", () => {
+      parent.connectCtrl.connect();
+    })
+    $sel(".disconnectBtn").addEventListener("click", () => {
+      parent.connectCtrl.disconnect();
+    })
+
+    let channelChooser = new parent.ListChooser( async () => {
+      return [1,2,3,4,5,6,7,8].map(p => ({
+        data: p,
+        active: p == parent.connectCtrl.subgroup,
+        subtitle: `信道${p}`
+      }))
+    }, true);
+
+    $sel(".channelBtn").addEventListener("click", async () => {
+      parent.document.querySelector("div.dataList .newItemBtn").style.display = "none";
+      parent.connectCtrl.subgroup = await channelChooser.choose() || parent.connectCtrl.subgroup;
+      parent.refreshUI();
+      refreshUI();
+    })
+
+    let loadQRCode = async () => {
+      let token = location.search.slice(1);
+      if(!token) {
+        token = await new GroupController().token();
+      }
+      let qrUrl = new URL("match.html?" + token, location.origin)
+      console.log("QRURL", qrUrl.toString());
+      new QRCode($sel(".connectQRcode"), qrUrl.toString())
+    }
+
+    loadQRCode();
+    refreshUI();
+
+  </script>
+</body>
+</html>

@@ -560,7 +560,7 @@ button:active,button:after,button:before {
 .connect.done img {
 	animation: connect-icon-done-ani 5s linear infinite ;
 }
-.connect.done.error img {
+.connect.error img {
 	animation: connect-icon-err-ani 0.8s infinite ;
 }
 
@@ -838,6 +838,36 @@ body.board {
   display: flex;
   flex-direction: column;
   width: 100%;
+}
+
+.qrcode {
+  position: fixed;
+  top: 50%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: white;
+  padding: 1rem;
+  box-sizing: border-box;
+  height: 50%;
+  display: none;
+}
+.qrcodeTitle {
+  position: absolute;
+  background: black;
+  color: white;
+  padding: 0.1rem;
+  border-radius: 0.1rem;
+  font-weight: bold;
+  font-size: 0.5rem;
+}
+.qrcodeImg {
+  width: 100%;
+  height: 100%;
+}
+.qrcodeImg img{
+  height: 100%;
 }
 
 body.board button:not(.active) {

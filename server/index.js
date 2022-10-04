@@ -67,11 +67,19 @@ router.post("/v1/group/info", async (ctx, next) => {
     ctx.body = await groupCtrl.getInfo(groupData.groupCode);
 })
 
+router.post("/v1/group/token", async (ctx, next) => {
+    let groupData = ctx.request.body;
+
+    ctx.body = {
+        token: await groupCtrl.getToken(groupData.groupCode)
+    }
+})
+
 // 保存赛局
 router.post("/v1/group/match", async (ctx, next) => {
     let data = ctx.request.body;
 
-    await groupCtrl.saveMatch(data.groupCode, data.matchData, data.ladderData);
+    await groupCtrl.saveMatch(data.token || data.groupCode, data.matchData, data.ladderData);
 })
 
 // import fs from 'fs'

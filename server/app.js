@@ -49,14 +49,38 @@ class GroupController {
     async getInfo(groupCode) {
         return await storage.getGroup(groupCode);
     }
+    async getToken(groupCode) {
+        let groupCodeHashName = path.basename(await storage.findPath(groupCode));
+        return await storage.groupCodeToken(groupCodeHashName);
+    }
+    async verifyToken(token) {
+        return await storage.verifyGroupCodeToken(token);
+    }
     async saveMatch(groupCode, matchData, ladderData) {
         await storage.saveMatch(groupCode, matchData, ladderData);
     }
     async onClientConnect(ws, userAgent, ip) {
         ws.once('message', async (msg)=>{
-            let groupCodeHashPath = await storage.findPath(msg).catch(err => {
-                ws.close(1000, "groupCode not exist")
-            })
+            let groupCodeHashPath;
+            if(msg && msg.length > 16) {
+                // > 16 is token
+                if(await storage.verifyGroupCodeToken(msg.toString()).catch(err => false)) {
+                    let groupCodeHash = msg.toString().split(".")[0]; 
+                    groupCodeHashPath = await storage.hasPath(groupCodeHash).catch(err => {
+                        ws.close(1000, "group not exist")
+                    })
+                } else {
+                    ws.close(1000, "token invalid")
+                }
+            }
+            else {
+                // < 16 is groupCode
+                groupCodeHashPath = await storage.findPath(msg.toString()).catch(err => {
+                    ws.close(1000, "groupCode not exist")
+                })
+            }
+
+            if(!groupCodeHashPath) return;
 
             this.wsClients[groupCodeHashPath] = this.wsClients[groupCodeHashPath] || {subgroups:{}}
 
@@ -68,7 +92,7 @@ class GroupController {
             // tailing "-1" when existed
             while(groupClients[clientID]) {
                 if(!__idx) { var __idx = 1 }
-                clientID = md5(userAgent + ip) + `-${__idx}`
+                clientID = md5(userAgent + ip) + `-${__idx++}`
             }
 
             ws.send(clientID)

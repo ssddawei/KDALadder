@@ -245,6 +245,9 @@ export class GroupController {
   async info() {
     return await this.sync.info();
   }
+  async token() {
+    return (await this.sync.token()).token;
+  }
   async updateInfo(groupName, groupCode) {
     let result = await this.sync.updateInfo(groupName, groupCode);
     if(groupCode) {
@@ -445,12 +448,15 @@ export class MatchController {
     let outEvents = e.filter(i=>i.name != "text")
     this.eventCallback && outEvents.length && this.eventCallback(outEvents);
   }
-  async end() {
+  async end(token) {
 
     if(!this.ready || !this.started) return;
 
     let storage = new LocalStorage();
     let sync = new ServerSyncData(storage, new LocalStorage("remote"));
+
+    if(token)
+      sync.api.token = token;
 
     let now = new Date();
 
@@ -483,8 +489,11 @@ export class MatchController {
 
 export class LadderController {
   // syncData = new ServerSyncData(null, new LocalStorage("remote"));
-  constructor() {
+  constructor(token) {
     this.syncData = new ServerSyncData(null, new LocalStorage("remote"));
+    if(token) {
+      this.syncData.api.token = token;
+    }
   }
   get storage() {
     return this.syncData.local
@@ -577,9 +586,9 @@ export class LadderController {
   }
   async dateMatch(date = $dateString(new Date()), beginTime) {
     let match = this.remote.data[date];
-    if(!match || !match.length || (beginTime && !match.filter(i=>i.beginTime == beginTime).length)) {
+    // if(!match || !match.length || (beginTime && !match.filter(i=>i.beginTime == beginTime).length)) {
       await this.syncData.loadRemote(new Date(date));
-    }
+    // }
     return this.remote.data[date];
   }
 
@@ -591,29 +600,15 @@ export class LadderController {
 /*
   Bind ConnectWebrtc to UI
 */
-export class ConnectController {
+export class ConnectController extends EventTarget {
   // conn;
   // status;
   // mode;
   // onData;
-  constructor(mode, onData) {
-    this.mode = mode; // act as "server" or "client"
+  constructor(token, onData) {
+    super()
+    this.token = token;
     this.onData = onData; // on data receive
-
-    $sel(".connect").addEventListener("click", async () => {
-
-      if(this.status == "done" ||this.status == "loading"){
-        // if(await $confirm("确定断开？")){
-          this.conn && this.conn.close()
-          this.conn == undefined;
-          localStorage.setItem("connect-status", "close");
-          this.refreshUI();
-          return;
-        // }
-      }
-
-      this.connect();
-    });
 
     let autoStart = localStorage.getItem("connect-status") == "done" ||
       localStorage.getItem("connect-status") == undefined;
@@ -629,6 +624,14 @@ export class ConnectController {
     localStorage.setItem("__subgroup", val);
 
     needSendSetSubGroup && this.send("set-subgroup")
+  }
+  set status(val) {
+    this._status = val;
+    console.log("sendstatus")
+    this.dispatchEvent(new MessageEvent("status", {data: val}))
+  }
+  get status() {
+    return this._status;
   }
   get subgroup() {
     if(!this._subgroup) {
@@ -659,7 +662,7 @@ export class ConnectController {
     }
 
     // create ConnectWebrtc, set receiveCallback, errorCallback
-    this.conn = new ConnectWebsocket(ServerSyncData.key.groupCode, 
+    this.conn = new ConnectWebsocket(this.token || ServerSyncData.key.groupCode, 
       (msg) => {
         if(msg.indexOf("hi") == 0) {
           this.refreshUI("done");
@@ -672,14 +675,22 @@ export class ConnectController {
         this.onData && this.onData(data);
       }, (err) => {
         if(err.code && err.code != 1000) {
-          this.refreshUI(["error", "done"]);
+          this.refreshUI("error");
           setTimeout(()=>{this.connect()}, 3000); // retry
         } else {
+          if(err.message)
+            $alert("connect error: " + err.message)
           this.refreshUI();
         }
       });
 
 
+  }
+  disconnect() {
+    this.conn && this.conn.close()
+    this.conn == undefined;
+    localStorage.setItem("connect-status", "close");
+    this.refreshUI();
   }
   send(action, data) {
     this.status == "done" && this.conn.send(JSON.stringify({action, data, subgroup: this.subgroup}));

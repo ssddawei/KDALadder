@@ -15,6 +15,10 @@ class ServerAPI {
     params = params || {}
     if(!params.groupCode)
       params.groupCode = this.groupCode;
+    if(this.token) {
+      params.token = this.token;
+    }
+
     return $fetch(url, {
       method: "POST",
       headers: {
@@ -46,6 +50,9 @@ class ServerAPI {
   }
   getInfo() {
     return this.call(new URL("/v1/group/info", this.ServerURL).toString())
+  }
+  getToken() {
+    return this.call(new URL("/v1/group/token", this.ServerURL).toString())
   }
 }
 export class ServerSyncData extends SyncData {
@@ -82,6 +89,16 @@ export class ServerSyncData extends SyncData {
       localStorage.removeItem("gc");
     } else {
       localStorage.setItem("gc", btoa(JSON.stringify(value)))
+    }
+  }
+  set groupCodeHashPath(val) {
+    this._groupCodehashPath = val;
+  }
+  get groupCodeHashPath() {
+    if(this.api.token) {
+      return this.api.token.split(".")[0]
+    } else {
+      return this._groupCodehashPath;
     }
   }
   autologin() {
@@ -123,8 +140,11 @@ export class ServerSyncData extends SyncData {
   async updateInfo(groupName, groupCode) {
     return await this.api.postInfo(groupName, groupCode);
   }
+  async token() {
+    return await this.api.getToken();
+  }
   async loadRemote(date) {
-    if(!this.online)
+    if(!this.online && !this.api.token)
       throw new Error("need login")
     let seasonStr = $seasonString(date);
     let dateStr = $dateString(date);
@@ -146,7 +166,7 @@ export class ServerSyncData extends SyncData {
   }
   async saveRemote() {
 
-    if(!this.online)
+    if(!this.online && !this.api.token)
       throw new Error("need login")
 
     if(!this.local){

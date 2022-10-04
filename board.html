@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Match</title>
   <script type="text/javascript" src="res/nosleep.min.js"></script>
+  <script type="text/javascript" src="res/qrcode.min.js"></script>
   <link rel="stylesheet" href="res/icomoon/style.css">
   <link rel="stylesheet" href="res/style.css">
   <style>
@@ -57,6 +58,8 @@
     <button class="musicBtn"><em class="icon-music"></em>音效开关</button>
     <button class="CDBtn"><em class="icon-cd"></em>CD开关</button>
     <button onclick="document.body.requestFullscreen();"><em class="icon-fullscreen"></em>全屏</button>
+    <div class="sep"></div>
+    <button class="QRBtn"></em># 网址二维码</button>
   </div>
   <button class="menuBtn">
     M<small>enu</small>
@@ -128,17 +131,22 @@
       <button class="lossBtn">X</button>
     </div>
   </div>
+  <div class="qrcode"><div class="qrcodeImg"></div><div class="qrcodeTitle">KDALadder.top</div></div>
+  
+
   <script type="module">
     import * as App from './res/app.js'
     import { LocalStorage } from './res/storage-localstorage.js'
     import { Match } from './res/storage.js'
     Object.assign(window, App);
 
+    const token = window.token = location.search.slice(1);
+
     const BroadcastAnimateDisabled = true;
 
     let timeTmr;
     let matchCtrl = new MatchController();
-    let connectCtrl = new ConnectController("server", (data) => {
+    let connectCtrl = window.connectCtrl = new ConnectController(token, (data) => {
       switch(data.action) {
         case "connect": {
           // SoundEffect.disabled = true;
@@ -203,7 +211,7 @@
       let result = [];
       
       { // current season
-        let ladder = await new LadderController().seasonLadder();
+        let ladder = await new LadderController(token).seasonLadder();
         result = result.concat(ladder.ladder.map(p => ({
           data: p.person,
           subtitle: `赛季成绩：${p.score.toFixed(2)}`
@@ -214,7 +222,7 @@
       { // pre season
         let preSeason = new Date();
         preSeason.setMonth(preSeason.getMonth() - 3);
-        let ladder = await new LadderController().seasonLadder($seasonString(preSeason));
+        let ladder = await new LadderController(token).seasonLadder($seasonString(preSeason));
         result = result.concat(ladder.ladder.map(p => ({
           data: p.person,
           subtitle: `上赛季成员`
@@ -232,10 +240,10 @@
       personChooser.select(newPerson);
     })
 
-    // sync match to client by ConnectController
-    function connectSync(action) {
+    // sync match by ConnectController
+    function connectSync(action, data) {
       if(action)
-        connectCtrl.send(action);
+        connectCtrl.send(action, data);
       else
         connectCtrl.send("match", matchCtrl.match);
     }
@@ -260,10 +268,10 @@
         $sel("div.match").classList.remove("started");
 
       // name
-      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "(empty)";
-      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "(empty)";
-      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "(empty)";
-      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(empty)";
+      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "(选择成员)";
+      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "(选择成员)";
+      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "(选择成员)";
+      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(选择成员)";
       
       // match score
       if($sel(".aScore").innerHTML != matchCtrl.aScore)
@@ -386,18 +394,19 @@
         $alert("比赛都没开始，结束你个头。");
         return;
       }
+      if(!matchCtrl.readyToEnd) {
+        if(!await $confirm("比赛看似还没结束，确定？")) {
+          return;
+        }
+      }
       let beginTime = matchCtrl.match.beginTime;
       try{
-        let date = await matchCtrl.end();
-        connectSync("end");
+        let date = await matchCtrl.end(token);
+        refreshUI();
+        connectSync("end")
         if(date) {
-
-          new LocalStorage("current").delete();
-          refreshUI();
-          $sel(".pop-result iframe").src = "about:blank"
           $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
           $sel(".pop-result").classList.add('show')
-          
         }
       } catch(e) {
         $alert("sync error " + e);
@@ -423,7 +432,33 @@
       connectCtrl.subgroup = await channelChooser.choose() || connectCtrl.subgroup;
       refreshUI();
     })
+    $sel(".QRBtn").addEventListener("click", () => {
+      if(!window.__hasQrcode) {
+        window.__hasQrcode = true;
+        new QRCode($sel(".qrcode .qrcodeImg"), location.origin);
+      }
+      if($sel(".qrcode").style.display == "flex")
+        $sel(".qrcode").style.display = "none"
+      else
+        $sel(".qrcode").style.display = "flex"
+    })
+    $sel(".qrcode").addEventListener("click", () => {
+      $sel(".qrcode").style.display = "none"
+    })
     
+    let popResult = (url) => {
+      $sel(".pop-result iframe").src = url
+      $sel(".pop-result").classList.add('show')
+      $pushHistoryBack(()=>{
+        $sel('.pop-result').classList.remove('show');
+      })
+    }
+    $sel(".connect").addEventListener("click", () => {
+      popResult("connect.html" + location.search)
+    })
+    
+    window.refreshUI = refreshUI;
+
     let menu = new Menu();
     matchCtrl.load();
     refreshUI();
