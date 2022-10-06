@@ -443,6 +443,22 @@ button:active,button:after,button:before {
   margin: 0.2rem 0;
   width: 100%;
 }
+@media (orientation: landscape) {
+  .menu {
+    width: 30%
+  }
+  .menu > button {
+    flex: 1 1;
+    margin: 0;
+  }
+  .menu > .sep {
+    margin: 0;
+    width: 100%;
+  }
+  .menu button {
+    font-size: 0.3rem;
+  }
+}
 
 /* dataList */
 .dataList {
@@ -897,6 +913,32 @@ body.board .score .aScore, body.board .score .bScore {
   margin: 0 0.1rem;
   /* padding: 0 1rem; */
 }
+
+body.board.score-only .score .aScore, body.board.score-only .score .bScore {
+  font-size: 8rem;
+  line-height: 8rem;
+  width: 9rem;
+}
+@media (orientation: portrait) {
+  body.board.score-only .score  {
+    flex-direction: column;
+    height: 100%;
+    justify-content: space-evenly;
+  }
+  body.board.score-only .score .aScore, body.board.score-only .score .bScore {
+    width: 100%;
+    border-radius: 0.2rem;
+  }
+}
+body.board.score-only .match {
+  display: none;
+}
+
+.kdaBtn.disabled {
+  text-decoration: line-through;
+  color: red
+}
+
 body.board .score .aScore {
   /* color: rgb(77, 0, 0) */
 }
@@ -1345,6 +1387,7 @@ body.result div.result .score .item{
   flex-direction: row;
   justify-content: space-around;
   position: relative;
+  height: 0.4rem;
 }
 body.result div.result .score .unit{
   width: 100%;
@@ -1406,7 +1449,8 @@ body.result div.result .score .item .scoreLine.groupB {
     flex-direction: row;
   }
   body.result div.result .score .item{
-    flex: 0 0 1rem;
+    flex: 1 1;
+    height: 100%;
     flex-direction: column;
     justify-content: space-around;
   }
