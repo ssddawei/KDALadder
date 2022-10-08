@@ -4,8 +4,12 @@ export class ALG {
     return (kda.kill + kda.assist/4) / (kda.death||0.9) * 0.7 + kda.win/(kda.loss||0.9) * 0.3;
   }
   
-  static Sum = arr => arr.reduce((partialSum, a) => partialSum + a, 0)
-  static Mean = arr => ALG.Sum(arr) / arr.length;
+  static Sum(arr) {
+    return arr.reduce((partialSum, a) => partialSum + a, 0)
+  }
+  static Mean(arr) {
+    return ALG.Sum(arr) / arr.length;
+  }
   static SD(arr) {
     const variance = arr => {
       const m = ALG.Mean(arr);

@@ -600,6 +600,9 @@ export class LadderController {
 /*
   Bind ConnectWebrtc to UI
 */
+// EventTarget constructor not supported in safari < 14
+import { EventTarget } from './eventtarget.pollyfill.mjs'
+
 export class ConnectController extends EventTarget {
   // conn;
   // status;

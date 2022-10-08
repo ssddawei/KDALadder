@@ -20,18 +20,18 @@
     </div>
     <div class="indexBody">
       <div class="bodyItem mainLadder active">
-        <iframe title="main ladder" src="hallladder.html" style="width: 100%; height: 100%; border: 0"></iframe>
+        <iframe title="main ladder" data-src="hallladder.html" style="width: 100%; height: 100%; border: 0"></iframe>
       </div>
       <div class="bodyItem groupLadder">
-        <iframe title="main ladder" src="ladder.html" style="width: 100%; height: 100%; border: 0"></iframe>
+        <iframe title="main ladder" data-src="ladder.html" style="width: 100%; height: 100%; border: 0"></iframe>
       </div>
       <div class="bodyItem groupHistory">
-        <iframe title="main ladder" src="history.html" style="width: 100%; height: 100%; border: 0"></iframe>
+        <iframe title="main ladder" data-src="history.html" style="width: 100%; height: 100%; border: 0"></iframe>
       </div>
     </div>
   </div>
   <div class="bodyItem groupBox"> 
-    <iframe title="main ladder" src="group.html" style="width: 100%; height: 100%; border: 0"></iframe>
+    <iframe title="main ladder" data-src="group.html" style="width: 100%; height: 100%; border: 0"></iframe>
   </div>
 
   <div class="botmenu">
@@ -78,16 +78,22 @@
     <iframe src="" title="result"></iframe>
     <button class="close-pop-result">关闭</button>
   </div>
-
   <script type="module">
     import * as App from './res/app.js'
     Object.assign(window, App);
+
+    function loadIFrame(target) {
+      if(!target.src)
+        target.src = target.dataset["src"]
+    }
 
     $sels(".topmenu .item").forEach(e => e.addEventListener("click", function(){
       $sels(".topmenu .item").forEach(e => e.classList.remove("active"));
       $sels(".indexBody .bodyItem").forEach(e => e.classList.remove("active"));
       this.classList.add("active");
       $sel(this.dataset.target).classList.add("active")
+
+      loadIFrame($sel(`${this.dataset.target} iframe`))
     }))
 
     $sel(".newMatch").addEventListener("click", () => {
@@ -109,6 +115,7 @@
       $sels(".botmenu>button").forEach(e => e.classList.remove("active"));
       $sel(".myGroup").classList.add("active");
       $sel(".groupBox").classList.add("active");
+      loadIFrame($sel(".groupBox iframe"))
     })
 
 
@@ -144,7 +151,7 @@
       $sel(".groupHistory iframe").contentWindow.location.reload()
     }
 
-    
+    loadIFrame($sel(".mainLadder iframe"))
 
   </script>
 </body>

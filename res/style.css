@@ -1586,7 +1586,7 @@ body.index .logo {
   padding: 0.2rem 0.3rem;
   border-radius: 0.5rem;
   background-color: #ffc5e9;
-  background-image:  repeating-radial-gradient( circle at 0 0, transparent 0, #ffc5e9 0.5rem ), repeating-linear-gradient( #8cfff955, #8cfff9 );
+  background-image:  repeating-radial-gradient( circle at 0 0, #ffc5e900, #ffc5e9 0.5rem ), repeating-linear-gradient( #8cfff955, #8cfff9 );
 }
 body.index {
   display: flex;
@@ -1631,6 +1631,7 @@ body.index .topmenu .item.active {
 }
 body.index .indexBody {
   flex: 1 1 100%;
+  min-height: 1rem;
 }
 body.index .indexBody .bodyItem {
   height: 100%;
@@ -1708,7 +1709,7 @@ body.index .botmenu button.active {
   border-radius: 0.2rem;
   background-color: #ffc5e9;
   opacity: 1;
-  background-image: radial-gradient(circle at center center, #8cfff9, #ffc5e9), repeating-radial-gradient(circle at center center, #8cfff9, #8cfff9, 0.2rem, transparent 0.6rem, transparent 0.2rem);
+  background-image: radial-gradient(circle at center center, #8cfff9, #ffc5e9), repeating-radial-gradient(circle at center center, #8cfff9, #8cfff9, 0.2rem, #8cfff900 0.6rem, #8cfff900 0.2rem);
   background-blend-mode: multiply;
 }
 body.index .botmenu .ladder img {

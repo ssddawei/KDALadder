@@ -94,6 +94,16 @@ window.$popHistoryBack = () => {
   window.__pushHistoryBack.pop()
 }
 
+let SysDate = Date;
+Date = function() {
+  let args = [...arguments]
+  if( typeof(args[0]) == "string" ) {
+    args[0] = args[0].replace(/-/g, "/")
+  }
+  return new SysDate(...args)
+}
+Date.now = SysDate.now;
+
 window.$prompt = async function(title){
   let tpl = `\
     <div class="dialog">\
