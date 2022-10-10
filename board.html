@@ -206,6 +206,13 @@
         $sel(".nosleep").classList.add("active")
       }
     })
+    window.addEventListener("touchstart", () => {
+			if(!window._nosleep){
+        window._nosleep = new NoSleep();
+        window._nosleep.enable();
+        $sel(".nosleep").classList.add("active")
+      }
+    })
 
     window.__personSort = JSON.parse(localStorage.getItem("__personSort")||"[]");
     let personChooser = new ListChooser( async () => {
@@ -269,10 +276,10 @@
         $sel("div.match").classList.remove("started");
 
       // name
-      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "(选择成员)";
-      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "(选择成员)";
-      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "(选择成员)";
-      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(选择成员)";
+      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "(选人)";
+      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "(选人)";
+      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "(选人)";
+      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(选人)";
       
       // match score
       if($sel(".aScore").innerHTML != matchCtrl.aScore)

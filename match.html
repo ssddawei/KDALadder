@@ -189,6 +189,13 @@
         $sel(".nosleep").classList.add("active")
       }
     })
+    window.addEventListener("touchstart", () => {
+			if(!window._nosleep){
+        window._nosleep = new NoSleep();
+        window._nosleep.enable();
+        $sel(".nosleep").classList.add("active")
+      }
+    })
 
     window.__personSort = JSON.parse(localStorage.getItem("__personSort")||"[]");
     let personChooser = new ListChooser( async () => {
@@ -244,18 +251,30 @@
           $sel("div.time").innerHTML = `${minutes}:${seconds}`;
         }, 1000);
       }
-      matchCtrl.ready?
-        $sel("div.match").classList.remove("notready"): 
-        $sel("div.match").classList.add("notready");
+
+      if(matchCtrl.ready) {
+        if($sel("div.match").classList.contains("notready")) {
+          $sel("div.match").classList.remove("notready");
+          // force refresh. cause Safari will not re-render the button
+          $sel("div.match").style.display = 'none';
+          $sel("div.match").offsetHeight;
+          $sel("div.match").style.display = '';
+        }
+      } else {
+        if(!$sel("div.match").classList.contains("notready")) {
+          $sel("div.match").classList.add("notready");
+        }
+      }
+        
       (matchCtrl.aScore > 0 || matchCtrl.bScore > 0)?
         $sel("div.match").classList.add("started"):
         $sel("div.match").classList.remove("started");
-
+      
       // name
-      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "(选择成员)";
-      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "(选择成员)";
-      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "(选择成员)";
-      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(选择成员)";
+      $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "(选人)";
+      $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "(选人)";
+      $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "(选人)";
+      $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(选人)";
       
       // match score
       if($sel(".aScore").innerHTML != matchCtrl.aScore)
@@ -372,7 +391,7 @@
       })
 
       $sel(i + " .name").addEventListener("click", async function(){
-        $sel("div.dataList .newItemBtn").style.display = "block";
+        $sel("div.dataList .newItemBtn").style.display = "";
         let person = await personChooser.choose();
         person && (matchCtrl.match.personGroup[idx] = person);
         { // sort when show chooser

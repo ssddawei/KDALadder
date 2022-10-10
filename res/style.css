@@ -2,6 +2,8 @@ html {
   font-size: 10vmin;
   width: 100%;
   height: 100%;
+  /* position: fixed; */
+  color: black;
 }
 html *{
   font-size: 3vmin
@@ -356,6 +358,7 @@ button:active,button:after,button:before {
   border-radius: 0.2rem;
   font-size: 0.8rem;
   z-index: 999;
+  padding: 0;
 }
 .menuBtn .icon-music:before {
   position: absolute;
@@ -469,24 +472,23 @@ button:active,button:after,button:before {
   width: 100%;
   height: 100%;
   background: rgba(99, 99, 99, 0.9);
-  display: flex;
-  flex-direction: column;
   /* justify-content: center; */
   align-items: center;
-  display: none;
   
   z-index: 2001;
   overflow: auto;
   display: flex;
   flex-direction: column;
+  text-align: center;
   display: none;
 }
 .dataList.show {
-  display: flex;
+  display: block;
 }
 .dataList .list {
   display: flex;
   width: 100%;
+  height: auto;
   box-sizing: border-box;
   padding: 0.5rem;
   flex-direction: row;
@@ -514,11 +516,14 @@ button:active,button:after,button:before {
 }
 .dataList .newItemBtn {
   color: black;
-  background: skyblue
+  background: skyblue;
+  display: inline-block;
 }
 .dataList .cancelBtn {
   color: black;
-  background: red
+  background: red;
+  display: inline-block;
+  margin-bottom: 1rem;
 }
 /* connect */
 
@@ -625,7 +630,7 @@ button:active,button:after,button:before {
 .pop-result {
   width: 100%;
   height: 100%;
-  position: fixed;
+  position: absolute;
   z-index: 2000;
   background: rgba(0,0,0,0.8);
   display: flex;
@@ -634,6 +639,8 @@ button:active,button:after,button:before {
   padding: 0.5rem;
   box-sizing: border-box;
   overflow: hidden;
+  -webkit-overflow-scrolling: touch;
+  overflow-y: scroll;
 }
 
 .pop-result:not(.show) {
@@ -642,7 +649,8 @@ button:active,button:after,button:before {
 .pop-result .close-pop-result {
   flex: 2rem;
   border-radius: 0.2rem;
-  font-size: 0.6rem;
+  font-size: 0.5rem;
+  padding: 0;
   border: 0;
   width: 2rem;
   height: 2rem;
@@ -650,14 +658,19 @@ button:active,button:after,button:before {
   position: absolute;
   left: 0;
   top: 0;
+  background: #aaa;
 }
 
 .pop-result iframe {
-  flex: 100%;
+  /* flex: 100%; */
   width: 100%;
+  height: 100%;
   border: 0;
   box-shadow: 0 0 0.5rem black;
-  border-radius: 0.3rem
+  border-radius: 0.3rem;
+  overflow: hidden;
+  -webkit-overflow-scrolling: touch;
+  overflow-y: scroll;
 }
 
 /* match */
@@ -697,6 +710,7 @@ body.match .gRevertBtn, body.match .gEndBtn {
   background: white;
   border: 0;
   font-size: 0.5rem;
+  padding: 0;
   border-radius: 0.1rem;
   box-shadow: 0 0 1rem 0.1rem black;
   overflow: hidden;
@@ -791,6 +805,7 @@ body.match .match .person button {
   height: 2rem;
   border-radius: 0.2rem;
   font-size: 1.8rem;
+  padding: 0;
   margin: 0.2rem;
 }
 body.match .match .person button.goalBtn {
@@ -1020,6 +1035,7 @@ body.board .match .person .name {
   top: 0.5rem;
   background: rgba(0,0,0,0.8);
   border-radius: 0.6rem;
+  white-space: nowrap;
 }
 body.board .match .person .kda {
   text-align: right;

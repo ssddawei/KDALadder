@@ -709,6 +709,11 @@ export class Menu {
     })
     let btn = $sel(".menuBtn");
     let menu = $sel(".menu");
+    document.addEventListener("touchstart", function(e){
+      if(e.composedPath().filter(i=>i==btn||i==menu).length == 0){
+        $sel(".menu").classList.remove("show");
+      }
+    })
     document.addEventListener("click", function(e){
       if(e.composedPath().filter(i=>i==btn||i==menu).length == 0){
         $sel(".menu").classList.remove("show");
