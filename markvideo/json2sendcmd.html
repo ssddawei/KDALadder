@@ -6,14 +6,6 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title></title>
-  <script type="text/javascript" src="../res/config.js"></script>
-  <script type="text/javascript" src="../res/helper.js"></script>
-  <script type="text/javascript" src="../res/algorithm.js"></script>
-  <script type="text/javascript" src="../res/storage.js"></script>
-  <script type="text/javascript" src="../res/storage-localstorage.js"></script>
-  <script type="text/javascript" src="../res/sync.js"></script>
-  <script type="text/javascript" src="../res/sync-aliyun.js"></script>
-  <script type="text/javascript" src="../res/app.js" ></script>
   <link rel="stylesheet" href="../res/style.css">
   <style>
     body { margin: 0.1rem }
@@ -46,7 +38,12 @@
 </body>
 </html>
 
-<script>
+<script type="module">
+  import * as App from '../res/app.js'
+  import { LocalStorage } from '../res/storage-localstorage.js'
+  import { Match } from '../res/storage.js'
+  Object.assign(window, App);
+
   let ladderCtrl = new LadderController()
   ladderCtrl.seasonLadder();
 
@@ -70,10 +67,12 @@
     let matchDate = await matchChooser.choose() || matchDate;
     process(matchDate)
   }
+  window.choose = choose;
+
   async function process(matchDate){
 
-    TOTAL = +$sel("#DURATION").value * 1000
-    OFFSET = +$sel("#OFFSET").value * 1000
+    let TOTAL = +$sel("#DURATION").value * 1000
+    let OFFSET = +$sel("#OFFSET").value * 1000
 
     let data = await ladderCtrl.dateMatch(matchDate);
     console.log(data)
@@ -81,42 +80,42 @@
     OFFSET = data[0].scores[0].timestamp - OFFSET
     TOTAL = TOTAL || (data.at(-1).scores.at(-1).timestamp - OFFSET)
 
-    ctrl = new MatchController()
+    let ctrl = new MatchController()
 
     // match mark
-    markResult = ''
-    for(iMatch in data) {
-      match = data[iMatch]
+    let markResult = ''
+    for(let iMatch in data) {
+      let match = data[iMatch]
       ctrl.match = match
-      startPoint = ((match.scores[0].timestamp - OFFSET) / TOTAL).toFixed(3)
-      duration = ((match.scores.at(-1).timestamp - match.scores[0].timestamp) / TOTAL).toFixed(3)
-      vs = `${match.personGroup[0]} ${match.personGroup[1]} vs ${match.personGroup[2]} ${match.personGroup[3]}`
+      let startPoint = ((match.scores[0].timestamp - OFFSET) / TOTAL).toFixed(3)
+      let duration = ((match.scores.at(-1).timestamp - match.scores[0].timestamp) / TOTAL).toFixed(3)
+      let vs = `${match.personGroup[0]} ${match.personGroup[1]} vs ${match.personGroup[2]} ${match.personGroup[3]}`
       vs += ` (${ctrl.aScore}\\:${ctrl.bScore})`
       markResult += `0 drawbox@bottom_m${iMatch} x 'iw*${startPoint}', drawbox@bottom_m${iMatch} w 'iw*${duration}', drawtext@m${iMatch}_text reinit 'text=${vs}:x=w*${startPoint}';\n`
     }
 
     // score board
 
-    ladder = []
+    let ladder = []
 
-    result = ""
-    for(iMatch in data) {
-      score1 = 0
-      score2 = 0
-      kda = []
+    let result = ""
+    for(let iMatch in data) {
+      let score1 = 0
+      let score2 = 0
+      let kda = []
 
-      match = data[iMatch]
+      let match = data[iMatch]
       ctrl.match = match
 
-      cacheScores = match.scores
+      let cacheScores = match.scores
       match.scores = []
 
-      for(iScore in cacheScores) {
+      for(let iScore in cacheScores) {
         match.scores = cacheScores.slice(0, +iScore + 1)
 
         // get ladder
         ladder[iMatch] = ctrl.ladder()
-        totalLadder = ladder.reduce((pre, nxt) => {
+        let totalLadder = ladder.reduce((pre, nxt) => {
           nxt.ladder.forEach(kda => {
             MatchController.LadderEvolve(pre.ladder, kda.person, kda);
           })
@@ -142,13 +141,13 @@
       result += `${TS} drawtext@score1_draw reinit 'text=${ctrl.aScore}',`
       result += `drawtext@score2_draw reinit 'text=${ctrl.bScore}',`
 
-      for(i in kda) {
+      for(let i in kda) {
         result += `drawtext@person${i}_draw reinit 'text=${kda[i].person}',`
         result += `drawtext@kda${i}_draw reinit 'text=${kda[i].kill}/${kda[i].death}',`
       }
 
-      maxScore = ladder[0].score || 1
-      for(i in ladder) {
+      let maxScore = ladder[0].score || 1
+      for(let i in ladder) {
         result += `drawtext@ladder_p${i} reinit 'text=${ladder[i].person}',`
         result += `drawtext@ladder_kda${i} reinit 'text=${ladder[i].kill}/${ladder[i].death}/${ladder[i].assist}',`
         result += `drawbox@ladder_box${i} w '(iw-x)*${(ladder[i].score/maxScore).toFixed(2)*0.8||0.01}',`
