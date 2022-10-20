@@ -4,7 +4,7 @@ window.$timeString = (d) => {
   return `${d.getMonth()+1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}`;
 }
 window.$dateString = (d) => {
-  return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+  return `${d.getFullYear()}-${(d.getMonth()+1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
 }
 window.$seasonString = (d) => {
   switch(d.getMonth()) {

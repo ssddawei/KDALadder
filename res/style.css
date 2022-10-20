@@ -1192,6 +1192,7 @@ body.ladder div.box h1 {
 body.ladder div.box > small {
   text-align: left;
   margin-bottom: 0.2rem;
+  font-size: 0.5rem;
 }
 body.ladder div.ladder-help {
   text-align: left;

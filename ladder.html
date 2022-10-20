@@ -26,7 +26,8 @@
 <body class="ladder">
 
   <div class="box ladderBox">
-    <h1># KDA天梯排名</h1>
+    <h1 class="season" style="display:none"># KDA排名</h1>
+    <h1 class="singleday" style="display:none"># 单日排名</h1>
     <small>2022-season1</small>
     <script id="LadderItem" type="text/template">
       <div class="item">
@@ -51,17 +52,31 @@
     Object.assign(window, App);
 
     let ladderCtrl = new LadderController();
-    let ladderDate = $seasonString(new Date());
+    let ladderDate;
 
     async function refreshUI() {
 
       
       try {
         $sel("div.ladder").innerHTML = "loading..."
+
+        if(!ladderDate) {
+          let todayHasLadder = !!(await ladderCtrl.dateLadder()).ladder.length;
+          ladderDate = todayHasLadder? $dateString(new Date()): $seasonString(new Date())
+        }
+
         let ladder = ladderDate.indexOf("season") >= 0? 
             await ladderCtrl.seasonLadder(ladderDate): 
             await ladderCtrl.dateLadder(ladderDate);
-        $sel(".ladderBox > small").innerHTML = ladderDate;
+
+        $sel(".ladderBox small").innerHTML = ladderDate;
+        if(ladderDate.indexOf("season") >= 0) {
+          $sel(".ladderBox > h1.season").style.display = ""
+          $sel(".ladderBox > h1.singleday").style.display = "none"
+        } else {
+          $sel(".ladderBox > h1.season").style.display = "none"
+          $sel(".ladderBox > h1.singleday").style.display = ""
+        }
 
         if(ladder && ladder.ladder.length) {
 
@@ -112,10 +127,10 @@
       return allDates;
     });
 
-    $sel(".ladderBox > h1").addEventListener("click", async ()=>{
+    $sels(".ladderBox > h1").forEach(i => i.addEventListener("click", async ()=>{
       ladderDate = await ladderChooser.choose() || ladderDate;
       refreshUI();
-    });
+    }));
 
     refreshUI();
   </script>
