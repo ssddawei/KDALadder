@@ -144,7 +144,7 @@
 
     const BroadcastAnimateDisabled = true;
 
-    let HideKDA = localStorage.getItem("__hidekda")
+    let HideKDA = +localStorage.getItem("__hidekda")
     let timeTmr;
     let matchCtrl = new MatchController();
     let connectCtrl = window.connectCtrl = new ConnectController(token, (data) => {
@@ -464,7 +464,7 @@
     
     $sel(".kdaBtn").addEventListener("click", () => {
       HideKDA = !HideKDA;
-      localStorage.setItem("__hidekda", HideKDA);
+      localStorage.setItem("__hidekda", HideKDA? 1: 0);
       refreshUI();
     })
     
