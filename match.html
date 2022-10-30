@@ -189,7 +189,7 @@
         $sel(".nosleep").classList.add("active")
       }
     })
-    window.addEventListener("touchstart", () => {
+    window.addEventListener("touchend", () => {
 			if(!window._nosleep){
         window._nosleep = new NoSleep();
         window._nosleep.enable();
