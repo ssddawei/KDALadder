@@ -424,7 +424,7 @@
       });
     }))
 
-    $sels(".endBtn,.gEndBtn").forEach(i=>i.addEventListener("click", async () => {
+    $sels(".endBtn,.gEndBtn").forEach(i=>i.addEventListener("click", async function(){
       if(!matchCtrl.started){
         $alert("比赛都没开始，结束你个头。");
         return;
@@ -436,6 +436,7 @@
       }
       let beginTime = matchCtrl.match.beginTime;
       try{
+        this.disabled = "disabled"
         let date = await matchCtrl.end(token);
         refreshUI();
         connectSync("end")
@@ -443,7 +444,9 @@
           $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
           $sel(".pop-result").classList.add('show')
         }
+        this.disabled = ""
       } catch(e) {
+        this.disabled = ""
         $alert("sync error " + e);
         throw e;
       }
