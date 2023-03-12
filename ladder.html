@@ -85,13 +85,16 @@
           var tmpl = $sel("#LadderItem").innerHTML;
 
           let maxScore = ladder.ladder[0].score;
-          $sel("div.ladder").innerHTML = ladder.ladder.map(i => {
-            let width = Math.floor(i.score / maxScore * 100 * 0.7);
-            let item = tmpl.replace("{{name}}", i.person)
-              .replace(/{{score}}/g, $kdaString(i, true))
-              .replace("{{width}}", width)
-            return item;
-          }).join("");
+          $sel("div.ladder").innerHTML = ladder.ladder
+            // filter out win+loss < 10 in season ladder
+            .filter(i => ladderDate.indexOf("season") >= 0? i.win + i.loss > 10: true)
+            .map(i => {
+              let width = Math.floor(i.score / maxScore * 100 * 0.7);
+              let item = tmpl.replace("{{name}}", i.person)
+                .replace(/{{score}}/g, $kdaString(i, true))
+                .replace("{{width}}", width)
+              return item;
+            }).join("");
 
         } else {
           $sel("div.ladder").innerHTML = "暂无数据"
