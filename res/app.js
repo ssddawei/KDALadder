@@ -336,6 +336,16 @@ export class MatchController {
     event.length && this.onEvent(event);
     SoundEffect.speak(`比分 ${this.scoreText}`);
   }
+  changePerson(oldPerson, newPerson) {
+    for(const i in this.match.personGroup) {
+      if(this.match.personGroup[i] == oldPerson)
+        this.match.personGroup[i] = newPerson;
+    }
+    this.match.scores.forEach(i => i.changePerson && i.changePerson(oldPerson, newPerson));
+  }
+  extra(type) {
+    this.match.scores.slice(-1)[0].extra = type
+  }
   revert() {
     this.match.scores.length && this.match.scores.length --;
     this.eventCalc.revert();
@@ -485,6 +495,30 @@ export class MatchController {
 
     return $dateString(now);
   }
+}
+
+MatchController.ExtraToCN = {
+  "smash-kill": "杀球得分",
+  "drop-kill": "落点得分",
+  "fast-kill": "抽挡得分",
+  "out-fall": "出界落网",
+  "serve-fall": "发球失误",
+  "air-fall": "误击空击",
+  "unknown": "(未知)"
+}
+MatchController.ExtraSortValue = {
+  "smash-kill": "1",
+  "drop-kill": "2",
+  "fast-kill": "3",
+  "out-fall": "4",
+  "serve-fall": "5",
+  "air-fall": "6",
+  "unknown": "7"
+}
+MatchController.ExtraSort = function(a, b) {
+  a = a.sort? a[0] : a;
+  b = b.sort? b[0] : b;
+  return (MatchController.ExtraSortValue[a]||999) - (MatchController.ExtraSortValue[b]||999)
 }
 
 export class LadderController {
@@ -761,8 +795,8 @@ export class ListChooser {
     $sel(".dataList").classList.remove("show")
     $popHistoryBack();
   }
-  choose() {
-    this.refreshUI();
+  async choose() {
+    await this.refreshUI();
     $sel(".dataList").classList.add("show")
 
     $pushHistoryBack(this.cancel.bind(this))

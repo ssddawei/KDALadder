@@ -13,9 +13,9 @@
     .match {
       display: flex
     }
-    .match.started .person .name {
+    /* .match.started .person .name {
       pointer-events:none;
-    }
+    } */
 
     .person {
       display: flex;
@@ -28,7 +28,8 @@
       pointer-events:none;
       opacity: 0.3;
     }
-    .CDBtn.disabled {
+    .CDBtn.disabled,
+    .ExtraEnableBtn.disabled {
       text-decoration: line-through;
       color: red
     }
@@ -64,7 +65,9 @@
   <div class="nosleep">点击激活屏幕锁亮</div>
 
   <div class="menu">
-    <button class="ladderBtn" onclick="location.href='index.html'"><em class="icon-back"></em>返回首页</button>
+    <button class="homeBtn"><em class="icon-back"></em>返回首页</button>
+    <button class="prevMatchBtn" ><em class="icon-back"></em>上局结果</button>
+    <button class="ladderBtn" style="display:none"><em class="icon-back"></em>天梯</button>
     <div class="sep"></div>
     <button class="endBtn"><em class="icon-flag"></em>结束</button>
     <button class="revertBtn"><em class="icon-revert"></em>撤销</button>
@@ -73,6 +76,7 @@
     <button onclick="location.replace('board.html')"><em class="icon-airplay"></em>看板模式</button>
     <button class="musicBtn"><em class="icon-music"></em>音效开关</button>
     <button class="CDBtn"><em class="icon-cd"></em>CD开关</button>
+    <button class="ExtraEnableBtn"><em class="icon-kda-a"></em>技术统计开关</button>
     <button onclick="document.body.requestFullscreen();"><em class="icon-fullscreen"></em>全屏</button>    
     <div class="sep"></div>
     <button class="QRBtn"></em># 网址二维码</button>
@@ -99,6 +103,18 @@
       <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
+      <div class="goalBtnExtra">
+        <button data-extra="smash-kill" class="extraBtn killShotBtn">杀球得分</button>
+        <button data-extra="drop-kill" class="extraBtn deadlyshotBtn">落点得分</button>
+        <button data-extra="fast-kill" class="extraBtn fastReturnBtn">抽挡得分</button>
+        <button data-extra="unknown" class="extraBtn cancelBtn selected">（未知）</button>
+      </div>
+      <div class="lossBtnExtra">
+        <button data-extra="out-fall" class="extraBtn">出界落网</button>
+        <button data-extra="serve-fall" class="extraBtn">发球失误</button>
+        <button data-extra="air-fall" class="extraBtn">误击空击</button>
+        <button data-extra="unknown" class="extraBtn cancelBtn selected">（未知）</button>
+      </div>
     </div>
     <div class="person aGroup2">
       <img class="mvp" src="res/svg/mvp.svg" alt="" />
@@ -109,6 +125,18 @@
       <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
+      <div class="goalBtnExtra">
+        <button data-extra="smash-kill" class="extraBtn killShotBtn">杀球得分</button>
+        <button data-extra="drop-kill" class="extraBtn deadlyshotBtn">落点得分</button>
+        <button data-extra="fast-kill" class="extraBtn fastReturnBtn">抽挡得分</button>
+        <button data-extra="unknown" class="extraBtn cancelBtn selected">（未知）</button>
+      </div>
+      <div class="lossBtnExtra">
+        <button data-extra="out-fall" class="extraBtn">出界落网</button>
+        <button data-extra="serve-fall" class="extraBtn">发球失误</button>
+        <button data-extra="air-fall" class="extraBtn">误击空击</button>
+        <button data-extra="unknown" class="extraBtn cancelBtn selected">（未知）</button>
+      </div>
     </div>
     <div class="person bGroup1">
       <img class="mvp" src="res/svg/mvp.svg" alt="" />
@@ -119,6 +147,18 @@
       <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
+      <div class="goalBtnExtra">
+        <button data-extra="smash-kill" class="extraBtn killShotBtn">杀球得分</button>
+        <button data-extra="drop-kill" class="extraBtn deadlyshotBtn">落点得分</button>
+        <button data-extra="fast-kill" class="extraBtn fastReturnBtn">抽挡得分</button>
+        <button data-extra="unknown" class="extraBtn cancelBtn selected">（未知）</button>
+      </div>
+      <div class="lossBtnExtra">
+        <button data-extra="out-fall" class="extraBtn">出界落网</button>
+        <button data-extra="serve-fall" class="extraBtn">发球失误</button>
+        <button data-extra="air-fall" class="extraBtn">误击空击</button>
+        <button data-extra="unknown" class="extraBtn cancelBtn selected">（未知）</button>
+      </div>
     </div>
     <div class="person bGroup2">
       <img class="mvp" src="res/svg/mvp.svg" alt="" />
@@ -129,6 +169,18 @@
       <div class="deathTag"></div>
       <button class="goalBtn">O</button>
       <button class="lossBtn">X</button>
+      <div class="goalBtnExtra">
+        <button data-extra="smash-kill" class="extraBtn killShotBtn">杀球得分</button>
+        <button data-extra="drop-kill" class="extraBtn deadlyshotBtn">落点得分</button>
+        <button data-extra="fast-kill" class="extraBtn fastReturnBtn">抽挡得分</button>
+        <button data-extra="unknown" class="extraBtn cancelBtn selected">（未知）</button>
+      </div>
+      <div class="lossBtnExtra">
+        <button data-extra="out-fall" class="extraBtn">出界落网</button>
+        <button data-extra="serve-fall" class="extraBtn">发球失误</button>
+        <button data-extra="air-fall" class="extraBtn">误击空击</button>
+        <button data-extra="unknown" class="extraBtn cancelBtn selected">（未知）</button>
+      </div>
     </div>
   </div>
   <div class="qrcode"><div class="qrcodeImg"></div><div class="qrcodeTitle">KDALadder.top</div></div>
@@ -141,8 +193,9 @@
 
     const token = window.token = location.search.slice(1);
 
-    const CD = 5000;
+    let PrevMatchRecord = localStorage.getItem("__PrevMatchRecord");
     let CDDisabled = (!!localStorage.getItem("cd-disabled"));
+    let ExtraDisabled = (!!localStorage.getItem("extra-disabled"));
     let timeTmr;
     let matchCtrl = new MatchController();
     let connectCtrl = window.connectCtrl = new ConnectController(token, (data) => {
@@ -320,12 +373,12 @@
       }
       
       // next event
-      [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"].forEach((i, idx) => {
-        let kEvent = matchCtrl.nextEvent(matchCtrl.match.personGroup[idx], true);
-        let dEvent = matchCtrl.nextEvent(matchCtrl.match.personGroup[idx], false);
-        $sel(i + " .killTag").innerHTML = kEvent && kEvent[0] && KDAEventCalc.NameToEN[kEvent[0].name] || ""
-        $sel(i + " .deathTag").innerHTML = dEvent && dEvent[0] && KDAEventCalc.NameToEN[dEvent[0].name] || ""
-      })
+      // [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"].forEach((i, idx) => {
+      //   let kEvent = matchCtrl.nextEvent(matchCtrl.match.personGroup[idx], true);
+      //   let dEvent = matchCtrl.nextEvent(matchCtrl.match.personGroup[idx], false);
+      //   $sel(i + " .killTag").innerHTML = kEvent && kEvent[0] && KDAEventCalc.NameToEN[kEvent[0].name] || ""
+      //   $sel(i + " .deathTag").innerHTML = dEvent && dEvent[0] && KDAEventCalc.NameToEN[dEvent[0].name] || ""
+      // })
       if(matchCtrl.started) {
         $sel(personToTarget(mvp)).classList.add("mvp");
         $sel(personToTarget(loser)).classList.add("loser");
@@ -339,38 +392,83 @@
       } else {
         $sel(".CDBtn").classList.remove("disabled");
       }
+      if(ExtraDisabled) {
+        $sel(".ExtraEnableBtn").classList.add("disabled");
+      } else {
+        $sel(".ExtraEnableBtn").classList.remove("disabled");
+      }
+      
+      $sels(".goalBtn,.lossBtn").forEach(function(i) {
+        if(i.dataset.waitExtra) {
+          i.parentElement.querySelectorAll(".goalBtn,.lossBtn").forEach(
+            j=>j.style.display = "none"
+          )
+          if(i.classList.contains("goalBtn"))
+            i.parentElement.querySelector(".goalBtnExtra")
+              .style.display = "block";
+          else
+            i.parentElement.querySelector(".lossBtnExtra")
+              .style.display = "block"
+        }
+      })
 
       $sels(".subgroup").forEach(i=>i.innerHTML = connectCtrl.subgroup);
       
       matchCtrl.save();
     }
     
-    function onScore() {
+    function activeCD(faster) {
+      let CD = faster? 2000: 5000;
+
       if(!matchCtrl.readyToEnd) {
         $sel(".gRevertBtn").style.display = "block";
       }
 
       // CD
-      $sels(".goalBtn,.lossBtn").forEach(function(i){
-        !CDDisabled && i.classList.add("cooldown"+(CD));
+      $sels(".goalBtn,.lossBtn,.extraBtn").forEach(function(i){
+        !CDDisabled && i.classList.remove("cooldown", "cooldown"+(CD))
+        !CDDisabled && i.offsetHeight /* trigger reflow */
+        !CDDisabled && i.classList.add("cooldown", "cooldown"+(CD));
       });
 
       clearTimeout(window.__cdTmr);
-      window.__cdTmr = setTimeout(()=>{
-        $sel(".gRevertBtn").style.display = "none";
-        $sels(".goalBtn,.lossBtn").forEach(function(i){
-          i.classList.remove("cooldown"+(CD));
-        });
-      }, CD)
+      window.__cdTmr = setTimeout(cancelCD, CD)
+    }
+    function cancelCD() {
+      $sel(".gRevertBtn").style.display = "none";
+      $sels(".goalBtn,.lossBtn,.extraBtn").forEach(function(i){
+        i.classList.remove("cooldown", "cooldown5000", "cooldown2000");
+      });
+      
+      $sels(".goalBtn,.lossBtn").forEach(function(i){
+        if(i.dataset.waitExtra) {
+          delete i.dataset.waitExtra;
+        }
+      });
+      $sels(".goalBtnExtra,.lossBtnExtra,.extraBtn,.goalBtn,.lossBtn").forEach(i => {
+        i.classList.remove("selected");
+        i.style.display = '';
+      })
+      $sels(".extraBtn.cancelBtn").forEach(i=>i.classList.add("selected"))
+    }
+    function onScore() {
+      if(!CDDisabled)
+        activeCD()
+    }
+
+    function onExtra() {
+      CDDisabled? cancelCD(): activeCD(true)
     }
 
     ["div.aGroup1", "div.aGroup2", "div.bGroup1", "div.bGroup2"].forEach((i, idx) => {
 
       $sel(i + " .goalBtn").addEventListener("click", function(){
-        if(!CDDisabled && this.classList.contains("cooldown"+(CD))) {
+        if(!CDDisabled && this.classList.contains("cooldown")) {
           SoundEffect.play("cooldown", 1); connectSync("cooldown")
           return;
         }
+        if(!ExtraDisabled)
+          this.dataset.waitExtra = idx;
         $activeAnimate(this);
         matchCtrl.goal(matchCtrl.match.personGroup[idx]);
         connectSync();
@@ -379,10 +477,12 @@
       });
 
       $sel(i + " .lossBtn").addEventListener("click", function(){
-        if(!CDDisabled && this.classList.contains("cooldown"+(CD))) {
+        if(!CDDisabled && this.classList.contains("cooldown")) {
           SoundEffect.play("cooldown", 1); connectSync("cooldown")
           return;
         }
+        if(!ExtraDisabled)
+          this.dataset.waitExtra = idx;
         $activeAnimate(this);
         matchCtrl.loss(matchCtrl.match.personGroup[idx]);
         connectSync();
@@ -390,10 +490,29 @@
         onScore();
       })
 
-      $sel(i + " .name").addEventListener("click", async function(){
+      $sels(i + " .extraBtn").forEach(j=>j.addEventListener("click", function(){
+        // if(!CDDisabled && this.classList.contains("cooldown"+(CD))) {
+        //   SoundEffect.play("cooldown", 1); connectSync("cooldown")
+        //   return;
+        // }
+        $sels(i + " .extraBtn").forEach(i=>i.classList.remove("selected"))
+        matchCtrl.extra(this.dataset.extra||"unknown");
+        this.classList.add("selected")
+        $activeAnimate(this);
+        connectSync();
+        refreshUI();
+        onExtra();
+      }))
+
+      //Select Person
+      async function selectPerson(){
         $sel("div.dataList .newItemBtn").style.display = "";
         let person = await personChooser.choose();
-        person && (matchCtrl.match.personGroup[idx] = person);
+
+        matchCtrl.started?
+          matchCtrl.changePerson(matchCtrl.match.personGroup[idx], person):
+          (matchCtrl.match.personGroup[idx] = person);
+
         { // sort when show chooser
           window.__personSort = window.__personSort.filter(i=>i!=person);
           window.__personSort.push(person);
@@ -401,6 +520,14 @@
         }
         connectSync();
         refreshUI();
+      }
+      $sel(i + " .name").addEventListener("click", ()=>{
+        if(matchCtrl.started)return;
+        selectPerson()
+      })
+
+      $sel(i + " .name").addEventListener("dblclick", ()=>{
+        selectPerson()
       })
     })
 
@@ -418,10 +545,7 @@
       refreshUI();
 
       // reset cd
-      $sel(".gRevertBtn").style.display = "none";
-      $sels(".goalBtn,.lossBtn").forEach(function(i){
-        i.classList.remove("cooldown"+(CD));
-      });
+      cancelCD();
     }))
 
     $sels(".endBtn,.gEndBtn").forEach(i=>i.addEventListener("click", async function(){
@@ -434,6 +558,12 @@
           return;
         }
       }
+      else if(!await $confirm("确定结束？", true)) {
+        return;
+      }
+
+      cancelCD();
+      
       let beginTime = matchCtrl.match.beginTime;
       try{
         this.disabled = "disabled"
@@ -441,8 +571,9 @@
         refreshUI();
         connectSync("end")
         if(date) {
-          $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
+          $sel(".pop-result iframe").src = PrevMatchRecord = `match-result.html?${date}-${beginTime}&embedded`
           $sel(".pop-result").classList.add('show')
+          localStorage.setItem("__PrevMatchRecord", PrevMatchRecord)
         }
         this.disabled = ""
       } catch(e) {
@@ -462,6 +593,14 @@
       CDDisabled? 
         localStorage.setItem("cd-disabled", true):
         localStorage.removeItem("cd-disabled")
+      refreshUI();
+    })
+    
+    $sel(".ExtraEnableBtn").addEventListener("click", () => {
+      ExtraDisabled = !ExtraDisabled;
+      ExtraDisabled? 
+        localStorage.setItem("extra-disabled", true):
+        localStorage.removeItem("extra-disabled")
       refreshUI();
     })
 
@@ -500,6 +639,19 @@
     }
     $sel(".connect").addEventListener("click", () => {
       popResult("connect.html" + location.search)
+    })
+    $sel(".ladderBtn").addEventListener("click", () => {
+      popResult("ladder.html")
+    })
+    $sel(".prevMatchBtn").addEventListener("click", () => {
+      if(PrevMatchRecord)
+        popResult(PrevMatchRecord);
+      else
+        $alert("没有记录")
+    })
+    $sel(".homeBtn").addEventListener("click", async () => {
+      if(await $confirm("确定退出？"))
+        location.href='index.html'
     })
 
     window.refreshUI = refreshUI;

@@ -134,7 +134,11 @@ window.$prompt = async function(title){
   })
 }
 
-window.$confirm = async function(title){
+window.$confirm = async function(title, timeout, timeoutForAccept){
+  
+  if(timeoutForAccept == undefined)
+    timeoutForAccept = true;
+
   let tpl = `\
     <div class="dialog">\
       <div class="title">${title}</div>\
@@ -149,15 +153,28 @@ window.$confirm = async function(title){
 
   document.body.appendChild(elm);
 
+  let timeoutTmr;
   let ok, cancel;
   elm.querySelector(".okBtn").addEventListener("click", ()=>{
     ok && ok(true)
     elm.remove();
+
+    if(timeoutTmr) clearTimeout(timeoutTmr);
+    timeoutTmr = null;
   })
   elm.querySelector(".cancelBtn").addEventListener("click", ()=>{
     cancel && cancel(false);
     elm.remove();
+
+    if(timeoutTmr) clearTimeout(timeoutTmr);
+    timeoutTmr = null;
   })
+  if(timeout) {
+    elm.querySelector(timeoutForAccept? ".okBtn": ".cancelBtn").classList.add("cooldown", "cooldown5000");
+    timeoutTmr = setTimeout(()=>{
+      elm.querySelector(timeoutForAccept? ".okBtn": ".cancelBtn").click()
+    }, 5000)
+  }
   return await new Promise((o,x)=>{
     ok = o;
     cancel = x;

@@ -14,7 +14,14 @@ export class GameScore extends Score {
     this.kill = K;
     this.death = D;
     this.assist = A;
+    this.extra = ""
   }
+  changePerson(oldPerson, newPerson) {
+    if(this.kill == oldPerson) this.kill = newPerson;
+    if(this.death == oldPerson) this.death = newPerson;
+    if(this.assist == oldPerson) this.assist = newPerson;
+  }
+
 }
 
 export class MatchScore extends Score {

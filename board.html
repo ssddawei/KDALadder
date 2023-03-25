@@ -158,6 +158,7 @@
           break;
         }
         case "match": {
+          $sel(".close-pop-result").click();
           matchCtrl.match = data.data;
           refreshUI();
           break;
@@ -431,8 +432,11 @@
     });
 
     $sel(".close-pop-result").addEventListener("click", () => {
-      $sel('.pop-result').classList.remove('show');
-      connectSync("close-result")
+      if($sel('.pop-result').classList.contains('show')) {
+        $sel('.pop-result').classList.remove('show');
+        $popHistoryBack();
+        connectSync("close-result");
+      }
     })
 
 

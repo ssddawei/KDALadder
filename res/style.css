@@ -56,7 +56,7 @@ body {
 }
 
 /* cooldown */
-@keyframes cooldown5000 {
+@keyframes cooldown {
   0% {
     background-position: 100% 50%;
     /* pointer-events: none; */
@@ -66,11 +66,11 @@ body {
     /* pointer-events: none; */
   }
 }
-button.cooldown5000{
+button.cooldown{
   position: relative;
   overflow: hidden;
 }
-button.cooldown5000:before{
+button.cooldown:before{
   content: ' ';
   width: 100%;
   height: 100%;
@@ -79,9 +79,14 @@ button.cooldown5000:before{
   left: 0;
   top: 0;
   background-size: 200% 200%!important;
-  background-image: linear-gradient(90deg, white 0%, white 50%, gray 50%, gray 100%)!important;
-	animation: cooldown5000 5s linear !important;
-  opacity: 0.6;
+  background-image: linear-gradient(90deg, white 0%, white 50%, black 50%, black 100%)!important;
+  opacity: 0.3;
+}
+button.cooldown5000:before{
+	animation: cooldown 5s linear !important;
+}
+button.cooldown2000:before{
+	animation: cooldown 2s linear !important;
 }
 
 .puff-out-center {
@@ -658,7 +663,9 @@ button:active,button:after,button:before {
   position: absolute;
   left: 0;
   top: 0;
-  background: #aaa;
+  color: white;
+  text-shadow: #000 0 0 10px;
+  background: rgba(155,155,155,0.8);
 }
 
 .pop-result iframe {
@@ -804,10 +811,36 @@ body.match .match .person button {
   width: 2rem;
   height: 2rem;
   border-radius: 0.2rem;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   padding: 0;
   margin: 0.2rem;
 }
+
+body.match .match .person .goalBtnExtra,
+body.match .match .person .lossBtnExtra {
+  display: none;
+  overflow: visible;
+  height: 4.8rem;
+}
+
+body.match .match .person button.extraBtn {
+  height: 1.3rem;
+  width: 2.5rem;
+  font-size: 0.5rem;
+  background: rgb(255, 252, 225);
+  border: 0;
+}
+
+body.match .match .person button.extraBtn:before {
+  background: ""!important
+}
+
+body.match .match .person button.selected {
+  background: black;
+  border: 1px solid rgb(101, 101, 0);
+  color: white;
+}
+
 body.match .match .person button.goalBtn {
   background: white;
   border: 0;
@@ -1391,14 +1424,34 @@ body.result div.result .kda .item{
   font-size: 0.3rem;
   color: #aaa;
 }
-body.result div.result .score{
+
+body.result .tab {
+  display: flex;
+  flex-direction: row;
+  background: black;
+  flex: 0 0 1rem;
+  color: gray;
+}
+body.result .tab > div {
+  width: 50%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+body.result .tab > div small{
+  zoom: 0.5
+}
+body.result div.result .score,
+body.result div.result .stats{
   width: 100%;
   height: 100%;
   overflow: auto;
   display: flex;
   flex-direction: column;
 }
-body.result div.result .score .item{
+body.result div.result .score .item,
+body.result div.result .stats .item{
   width: 100%;
   display: flex;
   flex-direction: row;
@@ -1406,7 +1459,12 @@ body.result div.result .score .item{
   position: relative;
   height: 0.4rem;
 }
-body.result div.result .score .unit{
+body.result div.result .stats .item{
+  justify-content: flex-start;
+  height: auto;
+}
+body.result div.result .score .unit,
+body.result div.result .stats .unit{
   width: 100%;
   font-size: 0.3rem;
   display: flex;
@@ -1415,6 +1473,20 @@ body.result div.result .score .unit{
   align-items: center;
   padding: 0.1rem 0;
   z-index: 2;
+}
+body.result div.result .stats .unit{
+  /* text-align: right; */
+  /* display: block; */
+  font-size: 0.8rem;
+  color: burlywood;
+}
+body.result div.result .stats .unit.itemName{
+  font-size: 0.3rem;
+  margin: 0 -0.7rem
+}
+body.result div.result .stats .unit span{
+  color: white;
+  font-size: 0.3rem;
 }
 
 body.result div.result .score .item .scoreLine {
@@ -1461,21 +1533,57 @@ body.result div.result .score .item .scoreLine.groupB {
   body.result div.result .person .item .loser {
     top: 0.3rem;
   }
+  body.result .tab {
+    display: flex;
+    flex-direction: column;
+    background: black;
+    flex: 0 0 0rem;
+    color: gray;
+    padding: 0.2rem;
+  }
+  body.result .tab > div {
+    width: 100%;
+    height: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  body.result .tab > div small{
+    zoom: 0.5
+  }
 
-  body.result div.result .score{
+  body.result div.result .score,
+  body.result div.result .stats{
     flex-direction: row;
   }
-  body.result div.result .score .item{
+  body.result div.result .score .item,
+  body.result div.result .stats .item{
     flex: 1 1;
     height: 100%;
     flex-direction: column;
     justify-content: space-around;
   }
-  body.result div.result .score .unit{
+  body.result div.result .score .unit,
+  body.result div.result .stats .unit{
     width: auto;
+    display: flex;
     flex: 0 0 1rem;
     font-size: 0.3rem;
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+  }
+  body.result div.result .stats .unit{
+    font-size: 0.5rem;
+    color: burlywood;
+    padding-right: 0.5rem;
+  }
+  body.result div.result .stats .unit br{
+    display: none
+  }
+  body.result div.result .stats .unit span{
+    margin-left: 0.2rem;
+    margin-right: 0.1rem;
   }
   body.result div.result .score .item .scoreLine {
     position: absolute;

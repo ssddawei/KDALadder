@@ -73,6 +73,10 @@
       <div class="item p3"></div>
       <div class="item p4"></div>
     </div>
+    <div class="tab">
+      <div class="scoreTab">技术参数</div>
+      <div class="statsTab">得分曲线</div>
+    </div>
     <script id="ScoreItem" type="text/template">
       <div class="item">
         <div class="scoreLine {{group}}" style="width:{{scoreLine}}%;margin-left:{{scoreLine2}}%;height:{{scoreLine}}%;"></div>
@@ -82,7 +86,19 @@
         <div class="unit item4">{{p4}}</div>
       </div>
     </script>
-    <div class="score">
+    <div class="score" style="display:none">
+    </div>
+    <script id="StatItem" type="text/template">
+      <div class="item">
+        <div class="unit item1">{{p1}}</div>
+        <div class="unit item2">{{p2}}</div>
+        <div class="unit itemName">{{name}}</div>
+        <div class="unit item3">{{p3}}</div>
+        <div class="unit item4">{{p4}}</div>
+      </div>
+    </script>
+    <div class="stats">
+
     </div>
   </div>
   <script type="module">
@@ -197,8 +213,61 @@
           .replace(/{{scoreLine2}}/g, span * (group == "groupB"? 1: -1))
         return item;
       }).join("")
+      
+      //Stats
+      let StatItem = $sel("#StatItem").innerHTML;
+      function personStat(stat) {
+        if(!stat) {
+          stat = {}
+        }
+
+        // default value
+        Object.keys(MatchController.ExtraToCN).forEach(i=>stat[i]=stat[i]||0)
+
+        let ret = ""
+        for(const i of Object.entries(stat)
+          .filter(i=>i[0]&&i[0]!="unknown"&&i[0]!="undefined")
+          .sort(MatchController.ExtraSort)) 
+        {
+          ret += "<span>" + (MatchController.ExtraToCN[i[0]]||i[0]) + "</span> " + i[1] + "<br>"
+        }
+        return ret;
+      }
+      $sel("div.result .stats").innerHTML = Object.entries(ctrl.matchCtrl.match.scores.reduce((ret, nxt)=>{ // reduce score to sum
+        const person = nxt.kill || nxt.death;
+        let item = ret[nxt.extra] || {};
+
+        item[person] = (item[person]||0) + 1;
+
+        ret[nxt.extra] = item;
+        return ret;
+        // {
+        //   "extraName": {
+        //     "person1": number
+        //   }
+        // }
+      }, {}))
+        .filter(i=>i[0]&&i[0]!="unknown"&&i[0]!="undefined")
+        .sort(MatchController.ExtraSort)
+        .map(i => {
+        
+        let item = StatItem.replace("{{name}}", MatchController.ExtraToCN[i[0]])
+          .replace("{{p1}}", i[1][ctrl.matchCtrl.aGroup[0]]||0)
+          .replace("{{p2}}", i[1][ctrl.matchCtrl.aGroup[1]]||0)
+          .replace("{{p3}}", i[1][ctrl.matchCtrl.bGroup[0]]||0)
+          .replace("{{p4}}", i[1][ctrl.matchCtrl.bGroup[1]]||0)
+        return item;
+      }).join("")
     }
 
+    $sel(".scoreTab").addEventListener("click", ()=>{
+      $sel(".result>.score").style.display = "none";
+      $sel(".result>.stats").style.display = "";
+    })
+    $sel(".statsTab").addEventListener("click", ()=>{
+      $sel(".result>.score").style.display = "";
+      $sel(".result>.stats").style.display = "none";
+    })
     ctrl.load().then(refreshUI);
 
   </script>
