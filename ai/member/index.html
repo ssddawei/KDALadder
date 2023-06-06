@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KDALadder</title>
+  <script src="res/js/helper.js?2"> </script>
+  <!-- Load TensorFlow.js -->
+  <script src="res/js/tf.min.js"> </script>
+  <!-- Require the peer dependencies of face-detection. -->
+  <script src="res/js/mediapipe_face_detection.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core"></script> -->
+
+  <!-- You must explicitly require a TF.js backend if you're not using the TF.js union bundle. -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl"></script> -->
+
+  <script src="res/js/tensorflow-models_face-detection.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-tflite/dist/tf-tflite.min.js"> </script> -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-webgl/dist/tf-backend-webgl.min.js"> </script> -->
+
+  <script src="res/js/tensorflow-models_coco-ssd.js"> </script>
+  <style>
+    html {
+      font-size: 10vmin;
+      width: 100%;
+      height: 100%;
+      /* position: fixed; */
+      color: black;
+      margin: 0;
+      padding:0;
+    }
+    html *{
+      font-size: 3vmin
+    }
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding:0;
+    }
+    .main {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .camera {
+      width: 50%;
+      display: flex;
+      flex: 1
+    }
+    .thumb {
+      width: 100%;
+      height: 100%;
+    }
+    .list {
+      display: flex;
+      width: 100%;
+      flex-direction: row;
+      flex-wrap: wrap;
+      flex: 6;
+      overflow: auto
+    }
+    .item {
+      position: relative;
+      width: 5rem;
+      height: 5rem;
+    }
+    .item .name {
+      position: absolute;
+      left: 0.1rem;
+      top: 0.1rem;
+      color: white;
+      background: rgba(0,0,0,0.3);
+      padding: 0.1rem;
+      border-radius: 0.5rem
+    }
+    .item button {
+      border: 1px solid rgba(255,0,0,0.3);
+      border-radius: 1rem;
+      background: rgba(255,0,0,0.1);
+      color: rgba(255,0,0,0.3);
+      position: absolute;
+      width: 2rem;
+      height: 1rem;
+      margin-left: -1rem;
+      margin-top: -0.5rem;
+      left: 50%;
+      top: 50%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main">
+    <div class="loading"> loading </div>
+    <canvas class="camera"></canvas>
+    <div class="item itemFalse">
+      <canvas class="thumb"></canvas>
+      <div class="name"></div>
+    </div>
+    
+    <script id="listitem" type="text/template">
+      <div class="item item{{id}}">
+        <canvas class="thumb"></canvas>
+        <div class="name">{{name}} - {{score}}</div>
+        <button data-id="{{id}}">待确认</button>
+      </div>
+    </script>
+
+    <div class="list">
+    </div>
+  </div>
+  <script type="module">
+    const FACE_THRESHOLD = 0.8
+    const PERSON_THRESHOLD = 0.95
+
+    const loading = document.querySelector(".loading")
+    // import {
+    //   ObjectDetector,
+    //   FilesetResolver
+    // } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0";
+
+    // await tf.setBackend('webgl');
+    // tf.ENV.set('WEBGL_FORCE_F16_TEXTURES', true);
+    await tf.ready()
+    loading.innerHTML+="tf ready<br/>"
+    const facenetModel = await tf.loadGraphModel('tfjs_model_facenet/model.json'); 
+    loading.innerHTML+="facenetModel ready<br/>"
+    const reidModel = await tf.loadGraphModel('tfjs_model_reid/model.json');
+    loading.innerHTML+="reidModel ready<br/>"
+    const ssdModel = await cocoSsd.load({modelUrl: "tfjs_model_ssd/model.json"});
+    loading.innerHTML+="ssdModel ready<br/>"
+    const faceDetectionModel = await faceDetection.createDetector(faceDetection.SupportedModels.MediaPipeFaceDetector,  {
+      runtime: 'mediapipe',
+      modelType: 'short',
+      solutionPath: 'mediapipe_model_face_detection',
+    });
+    // faceDetectionModel.faceDetectorSolution.setOptions({
+    //   minDetectionConfidence: FACE_THRESHOLD
+    // })
+    loading.innerHTML+="faceDetectionModel ready<br/>"
+    loading.innerHTML+="warmup<br/>"
+    reidModel.predict(tf.zeros([1, 256, 128, 3]));
+    facenetModel.predict(tf.zeros([1, 160, 160, 3]));
+    loading.innerHTML+="warmup done<br/>"
+    loading.remove()
+
+    // const vision = await FilesetResolver.forVisionTasks(
+    //   // path/to/wasm/root
+    //   "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
+    // );
+    // const objectDetector = await ObjectDetector.createFromOptions(vision, {
+    //   baseOptions: {
+    //     modelAssetPath: `https://storage.googleapis.com/mediapipe-models/object_detector/efficientdet_lite0/float16/1/efficientdet_lite0.tflite`,
+    //     delegate: "GPU"
+    //   },
+    //   scoreThreshold: 0.5,
+    //   runningMode: "IMAGE"
+    // });
+
+    const inputVideo = document.createElement('video');
+    inputVideo.width = 1080
+    inputVideo.height = 1080
+    // const camera = await tf.data.webcam(inputVideo,{facingMode:"user"});
+    await openCamera(inputVideo, {
+        width: { ideal: inputVideo.width }, // 期望的宽度
+        height: { ideal: inputVideo.height }, // 期望的高度
+      })
+    
+
+    const cacheCanvas = document.createElement('canvas');
+    const cacheCanvasCtx = cacheCanvas.getContext("2d");
+
+    const DEBUG = false
+    async function predict(inputVideo, withID = false) {
+      // return []
+      // const image = await tf.browser.fromPixels(inputVideo)
+
+      // ### 1 Predict Persons
+      const BEGIN = Date.now()
+      // const persons = objectDetector.detect(inputVideo).detections//await ssdModel.detect(inputVideo);
+      const persons = await ssdModel.detect(inputVideo);
+      DEBUG && console.log("ssdModel time: "+(Date.now()-BEGIN))
+      // image.dispose()
+
+      const result = await Promise.all(persons
+        .filter(i=>i.class=="person")
+        // .filter(i=>i.score>PERSON_THRESHOLD)
+        // .filter(i=>(i.bbox[2]-i.bbox[0])/(i.bbox[3]-i.bbox[1])<0.4) // 长条形
+        .map(async person => {
+
+        if(!withID) {
+          return person
+        }
+        cacheCanvas.width = person.bbox[2]
+        cacheCanvas.height = person.bbox[3]
+        cacheCanvasCtx.drawImage(inputVideo, person.bbox[0], person.bbox[1], person.bbox[2], person.bbox[3], 0, 0, person.bbox[2], person.bbox[3])
+        const personImage = await tf.browser.fromPixels(cacheCanvas)
+        const reidInput = tf.image.resizeBilinear(
+          personImage.expandDims(0), [256, 128]
+        ).div(255.0).sub([0.485, 0.456, 0.406]).div([0.229, 0.224, 0.225])
+
+        // ### 2 Predict PersonID
+        const BEGIN1 = Date.now()
+        let personID = await reidModel.predict(reidInput);
+        DEBUG && console.log("reidModel time: "+(Date.now()-BEGIN1))
+        if(personID && personID.dataSync) {
+          personID = personID.dataSync()
+        }
+
+        
+        cacheCanvas.width = person.bbox[2]
+        cacheCanvas.height = person.bbox[3]/2
+        cacheCanvasCtx.drawImage(inputVideo, person.bbox[0], person.bbox[1], person.bbox[2], person.bbox[3]/2, 0, 0, cacheCanvas.width, cacheCanvas.height)
+        // ### 3 Predict Faces
+        const BEGIN = Date.now()
+        const faces = await faceDetectionModel.estimateFaces(cacheCanvas, {flipHorizontal: false});
+        DEBUG && console.log("faceModel time: "+(Date.now()-BEGIN))
+
+        // Reid Face
+        return { ...person, personID, faces: await Promise.all(faces
+          // .filter(i=>
+          //   Math.abs(i.keypoints[0].x - i.keypoints[1].x)>i.box.width/2.5 &&
+          //   Math.abs(i.keypoints[0].y - i.keypoints[1].y)<i.box.height/20
+          // )
+          .map(async face => {
+          const facenetInput = tf.image.cropAndResize(
+            personImage.expandDims(0),
+            [[
+              face.box.yMin/cacheCanvas.height,
+              face.box.xMin/cacheCanvas.width, 
+              face.box.yMax/cacheCanvas.height, 
+              face.box.xMax/cacheCanvas.width, 
+            ]], [0],
+            [160, 160]
+          ).div(255.0);
+
+          // ### 4 Predict FaceID
+          const BEGIN = Date.now()
+          const faceID = facenetModel.predict(facenetInput);
+          DEBUG && console.log("facenetModel time: "+(Date.now()-BEGIN))
+          return {...face, faceID: faceID.dataSync()}
+        }))}
+      }))
+    
+      return result
+    }
+
+    const mainCanvas = document.querySelector(".camera")
+    const mainCanvasCtx = mainCanvas.getContext("2d");
+    mainCanvas.width = inputVideo.width
+    mainCanvas.height = inputVideo.height
+    
+    async function render(result) {
+      const ctx = mainCanvasCtx
+
+      ctx.fillStyle = 'rgba(0,0,0,0.5)';
+      ctx.beginPath();
+      ctx.rect(0, 0, mainCanvas.width, mainCanvas.height);
+      for(const person of result) {
+        ctx.roundRect(...person.bbox, 30);
+      }
+      ctx.fill("evenodd");
+
+      // for(const person of result) {
+      //   for(const face of person.faces) {
+
+      //   }
+      // }
+      ctx.fillStyle = "red"
+      ctx.font="60px serif"
+      ctx.fillText(fpsCalc.fps + "fps", 0, 50)
+    }
+    let collectedPersons = []
+    let waittingPersons = []
+    async function collect(result) {
+      result = result.filter(i=>i.personID&&i.faces&&i.faces.length) // remove no face
+      result = result.map(i=>{ // 寻找是否已经 collected，角度是否符合标准
+        const collected = collectedPersons.filter(j=>{
+          return tf.norm(tf.sub(j.personID, i.personID)).dataSync() < 10 // 在 collectedPersons 中距离少于 10 的数量为0，则为新人物
+        }).length > 0;
+        let faceOk = false;
+        let personOk = false;
+        if(!collected) {
+          const facePics = i.faces[0].box.width / 5
+          const keypoints = i.faces[0].keypoints
+          const offX = i.faces[0].box.xMin;
+          const offY = i.faces[0].box.yMin;
+          faceOk = // 两只眼睛在五分块的距离边界一块的位置
+            keypoints[0].x - offX > facePics && keypoints[0].x - offX < facePics * 2 &&
+            keypoints[0].y - offY > facePics && keypoints[0].y - offY < facePics * 2 &&
+            keypoints[1].x - offX > facePics * 3 && keypoints[1].x - offX < facePics * 4 &&
+            keypoints[1].y - offY > facePics && keypoints[1].y - offY < facePics * 2 &&
+            keypoints[3].x - offX > facePics * 2 && keypoints[3].x - offX < facePics * 3; // mouse
+            personOk = (i.bbox[2])/(i.bbox[3]) < 1/2 // 身体长度是 1:2
+        }
+        return {
+          ...i, collected, faceOk, personOk
+        }
+      })
+
+      const newItems = result.filter(i=>!i.collected&&i.faceOk&&i.personOk).map(person=>{
+        // 未存在，则收集
+        return {
+          id: collectedPersons.length? +collectedPersons[collectedPersons.length-1].id + 1: 1,
+          name: "unknown",
+          ...person,
+          score: 0,
+        }
+      })
+
+      if(newItems.length){
+        collectedPersons.splice(collectedPersons.length, 0, ...newItems)
+      }
+      return {newItems, falseItems: result.filter(i=>!i.collected&&(!i.faceOk||!i.personOk))}
+    }
+    async function renderList(items, itemsFalse, video) {
+      items.forEach(i=>newItem(i, video))
+      if(!itemsFalse.length) {
+        const target = document.querySelector(".itemFalse")
+        const can = target.querySelector(".thumb")
+        const ctx = can.getContext("2d")
+        ctx.clearRect(0,0, can.width, can.height)
+      } else {
+        const p = itemsFalse[0]
+        const target = document.querySelector(".itemFalse")
+        
+        const can = target.querySelector(".thumb")
+        can.width = 300
+        can.height = 300
+        const ctx = can.getContext("2d")
+
+        // draw face
+        if(p.faces && p.faces.length){
+          let {xMin,yMin,width,height} = p.faces[0].box
+          xMin += p.bbox[0]
+          yMin += p.bbox[1]
+          ctx.drawImage(video, xMin,yMin,width,height, 0, 0, can.width, can.height)
+          // ctx.fillStyle = 'blue';
+          // p.faces[0].keypoints.forEach((i) => {
+          //   ctx.beginPath();
+          //   const x = (i.x-p.faces[0].box.xMin) / p.faces[0].box.width * can.width
+          //   const y = (i.y-p.faces[0].box.yMin) / p.faces[0].box.height * can.height
+          //   ctx.arc(x, y, 2, 0, 2 * Math.PI);
+          //   ctx.fill();
+          // });
+        }
+
+        // draw body
+        ctx.drawImage(video, ...p.bbox, can.width * 3 / 4, 0, can.width * 1 / 4, can.height/2)
+      }
+    }
+
+    class FpsCalc {
+      constructor(){
+        this.fpsCalc = []
+      }
+      tick() {
+        this.fpsCalc.push(Date.now())
+      }
+      get fps() {
+        return ((this.fpsCalc.length - 1) / (this.fpsCalc[this.fpsCalc.length - 1] - this.fpsCalc[0]) * 1000).toFixed(1)
+
+      }
+    }
+    let fpsCalc = new FpsCalc()
+    let predictDisable = 0
+    async function mainloop() {
+      
+      mainCanvasCtx.drawImage(inputVideo, 0, 0, inputVideo.width, inputVideo.height, 0, 0, mainCanvas.width, mainCanvas.height);
+      const result = await predict(mainCanvas, !predictDisable)
+      if(!predictDisable) {
+        const {newItems,falseItems} = await collect(result)
+        await renderList(newItems, falseItems, mainCanvas)
+      }
+      await render(result)
+      // console.log(result)
+      fpsCalc.tick()
+      if(predictDisable) {
+        predictDisable --
+      } else {
+        predictDisable = Math.round(fpsCalc.fps)
+      }
+
+      window.requestAnimationFrame(mainloop)
+    }
+    window.requestAnimationFrame(mainloop)
+
+    function removeItem(id) {
+      const target = document.querySelector(".item"+id)
+      target.remove()
+      collectedPersons = collectedPersons.filter(i=>i.id != id)
+    }
+    function newItem(p, video) {
+      let {id, name, score} = p
+      const tmpl = document.querySelector("#listitem").innerHTML;
+      document.querySelector(".list").insertAdjacentHTML("beforeEnd",
+        tmpl.replace(/{{id}}/g, id)
+          .replace("{{name}}", name)
+          .replace("{{score}}", score)
+      )
+      const target = document.querySelector(".item"+id)
+      target.querySelector("button").addEventListener("click", ()=>{
+        removeItem(id)
+      })
+      const can = target.querySelector(".thumb")
+      can.width = 300
+      can.height = 300
+      const ctx = can.getContext("2d")
+
+      // draw face
+      if(p.faces && p.faces.length){
+        let {xMin,yMin,width,height} = p.faces[0].box
+        xMin += p.bbox[0]
+        yMin += p.bbox[1]
+        ctx.drawImage(video, xMin,yMin,width,height, 0, 0, can.width, can.height)
+        // ctx.fillStyle = 'blue';
+        // p.faces[0].keypoints.forEach((i) => {
+        //   ctx.beginPath();
+        //   const x = (i.x-p.faces[0].box.xMin) / p.faces[0].box.width * can.width
+        //   const y = (i.y-p.faces[0].box.yMin) / p.faces[0].box.height * can.height
+        //   ctx.arc(x, y, 2, 0, 2 * Math.PI);
+        //   ctx.fill();
+        // });
+      }
+
+      // draw body
+      ctx.drawImage(video, ...p.bbox, can.width * 3 / 4, 0, can.width * 1 / 4, can.height/2)
+    }
+    // newItem("1", "dawei", "100")
+    // newItem("12", "dawei2", "100")
+  </script>
+</body>
+</html>
