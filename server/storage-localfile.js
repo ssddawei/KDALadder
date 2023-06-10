@@ -154,6 +154,153 @@ class StorageLocalfile extends Storage {
             }))
         }
     }
+    async updateMember(groupCode, member) {
+        /*
+            member = {
+                delFaceID: ["..."],
+                delPersonID: ["..."],
+            }
+        */
+        let groupPath;
+        if(groupCode.length > 16) {
+            // is token
+            let groupCodeHash = await this.verifyGroupCodeToken(groupCode);
+            groupPath = await this.hasPath(groupCodeHash);
+        } else {
+            groupPath = await this.findPath(groupCode);
+        }
+        let memberDataPath = path.join(groupPath, `member`)
+
+        // 创建 member 的目录
+        await fs.mkdir(memberDataPath, {recursive: true})
+
+        let memberJsonPath = path.join(memberDataPath, `${member.name}.json`)
+        if(path.parse(memberJsonPath).name != member.name) {
+            throw new Error("member.name 非法")
+        }
+        
+        let storedMember
+        if(!await fs.access(memberJsonPath).catch(err => true)) { // if exist
+            storedMember = JSON.parse((await fs.readFile(memberJsonPath, {encoding: "utf-8"})).toString());
+        } else {
+            throw new Error("member 不存在")
+        }
+
+        
+        //remove image
+        member.delFaceID.forEach(async i=>{
+            const delIdx = storedMember.faceID.indexOf(i)
+
+            storedMember.faceID.splice(delIdx, 1)
+
+            let removeFile = storedMember.faceImgName.splice(delIdx, 1)[0];
+            await fs.unlink(path.join(memberDataPath, removeFile))
+        })
+        member.delPersonID.forEach(async i=>{
+            const delIdx = storedMember.personID.indexOf(i)
+
+            storedMember.personID.splice(delIdx, 1)
+
+            let removeFile = storedMember.personImgName.splice(delIdx, 1)[0];
+            await fs.unlink(path.join(memberDataPath, removeFile))
+        })
+
+        // save member
+        await fs.writeFile(memberJsonPath, JSON.stringify(storedMember))
+
+    }
+    async saveMember(groupCode, member) {
+
+        /*
+            member = {
+                name: "dawei",
+                faceID: ["..."],
+                personID: ["..."],
+                faceImg: [],
+                personImg: [],
+            }
+        */
+        let groupPath;
+        if(groupCode.length > 16) {
+            // is token
+            let groupCodeHash = await this.verifyGroupCodeToken(groupCode);
+            groupPath = await this.hasPath(groupCodeHash);
+        } else {
+            groupPath = await this.findPath(groupCode);
+        }
+        let memberDataPath = path.join(groupPath, `member`)
+
+        // 创建 member 的目录
+        await fs.mkdir(memberDataPath, {recursive: true})
+
+        let memberJsonPath = path.join(memberDataPath, `${member.name}.json`)
+        if(path.parse(memberJsonPath).name != member.name) {
+            throw new Error("member.name 非法")
+        }
+        if(JSON.stringify(member).length > 1024 * 1024) {
+            throw new Error("member 大小非法")
+        }
+        let memberlistJsonPath = path.join(memberDataPath, `memberlist.json`)
+        let storedMemberList = {}
+        if(!await fs.access(memberlistJsonPath).catch(err => true)) { // if exist
+            storedMemberList = JSON.parse((await fs.readFile(memberlistJsonPath, {encoding: "utf-8"})).toString());
+        }
+
+        // 生成图片名字
+        // save image
+        let now = helper.tickString(new Date());
+        member.faceImgName = await Promise.all(member.faceImg.map(async (i,idx)=>{
+            let filename = `${member.name}_face_${now}_${idx}.jpg`
+            let filepath = path.join(memberDataPath, filename)
+            const imageBuffer = Buffer.from(i, 'base64');
+            await fs.writeFile(filepath, imageBuffer)
+            return filename
+        }))
+        member.personImgName = await Promise.all(member.personImg.map(async (i,idx)=>{
+            let filename = `${member.name}_person_${now}_${idx}.jpg`
+            let filepath = path.join(memberDataPath, filename)
+            const imageBuffer = Buffer.from(i, 'base64');
+            await fs.writeFile(filepath, imageBuffer)
+            return filename
+        }))
+        delete member.faceImg
+        delete member.personImg
+
+        let storedMember
+        if(!await fs.access(memberJsonPath).catch(err => true)) { // if exist
+            storedMember = JSON.parse((await fs.readFile(memberJsonPath, {encoding: "utf-8"})).toString());
+            storedMember.faceID = storedMember.faceID.concat(member.faceID)
+            storedMember.personID = storedMember.personID.concat(member.personID)
+            storedMember.faceImgName = storedMember.faceImgName.concat(member.faceImgName)
+            storedMember.personImgName = storedMember.personImgName.concat(member.personImgName)
+        } else {
+            storedMember = member
+        }
+
+        //limit 5, remove image
+        if(storedMember.faceID.length > 5) {
+            storedMember.faceID.splice(0, storedMember.faceID.length - 5)
+            while(storedMember.faceImgName.length > 5) {
+                let removeFile = storedMember.faceImgName.shift();
+                await fs.unlink(path.join(memberDataPath, removeFile))
+            }
+        }
+        if(storedMember.personID.length > 5) {
+            storedMember.personID.splice(0, storedMember.personID.length - 5)
+            while(storedMember.personImgName.length > 5) {
+                let removeFile = storedMember.personImgName.shift();
+                await fs.unlink(path.join(memberDataPath, removeFile))
+            }
+        }
+
+        // save member
+        await fs.writeFile(memberJsonPath, JSON.stringify(storedMember))
+
+        storedMemberList[member.name] = member.name;
+        // save memberlist
+        await fs.writeFile(memberlistJsonPath, JSON.stringify(storedMemberList))
+
+    }
 }
 
 export default StorageLocalfile

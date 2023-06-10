@@ -59,6 +59,12 @@ class GroupController {
     async saveMatch(groupCode, matchData, ladderData) {
         await storage.saveMatch(groupCode, matchData, ladderData);
     }
+    async saveMember(groupCode, member) {
+        await storage.saveMember(groupCode, member)
+    }
+    async updateMember(groupCode, member) {
+        await storage.updateMember(groupCode, member)
+    }
     async onClientConnect(ws, userAgent, ip) {
         ws.once('message', async (msg)=>{
             let groupCodeHashPath;

@@ -82,6 +82,19 @@ router.post("/v1/group/match", async (ctx, next) => {
     await groupCtrl.saveMatch(data.token || data.groupCode, data.matchData, data.ladderData);
 })
 
+router.post("/v1/group/member", async (ctx, next) => {
+    let data = ctx.request.body;
+
+    await groupCtrl.saveMember(data.token || data.groupCode, data.memberData);
+})
+
+router.post("/v1/group/updatemember", async (ctx, next) => {
+    let data = ctx.request.body;
+
+    await groupCtrl.updateMember(data.token || data.groupCode, data.memberData);
+})
+
+
 // import fs from 'fs'
 // router.get("/", async (ctx) => {
 //     ctx.body = fs.readFileSync("./index.html")

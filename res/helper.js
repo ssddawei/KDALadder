@@ -20,6 +20,16 @@ window.$kdaString = (kda, long) => {
   else
     return `${kda.kill} / ${kda.death} / ${kda.assist}`
 }
+window.$f32encode = (f32) => {
+  return window.btoa(String.fromCharCode.apply(null, new Uint8Array(f32.buffer.slice(0,f32.byteLength))))
+}
+window.$f32decode = (f32en) => {
+  let blob = window.atob( f32en );
+  let ary_buf = new ArrayBuffer( blob.length );
+  let dv = new DataView( ary_buf );
+  for( let i=0; i < blob.length; i++ ) dv.setUint8( i, blob.charCodeAt(i) );
+  return new Float32Array( ary_buf );
+}
 window.$fetch = async function(){
   let response = await fetch.apply(window, arguments)
   if(response.status == 404) {

@@ -33,6 +33,16 @@ class ServerAPI {
       ladderData
     })
   }
+  postMember(memberData) {
+    return this.call(new URL("/v1/group/member", this.ServerURL).toString(), {
+      memberData
+    })
+  }
+  updateMember(memberData) {
+    return this.call(new URL("/v1/group/updatemember", this.ServerURL).toString(), {
+      memberData
+    })
+  }
   login(groupCode) {
     return this.call(new URL("/v1/group/hash", this.ServerURL).toString(), {
       groupCode
@@ -69,13 +79,22 @@ export class ServerSyncData extends SyncData {
     return new URL(`${this.groupCodeHashPath}/data-${date}.json`,DEFAULT_SERVER_URL).toString();
   }
   GroupLadderURL(season, groupCodeHashPath) {
-    return new URL(`${groupCodeHashPath}/ladder-${season}.json`,DEFAULT_SERVER_URL).toString();
+    return new URL(`${this.groupCodeHashPath}/ladder-${season}.json`,DEFAULT_SERVER_URL).toString();
   }
   GroupIndexURL() {
     return new URL(`index.json`,DEFAULT_SERVER_URL).toString();
   }
   GroupNameURL(groupCodeHashPath) {
-    return new URL(`${groupCodeHashPath}/name`,DEFAULT_SERVER_URL).toString();
+    return new URL(`${this.groupCodeHashPath}/name`,DEFAULT_SERVER_URL).toString();
+  }
+  MemberListURL() {
+    return new URL(`${this.groupCodeHashPath}/member/memberlist.json`,DEFAULT_SERVER_URL).toString();
+  }
+  MemberURL(memberName) {
+    return new URL(`${this.groupCodeHashPath}/member/${memberName}.json`,DEFAULT_SERVER_URL).toString();
+  }
+  MemberFileURL(filename) {
+    return new URL(`${this.groupCodeHashPath}/member/${filename}`,DEFAULT_SERVER_URL).toString();
   }
   static get key() {
     try{
@@ -163,6 +182,26 @@ export class ServerSyncData extends SyncData {
     let allName = await Promise.all(index.map(path => $fetch(this.GroupNameURL(path), {toString:true})))
 
     return [allLadders, allName];
+  }
+  async loadMemberList() {
+    let memberlist = await $fetch(this.MemberListURL())
+    if(!memberlist) return []
+    
+    let members = await Promise.all(Object.keys(memberlist).map(async i=>{
+      let member = await $fetch(this.MemberURL(i))
+      member.faceImageURL = member.faceImgName.map(i=>this.MemberFileURL(i))
+      member.personImageURL = member.personImgName.map(i=>this.MemberFileURL(i))
+      member.faceID = member.faceID.map($f32decode)
+      member.personID = member.personID.map($f32decode)
+      return member
+    }))
+    return members
+  }
+  async saveMember(memberData) {
+    await this.api.postMember(memberData)
+  }
+  async updateMember(memberData) {
+    await this.api.updateMember(memberData)
   }
   async saveRemote() {
 

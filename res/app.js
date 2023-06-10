@@ -631,6 +631,52 @@ export class LadderController {
   }
 }
 
+export class MemberController {
+  constructor(token) {
+    this.syncData = new ServerSyncData();
+    if(token) {
+      this.syncData.api.token = token;
+    }
+  }
+  async loadMemberList() {
+    return await this.syncData.loadMemberList()
+  }
+  async postMember(memberData) {
+    let saveData = {...memberData}
+    if(saveData.faceImage) {
+      saveData.faceImg = [saveData.faceImage.toDataURL("image/jpeg").replace("data:image/jpeg;base64,", "")]
+      delete saveData.faceImage
+    }
+    if(saveData.personImage) {
+      saveData.personImg = [saveData.personImage.toDataURL("image/jpeg").replace("data:image/jpeg;base64,", "")]
+      delete saveData.personImage
+    }
+    if(saveData.personID) {
+      saveData.personID = [$f32encode(saveData.personID)]
+    }
+    if(saveData.faces && saveData.faces.length) {
+      saveData.faceID = [$f32encode(saveData.faces[0].faceID)]
+      delete saveData.faces
+    }
+
+    this.syncData.saveMember(saveData)
+  }
+  async updateMember(memberData) {
+    let saveData = {
+      name: memberData.name
+    }
+    if(memberData.delPersonID && memberData.delPersonID instanceof Float32Array) {
+      saveData.delPersonID = [$f32encode(memberData.delPersonID)]
+    }
+    if(memberData.delFaceID && memberData.delPersonID instanceof Float32Array) {
+      saveData.delFaceID = [$f32encode(memberData.delFaceID)]
+    }
+    this.syncData.updateMember(saveData)
+  }
+  
+
+}
+
 /*
   Bind ConnectWebrtc to UI
 */
@@ -776,7 +822,7 @@ export class ListChooser {
   async refreshUI() {
     let datas = this.loader && await this.loader() || [];
     let tpl = $sel("#DataListItem").innerHTML;
-    $sel("div.dataList > .list").innerHTML = datas.map(d => {
+    $sel("div.dataList .list").innerHTML = datas.map(d => {
       let data = d.data || d;
       let subtitle = d.subtitle || "";
       let active = d.active? "active": "";

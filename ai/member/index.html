@@ -5,7 +5,9 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KDALadder</title>
-  <script src="res/js/helper.js?2"> </script>
+  <link rel="stylesheet" href="../../res/icomoon/style.css">
+  <link rel="stylesheet" href="../../res/style.css">
+  <script src="res/js/helper.js?4"> </script>
   <!-- Load TensorFlow.js -->
   <script src="res/js/tf.min.js"> </script>
   <!-- Require the peer dependencies of face-detection. -->
@@ -45,11 +47,6 @@
       display: flex;
       flex-direction: column;
     }
-    .camera {
-      width: 50%;
-      display: flex;
-      flex: 1
-    }
     .thumb {
       width: 100%;
       height: 100%;
@@ -59,13 +56,18 @@
       width: 100%;
       flex-direction: row;
       flex-wrap: wrap;
-      flex: 6;
+      flex: 1;
+      padding: 0.1rem;
+      justify-content: center;
       overflow: auto
     }
     .item {
       position: relative;
-      width: 5rem;
-      height: 5rem;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 0.3rem;
+      background-color: gray;
+      margin: 0.3rem
     }
     .item .name {
       position: absolute;
@@ -76,45 +78,203 @@
       padding: 0.1rem;
       border-radius: 0.5rem
     }
-    .item button {
-      border: 1px solid rgba(255,0,0,0.3);
-      border-radius: 1rem;
-      background: rgba(255,0,0,0.1);
-      color: rgba(255,0,0,0.3);
+    .item .thumb{
+      border-radius: 0.3rem;
+      background-color: gray;
+    }
+    .titleBox {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      line-height: 0.7rem;
+      margin: 0.5rem;
+    }
+    .titleBox h1 {
+      font-size: 0.7rem
+    }
+    .cameraBox {
+      background-image: linear-gradient(#bdbdbd, #8b8b8b);
+      background-size: 70% 70%;
+      background-position: center center;
+      background-repeat: no-repeat;
+      padding: 1rem;
+      padding-top: 0;
+      display: flex;
+    }
+    .cameraBox .camera {
+      width: 5rem;
+      height: 8.88rem;
+      border-radius: 0.3rem;
+      background-color: black;
+    }
+    .cameraBox .itemBox {
+      width: 4rem;
+      height: 8.88rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: end;
+    }
+    .cameraBox .item {
+      width: 2.5rem;
+      height: 2.5rem;
+      background-color: gray;
+    }
+    .cameraBox .item .thumb{
+      border-radius: 0.3rem;
+      background-color: gray;
+    }
+    .cameraBox .item .tip {
       position: absolute;
-      width: 2rem;
+      top: -0.5rem;
+      /* left: 50%; */
+      zoom: 0.7;
+      text-align: center;
+      width: 100%;
+    }
+    .item .remove {
+      position: absolute;
+      right: -0.2rem;
+      bottom: -0.2rem;
+      width: 1rem;
       height: 1rem;
-      margin-left: -1rem;
-      margin-top: -0.5rem;
-      left: 50%;
-      top: 50%;
+      background: red;
+      fill: white;
+      border-radius: 0.3rem;
+    }
+    .listtitle {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      line-height: 0.3rem;
+    }
+    .listtitle h1 {
+      font-size: 0.5rem
+    }
+
+    .dataList.show {
+      flex-direction: row;
+      display: flex;
+    }
+    .dataList .person {
+      display: flex;
+      flex-direction: column;
+    }
+    .dataList .itemList {
+      display: flex;
+      flex-direction: column;
+      padding: 0.5rem;
+      overflow: auto
+    }
+    .dataList .itemList .list {
+      padding: 0;
+      overflow: visible
+    }
+    
+    .dataList .itemList .item {
+      width: 1.5rem;
+      height: 1rem;
+      margin: 0.1rem 0;
+    }
+    .dataList .listBtn {
+      display: flex;
+      justify-content: space-between;
     }
   </style>
 </head>
 
 <body>
   <div class="main">
+    
+    <script id="DataListItem" type="text/template">
+      <div class="item {{active}}" data-data="{{data}}">
+        <div class="data">{{data}}</div>
+        <div class="subtitle">{{subtitle}}</div>
+      </div>
+    </script>
+    <div class="dataList">
+      <div class="person">
+
+      </div>
+      <div class="itemList">
+        <div class="list"></div>
+        <div class="listBtn">
+          <div class="item newItemBtn">
+            <div class="name">新增</div>
+          </div>
+          <div class="item cancelBtn">
+            <div class="name">取消</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="pop-result">
+      <iframe src="" title="result"></iframe>
+      <button class="close-pop-result">关闭</button>
+    </div>
+    
     <div class="loading"> loading </div>
-    <canvas class="camera"></canvas>
-    <div class="item itemFalse">
-      <canvas class="thumb"></canvas>
-      <div class="name"></div>
+    <div class="titleBox">
+      <h1>成员录入</h1>
+      <h2>站在摄像头前，自动检测录入</h2>
+    </div>
+    <div class="cameraBox">
+      <canvas class="camera"></canvas>
+      <div class="itemBox">
+        <div class="item itemFalse1">
+          <canvas class="thumb"></canvas>
+          <div class="name"></div>
+          <div class="tip">候选</div>
+          <div class="remove">
+            <svg fill="#444" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M18.8,16l5.5-5.5c0.8-0.8,0.8-2,0-2.8l0,0C24,7.3,23.5,7,23,7c-0.5,0-1,0.2-1.4,0.6L16,13.2l-5.5-5.5 c-0.8-0.8-2.1-0.8-2.8,0C7.3,8,7,8.5,7,9.1s0.2,1,0.6,1.4l5.5,5.5l-5.5,5.5C7.3,21.9,7,22.4,7,23c0,0.5,0.2,1,0.6,1.4 C8,24.8,8.5,25,9,25c0.5,0,1-0.2,1.4-0.6l5.5-5.5l5.5,5.5c0.8,0.8,2.1,0.8,2.8,0c0.8-0.8,0.8-2.1,0-2.8L18.8,16z"></path> </g></svg>
+          </div>
+        </div>
+        <div class="item itemFalse2">
+          <canvas class="thumb"></canvas>
+          <div class="name"></div>
+          <div class="tip">候选</div>
+          <div class="remove">
+            <svg fill="#444" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M18.8,16l5.5-5.5c0.8-0.8,0.8-2,0-2.8l0,0C24,7.3,23.5,7,23,7c-0.5,0-1,0.2-1.4,0.6L16,13.2l-5.5-5.5 c-0.8-0.8-2.1-0.8-2.8,0C7.3,8,7,8.5,7,9.1s0.2,1,0.6,1.4l5.5,5.5l-5.5,5.5C7.3,21.9,7,22.4,7,23c0,0.5,0.2,1,0.6,1.4 C8,24.8,8.5,25,9,25c0.5,0,1-0.2,1.4-0.6l5.5-5.5l5.5,5.5c0.8,0.8,2.1,0.8,2.8,0c0.8-0.8,0.8-2.1,0-2.8L18.8,16z"></path> </g></svg>
+          </div>
+        </div>
+        <div class="item itemFalse3">
+          <canvas class="thumb"></canvas>
+          <div class="name"></div>
+          <div class="tip">候选</div>
+          <div class="remove">
+            <svg fill="#444" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M18.8,16l5.5-5.5c0.8-0.8,0.8-2,0-2.8l0,0C24,7.3,23.5,7,23,7c-0.5,0-1,0.2-1.4,0.6L16,13.2l-5.5-5.5 c-0.8-0.8-2.1-0.8-2.8,0C7.3,8,7,8.5,7,9.1s0.2,1,0.6,1.4l5.5,5.5l-5.5,5.5C7.3,21.9,7,22.4,7,23c0,0.5,0.2,1,0.6,1.4 C8,24.8,8.5,25,9,25c0.5,0,1-0.2,1.4-0.6l5.5-5.5l5.5,5.5c0.8,0.8,2.1,0.8,2.8,0c0.8-0.8,0.8-2.1,0-2.8L18.8,16z"></path> </g></svg>
+          </div>
+        </div>
+      </div>
     </div>
     
     <script id="listitem" type="text/template">
       <div class="item item{{id}}">
         <canvas class="thumb"></canvas>
         <div class="name">{{name}} - {{score}}</div>
-        <button data-id="{{id}}">待确认</button>
+        <div class="remove">
+          <svg fill="#444" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M18.8,16l5.5-5.5c0.8-0.8,0.8-2,0-2.8l0,0C24,7.3,23.5,7,23,7c-0.5,0-1,0.2-1.4,0.6L16,13.2l-5.5-5.5 c-0.8-0.8-2.1-0.8-2.8,0C7.3,8,7,8.5,7,9.1s0.2,1,0.6,1.4l5.5,5.5l-5.5,5.5C7.3,21.9,7,22.4,7,23c0,0.5,0.2,1,0.6,1.4 C8,24.8,8.5,25,9,25c0.5,0,1-0.2,1.4-0.6l5.5-5.5l5.5,5.5c0.8,0.8,2.1,0.8,2.8,0c0.8-0.8,0.8-2.1,0-2.8L18.8,16z"></path> </g></svg>
+        </div>
       </div>
     </script>
 
-    <div class="list">
+    <div class="listtitle">
+      <h1>已录入成员</h1>
+    </div>
+    <div class="collectedList list">
     </div>
   </div>
   <script type="module">
+    import * as App from '../../res/app.js'
+    Object.assign(window, App);
+
     const FACE_THRESHOLD = 0.8
     const PERSON_THRESHOLD = 0.95
+    const OFF_MODEL = false
+
+    const memberCtrl = new MemberController()
 
     const loading = document.querySelector(".loading")
     // import {
@@ -126,9 +286,9 @@
     // tf.ENV.set('WEBGL_FORCE_F16_TEXTURES', true);
     await tf.ready()
     loading.innerHTML+="tf ready<br/>"
-    const facenetModel = await tf.loadGraphModel('tfjs_model_facenet/model.json'); 
+    const facenetModel = OFF_MODEL? null: await tf.loadGraphModel('tfjs_model_facenet/model.json'); 
     loading.innerHTML+="facenetModel ready<br/>"
-    const reidModel = await tf.loadGraphModel('tfjs_model_reid/model.json');
+    const reidModel = OFF_MODEL? null: await tf.loadGraphModel('tfjs_model_reid/model.json');
     loading.innerHTML+="reidModel ready<br/>"
     const ssdModel = await cocoSsd.load({modelUrl: "tfjs_model_ssd/model.json"});
     loading.innerHTML+="ssdModel ready<br/>"
@@ -161,8 +321,8 @@
     // });
 
     const inputVideo = document.createElement('video');
-    inputVideo.width = 1080
-    inputVideo.height = 1080
+    inputVideo.width = 720
+    inputVideo.height = 1280
     // const camera = await tf.data.webcam(inputVideo,{facingMode:"user"});
     await openCamera(inputVideo, {
         width: { ideal: inputVideo.width }, // 期望的宽度
@@ -207,7 +367,9 @@
         let personID = await reidModel.predict(reidInput);
         DEBUG && console.log("reidModel time: "+(Date.now()-BEGIN1))
         if(personID && personID.dataSync) {
-          personID = personID.dataSync()
+          let cache = personID.dataSync()
+          personID.dispose()
+          personID = cache
         }
 
         
@@ -216,11 +378,11 @@
         cacheCanvasCtx.drawImage(inputVideo, person.bbox[0], person.bbox[1], person.bbox[2], person.bbox[3]/2, 0, 0, cacheCanvas.width, cacheCanvas.height)
         // ### 3 Predict Faces
         const BEGIN = Date.now()
-        const faces = await faceDetectionModel.estimateFaces(cacheCanvas, {flipHorizontal: false});
+        let faces = await faceDetectionModel.estimateFaces(cacheCanvas, {flipHorizontal: false});
         DEBUG && console.log("faceModel time: "+(Date.now()-BEGIN))
 
         // Reid Face
-        return { ...person, personID, faces: await Promise.all(faces
+        faces = await Promise.all(faces
           // .filter(i=>
           //   Math.abs(i.keypoints[0].x - i.keypoints[1].x)>i.box.width/2.5 &&
           //   Math.abs(i.keypoints[0].y - i.keypoints[1].y)<i.box.height/20
@@ -229,20 +391,42 @@
           const facenetInput = tf.image.cropAndResize(
             personImage.expandDims(0),
             [[
-              face.box.yMin/cacheCanvas.height,
-              face.box.xMin/cacheCanvas.width, 
-              face.box.yMax/cacheCanvas.height, 
-              face.box.xMax/cacheCanvas.width, 
+              face.box.yMin/person.bbox[3],
+              face.box.xMin/person.bbox[2], 
+              face.box.yMax/person.bbox[3], 
+              face.box.xMax/person.bbox[2], 
             ]], [0],
             [160, 160]
           ).div(255.0);
 
+          // await tf.browser.toPixels(facenetInput.squeeze(0), cacheCanvas)
+
           // ### 4 Predict FaceID
           const BEGIN = Date.now()
-          const faceID = facenetModel.predict(facenetInput);
+          let faceID = facenetModel.predict(facenetInput);
+          if(faceID && faceID.dataSync) {
+            let cache = faceID.dataSync()
+            faceID.dispose()
+            faceID = cache
+          }
+          
+          let faceIdentity = 
+            collectedPersons.concat(waittingPersons).filter(i=>i.faceID).map(j=>{
+              return {
+                name: j.name,
+                faceDiff: tf.norm(tf.sub(j.faceID, faceID)).dataSync()
+              }
+            }).filter(i=>i.faceDiff < 0.6).sort((a,b)=>a.faceDiff-b.faceDiff)[0]
+
+          faceIdentity && console.log("face diff: "+ faceIdentity.faceDiff)
+          faceIdentity = faceIdentity? faceIdentity.name: faceIdentity;
+            
           DEBUG && console.log("facenetModel time: "+(Date.now()-BEGIN))
-          return {...face, faceID: faceID.dataSync()}
-        }))}
+          return {...face, faceID: faceID, faceIdentity}
+        }))
+
+        const faceIdentity = faces.length && faces[0].faceIdentity
+        return { ...person, personID, faceIdentity, faces }
       }))
     
       return result
@@ -264,6 +448,13 @@
       }
       ctx.fill("evenodd");
 
+      ctx.fillStyle = "red"
+      ctx.font="60px serif"
+      for(const person of result) {
+        person.faceIdentity &&
+          ctx.fillText(person.faceIdentity, person.bbox[0], person.bbox[1] - 60);
+      }
+
       // for(const person of result) {
       //   for(const face of person.faces) {
 
@@ -273,14 +464,19 @@
       ctx.font="60px serif"
       ctx.fillText(fpsCalc.fps + "fps", 0, 50)
     }
+    let cacheResult = null
+    let serverPersons = []
     let collectedPersons = []
     let waittingPersons = []
-    async function collect(result) {
+    let personItemIDIncreased = 0
+    async function collect(result, image) {
       result = result.filter(i=>i.personID&&i.faces&&i.faces.length) // remove no face
       result = result.map(i=>{ // 寻找是否已经 collected，角度是否符合标准
-        const collected = collectedPersons.filter(j=>{
-          return tf.norm(tf.sub(j.personID, i.personID)).dataSync() < 10 // 在 collectedPersons 中距离少于 10 的数量为0，则为新人物
-        }).length > 0;
+        const collected = 
+          collectedPersons.concat(waittingPersons).filter(j=>{
+            return tf.norm(tf.sub(j.personID, i.personID)).dataSync() < 10 // 在 collectedPersons 中距离少于 10 的数量为0，则为新人物
+          }).length > 0 
+
         let faceOk = false;
         let personOk = false;
         if(!collected) {
@@ -296,63 +492,115 @@
             keypoints[3].x - offX > facePics * 2 && keypoints[3].x - offX < facePics * 3; // mouse
             personOk = (i.bbox[2])/(i.bbox[3]) < 1/2 // 身体长度是 1:2
         }
+        
+        let {xMin,yMin,width,height} = i.faces[0].box
+        xMin += i.bbox[0]
+        yMin += i.bbox[1]
+        const can = document.createElement("canvas");
+        const ctx = can.getContext("2d")
+        can.width = can.height = 160;
+        ctx.drawImage(image, xMin,yMin,width,height, 0, 0, can.width, can.height)
+        // ctx.fillStyle = 'blue';
+        // p.faces[0].keypoints.forEach((i) => {
+        //   ctx.beginPath();
+        //   const x = (i.x-p.faces[0].box.xMin) / p.faces[0].box.width * can.width
+        //   const y = (i.y-p.faces[0].box.yMin) / p.faces[0].box.height * can.height
+        //   ctx.arc(x, y, 2, 0, 2 * Math.PI);
+        //   ctx.fill();
+        // });
+
+        // draw body
+        const can2 = document.createElement("canvas");
+        const ctx2 = can2.getContext("2d")
+        can2.width = 128
+        can2.height = 256;
+        ctx2.drawImage(image, ...i.bbox, 0, 0, can2.width, can2.height)
+
         return {
-          ...i, collected, faceOk, personOk
+          ...i, collected, faceOk, personOk, faceImage: can, personImage: can2
         }
       })
 
       const newItems = result.filter(i=>!i.collected&&i.faceOk&&i.personOk).map(person=>{
         // 未存在，则收集
         return {
-          id: collectedPersons.length? +collectedPersons[collectedPersons.length-1].id + 1: 1,
+          id: personItemIDIncreased++,
           name: "unknown",
           ...person,
           score: 0,
         }
       })
 
-      if(newItems.length){
-        collectedPersons.splice(collectedPersons.length, 0, ...newItems)
-      }
       return {newItems, falseItems: result.filter(i=>!i.collected&&(!i.faceOk||!i.personOk))}
     }
     async function renderList(items, itemsFalse, video) {
-      items.forEach(i=>newItem(i, video))
-      if(!itemsFalse.length) {
-        const target = document.querySelector(".itemFalse")
-        const can = target.querySelector(".thumb")
-        const ctx = can.getContext("2d")
-        ctx.clearRect(0,0, can.width, can.height)
-      } else {
-        const p = itemsFalse[0]
-        const target = document.querySelector(".itemFalse")
+      const allItems = items.concat(itemsFalse)
+      allItems.slice(0,Math.min(3, allItems.length)).forEach((p,idx) => {
+        if(p.rendered)return
+        p.rendered = true
+
+        const target = document.querySelector(".itemBox .itemFalse"+(idx+1))
+        target.dataset["id"] = p.id
         
         const can = target.querySelector(".thumb")
         can.width = 300
         can.height = 300
         const ctx = can.getContext("2d")
 
+        const facePersonOk = p.faceOk && p.personOk
+        const removeBtn = target.querySelector(".remove")
+        removeBtn.style.display = facePersonOk? "block": "none"
+        removeBtn.dataset["id"] = p.id
+
         // draw face
-        if(p.faces && p.faces.length){
-          let {xMin,yMin,width,height} = p.faces[0].box
-          xMin += p.bbox[0]
-          yMin += p.bbox[1]
-          ctx.drawImage(video, xMin,yMin,width,height, 0, 0, can.width, can.height)
-          // ctx.fillStyle = 'blue';
-          // p.faces[0].keypoints.forEach((i) => {
-          //   ctx.beginPath();
-          //   const x = (i.x-p.faces[0].box.xMin) / p.faces[0].box.width * can.width
-          //   const y = (i.y-p.faces[0].box.yMin) / p.faces[0].box.height * can.height
-          //   ctx.arc(x, y, 2, 0, 2 * Math.PI);
-          //   ctx.fill();
-          // });
-        }
+        ctx.drawImage(p.faceImage, 0, 0, p.faceImage.width, p.faceImage.height, 0, 0, can.width, can.height)
 
         // draw body
-        ctx.drawImage(video, ...p.bbox, can.width * 3 / 4, 0, can.width * 1 / 4, can.height/2)
-      }
+        ctx.drawImage(p.personImage, 0, 0, p.personImage.width, p.personImage.height, can.width * 3 / 4, 0, can.width * 1 / 4, can.height/2)
+      })
+      if(allItems.length < 3) {
+        for(let i = allItems.length; i<3; i++) {
+          const target = document.querySelector(".itemBox .itemFalse"+(i+1))
+          target.querySelector(".remove").style.display = "none"
+          const can = target.querySelector(".thumb")
+          const ctx = can.getContext("2d")
+          ctx.clearRect(0,0, can.width, can.height)
+        }
+      } 
     }
+    function personBBoxIOU(p1,p2) {
+      const area1 = p1[2] * p1[3];
+      const area2 = p2[2] * p2[3];
+      const overlap = 
+        (Math.min(p1[0] + p1[2], p2[0] + p2[2]) - Math.max(p1[0], p2[0]))
+        *
+        (Math.min(p1[1] + p1[3], p2[1] + p2[3]) - Math.max(p1[1], p2[1]))
+      return overlap / (area1 + area2 - overlap)
+    }
+    async function linkPreResult(result) {
+      if(!cacheResult){
+        cacheResult = result;
+        return;
+      }
+      let linkto = cacheResult.filter(i=>i.faceIdentity)
+        .map(i=>{
+          // 选取IOU最大的一个作为链接对象
+          let maxIOU = result.map((j,idx)=>{
+            return {
+              resultIdx: idx,
+              iou: personBBoxIOU(i.bbox, j.bbox)
+            }
+          })
+          .filter(i=>i.iou>0.2)
+          .sort((a,b)=>b.iou-a.iou)[0]
+          return {...i, linkto: maxIOU && maxIOU.resultIdx}
+        })
+      linkto.filter(i=>i.linkto!==undefined).forEach(i=>{
+        result[i.linkto].faceIdentity = i.faceIdentity
+      })
 
+      cacheResult = result
+    }
     class FpsCalc {
       constructor(){
         this.fpsCalc = []
@@ -362,18 +610,20 @@
       }
       get fps() {
         return ((this.fpsCalc.length - 1) / (this.fpsCalc[this.fpsCalc.length - 1] - this.fpsCalc[0]) * 1000).toFixed(1)
-
       }
     }
     let fpsCalc = new FpsCalc()
     let predictDisable = 0
+    let cacheFalseItems = []
     async function mainloop() {
       
       mainCanvasCtx.drawImage(inputVideo, 0, 0, inputVideo.width, inputVideo.height, 0, 0, mainCanvas.width, mainCanvas.height);
       const result = await predict(mainCanvas, !predictDisable)
+      linkPreResult(result)
       if(!predictDisable) {
-        const {newItems,falseItems} = await collect(result)
-        await renderList(newItems, falseItems, mainCanvas)
+        const {newItems,falseItems} = await collect(result, mainCanvas)
+        waittingPersons = waittingPersons.concat(newItems)
+        await renderList(waittingPersons, cacheFalseItems=falseItems, mainCanvas)
       }
       await render(result)
       // console.log(result)
@@ -388,47 +638,148 @@
     }
     window.requestAnimationFrame(mainloop)
 
-    function removeItem(id) {
-      const target = document.querySelector(".item"+id)
-      target.remove()
-      collectedPersons = collectedPersons.filter(i=>i.id != id)
+    document.querySelectorAll(".itemBox .item").forEach(i=>{
+      i.addEventListener("click", async ()=>{
+        const id = i.dataset["id"]
+        const item = waittingPersons.filter(i=>i.id==id)[0]
+        document.querySelector(".dataList .person").innerHTML = ""
+        document.querySelector(".dataList .person").appendChild(item.faceImage)
+        document.querySelector(".dataList .person").appendChild(item.personImage)
+        const person = await personChooser.choose()
+        if(!person)return;
+
+        item.name = person
+
+        waittingPersons = waittingPersons.filter(i=>i.id != id)
+        collectedPersons.push(item)
+        
+        waittingPersons.forEach(i=>{
+          i.rendered = false
+        })
+        cacheFalseItems.forEach(i=>{
+          i.rendered = false
+        })
+        renderList(waittingPersons, cacheFalseItems)
+        newItem(item)
+        memberCtrl.postMember(item)
+      })
+      i.querySelector(".remove").addEventListener("click", (e)=>{
+        e.stopPropagation()
+        removeWaittingItem(i.dataset["id"])
+      })
+    })
+
+    function removeWaittingItem(id) {
+      waittingPersons = waittingPersons.filter(i=>i.id != id)
+      waittingPersons.forEach(i=>{
+        i.rendered = false
+      })
+      cacheFalseItems.forEach(i=>{
+        i.rendered = false
+      })
+      renderList(waittingPersons, cacheFalseItems)
     }
-    function newItem(p, video) {
+    function removeItem(id) {
+      const item = collectedPersons.filter(i=>i.id==id)[0]
+      collectedPersons = collectedPersons.filter(i=>i.id != id)
+
+      const delFaceID = 
+        item.faceID instanceof Float32Array? item.faceID:
+        item.faceID && item.faceID.length? item.faceID[item.faceID.length - 1]: 
+        item.faceID? item.faceID:
+        item.faces[0].faceID;
+      const delPersonID = 
+        item.personID instanceof Float32Array? item.personID:
+        item.personID && item.personID.length? item.personID[item.personID.length - 1]: 
+        item.personID;
+      memberCtrl.updateMember({
+        name: item.name,
+        delFaceID,
+        delPersonID
+      })
+    }
+    async function newItem(p, video) {
       let {id, name, score} = p
       const tmpl = document.querySelector("#listitem").innerHTML;
-      document.querySelector(".list").insertAdjacentHTML("beforeEnd",
+      document.querySelector(".collectedList").insertAdjacentHTML("beforeEnd",
         tmpl.replace(/{{id}}/g, id)
           .replace("{{name}}", name)
           .replace("{{score}}", score)
       )
       const target = document.querySelector(".item"+id)
-      target.querySelector("button").addEventListener("click", ()=>{
-        removeItem(id)
-      })
       const can = target.querySelector(".thumb")
       can.width = 300
       can.height = 300
       const ctx = can.getContext("2d")
+      target.querySelector(".remove").addEventListener("click", ()=>{
+        target.remove()
+        removeItem(p.id)
+      })
+
+      // load url if needed
+      await Promise.all([p.faceImageURL, p.personImageURL].map(async (i,idx)=>{
+        if(!i || !i.length)return
+        const img = new Image()
+        img.src = i[i.length - 1]
+        await new Promise((o,x)=>{
+          img.onload = o
+          img.onerror = x
+        })
+        if(idx == 0)
+          p.faceImage = img;
+        else
+          p.personImage = img
+      }))
 
       // draw face
-      if(p.faces && p.faces.length){
-        let {xMin,yMin,width,height} = p.faces[0].box
-        xMin += p.bbox[0]
-        yMin += p.bbox[1]
-        ctx.drawImage(video, xMin,yMin,width,height, 0, 0, can.width, can.height)
-        // ctx.fillStyle = 'blue';
-        // p.faces[0].keypoints.forEach((i) => {
-        //   ctx.beginPath();
-        //   const x = (i.x-p.faces[0].box.xMin) / p.faces[0].box.width * can.width
-        //   const y = (i.y-p.faces[0].box.yMin) / p.faces[0].box.height * can.height
-        //   ctx.arc(x, y, 2, 0, 2 * Math.PI);
-        //   ctx.fill();
-        // });
-      }
-
+      ctx.drawImage(p.faceImage, 0, 0, p.faceImage.width, p.faceImage.height, 0, 0, can.width, can.height)
       // draw body
-      ctx.drawImage(video, ...p.bbox, can.width * 3 / 4, 0, can.width * 1 / 4, can.height/2)
+      ctx.drawImage(p.personImage, 0, 0, p.personImage.width, p.personImage.height, can.width * 3 / 4, 0, can.width * 1 / 4, can.height/2)
+      
+    
     }
+
+    window.__personSort = JSON.parse(localStorage.getItem("__personSort")||"[]");
+    let personChooser = new ListChooser( async () => {
+      let result = [];
+      
+      { // current season
+        let ladder = await new LadderController().seasonLadder();
+        result = result.concat(ladder.ladder.map(p => ({
+          data: p.person,
+          subtitle: `赛季成绩：${p.score.toFixed(2)}`
+        })).filter(i => {
+          return !ladder.ladder.find(j => j.person == i.person)
+        }))
+      }
+      { // pre season
+        let preSeason = new Date();
+        preSeason.setMonth(preSeason.getMonth() - 3);
+        let ladder = await new LadderController().seasonLadder($seasonString(preSeason));
+        result = result.concat(ladder.ladder.map(p => ({
+          data: p.person,
+          subtitle: `上赛季成员`
+        })).filter(i => {
+          return !result.find(j => j.data == i.data)
+        }))
+      }
+      result.sort((a,b) => {
+        return window.__personSort.indexOf(b.data) - window.__personSort.indexOf(a.data)
+      })
+      return result;
+    }, true);
+    $sel("div.dataList .newItemBtn").addEventListener("click", async () => {
+      let newPerson = await $prompt("输入新成员名字");
+      personChooser.select(newPerson);
+    })
+
+    const members = await memberCtrl.loadMemberList()
+    members.filter(i=>i.personID&&i.personID.length).forEach(i=>{
+      i.id = personItemIDIncreased++;
+      serverPersons.push(i);
+      collectedPersons.push(i);
+      newItem(i);
+    })
     // newItem("1", "dawei", "100")
     // newItem("12", "dawei2", "100")
   </script>

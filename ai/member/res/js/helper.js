@@ -1,5 +1,11 @@
 async function openCamera(video, config) {
   if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    if(config.width){
+      let temp = config.width;
+      config.width = config.height
+      config.height = temp
+    }
+
     // 设置分辨率和帧率的约束条件
     const constraints = {
       video: {
