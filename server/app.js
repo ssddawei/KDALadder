@@ -67,6 +67,7 @@ class GroupController {
     }
     async onClientConnect(ws, userAgent, ip) {
         ws.once('message', async (msg)=>{
+            console.log(msg)
             let groupCodeHashPath;
             if(msg && msg.length > 16) {
                 // > 16 is token
@@ -123,10 +124,12 @@ class GroupController {
 
                 msg = JSON.parse(msg);
 
+                console.log(msg)
                 // msg only send to subgroup clients
                 if(msg.subgroup) {
                     groupClients.subgroups[msg.subgroup] = groupClients.subgroups[msg.subgroup] || [];
                     let subgroup = groupClients.subgroups[msg.subgroup];
+                    let allsubgroups = Object.values(groupClients.subgroups).flatMap(i=>i);
 
                     // add to subgroup
                     if(!subgroup.find(i=>i==clientID)) {
@@ -135,7 +138,7 @@ class GroupController {
 
                     // filter out other clients then current subgroup
                     targetClients = targetClients.filter(([cid, clientWS]) => {
-                        return subgroup.find(i=>i==cid)
+                        return subgroup.find(i=>i==cid) || !allsubgroups.find(i=>i==cid)
                     })
                 }
                 this.boradcastClientMessage(targetClients.map(i=>i[1]), clientID, msg);

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Match</title>
+  <script type="text/javascript" src="res/nosleep.min.js"></script>
+  <script type="text/javascript" src="res/qrcode.min.js"></script>
+  <link rel="stylesheet" href="res/icomoon/style.css">
+  <link rel="stylesheet" href="res/style.css">
+  <style>
+    .match {
+      display: flex
+    }
+    .match.started .person .name {
+      pointer-events:none;
+    }
+
+    .scoreList {
+      width: 50%
+    }
+    .person {
+      display: flex;
+      flex-direction: column;
+      height: 1.5rem!important;
+    }
+    .person .name {
+      top: auto!important;
+      width: 50%!important;
+      font-size: 1.2rem!important;
+    }
+    .person .kda {
+      line-height: normal!important;
+      font-size: 1.5rem!important;
+      position: absolute!important;
+      text-align: center!important;
+      right: 0!important;
+      width: 50%!important;
+    }
+    .person button {
+      display: block
+    }
+    .notready button {
+      pointer-events:none;
+      opacity: 0.3;
+    }
+    .match {
+    }
+  </style>
+</head>
+<body class="board">
+  <script id="DataListItem" type="text/template">
+    <div class="item {{active}}" data-data="{{data}}">
+      <div class="data">{{data}}</div>
+      <div class="subtitle">{{subtitle}}</div>
+    </div>
+  </script>
+  <div class="dataList">
+    <div class="list"></div>
+    <div class="item newItemBtn">
+      <div class="name">新增</div>
+    </div>
+    <div class="item cancelBtn">
+      <div class="name">取消</div>
+    </div>
+  </div>
+  
+  <div class="menu">
+    <button class="ladderBtn" onclick="location.href='index.html'"><em class="icon-back"></em>返回首页</button>
+    <div class="sep"></div>
+    <button class="endBtn"><em class="icon-flag"></em>结束</button>
+    <button class="revertBtn"><em class="icon-revert"></em>撤销</button>
+    <div class="sep"></div>
+    <button class="channelBtn"><em class="icon-sync"></em>切换信道(<span class="subgroup"></span>)</button>
+    <button onclick="location.replace('match.html')"><em class="icon-airplay"></em>普通模式</button>
+    <button class="musicBtn"><em class="icon-music"></em>音效开关</button>
+    <button class="kdaBtn"><em class="icon-kda-a"></em>显示KDA</button>
+    <button onclick="document.body.requestFullscreen();"><em class="icon-fullscreen"></em>全屏</button>
+    <div class="sep"></div>
+    <button class="QRBtn"></em># 网址二维码</button>
+  </div>
+  <button class="menuBtn">
+    M<small>enu</small>
+  </button>
+
+  <div class="pop-result">
+    <iframe src="" title="result"></iframe>
+    <button class="close-pop-result">关闭</button>
+  </div>
+
+  <div class="connect">
+    <div class="subgroup">1</div>
+    <img src="res/svg/sync.svg" />
+  </div>
+
+  <div class="nosleep">激活锁亮</div>
+
+  <div class="broadcast">
+    <!-- <img src="res/svg/frame-sword-left.svg" alt="" class="sword-left">
+    <img src="res/svg/frame-sword-right.svg" alt="" class="sword-right">
+    <img src="res/svg/frame-shield.svg" alt="" class="shield">
+    <img src="res/svg/quadra-kill.svg" alt="" class="mark"> -->
+    <object data="res/svg/frame-sword-left.svg" type="image/svg+xml" class="sword-left"></object>
+    <object data="res/svg/frame-sword-right.svg" type="image/svg+xml" class="sword-right"></object>
+    <object data="res/svg/frame-shield.svg" type="image/svg+xml" class="shield"></object>
+    <div class="mark"></div>
+  </div>
+
+  <div class="score">
+    <div class="aScore">/</div>
+    <div class="bScore">/</div>
+    <div class="time" style="display:none"></div>
+  </div>
+  <div class="personGroup">
+    <div class="person0 person">
+      <div class="thumb"></div>
+      <div class="personName"></div>
+    </div>
+    <div class="person1 person">
+      <div class="thumb"></div>
+      <div class="personName"></div></div>
+    <div class="person2 person">
+      <div class="thumb"></div>
+      <div class="personName"></div></div>
+    <div class="person3 person">
+      <div class="thumb"></div>
+      <div class="personName"></div></div>
+  </div>
+  <div class="kdaGroup">
+    <div class="kda0 person"></div>
+    <div class="kda1 person"></div>
+    <div class="kda2 person"></div>
+    <div class="kda3 person"></div>
+  </div>
+  <script id="scoreTpl" type="text/template">
+    <div class="scoreRecord" data-idx="{{idx}}">
+      <div class="p0 personRecord">{{p0}}</div>
+      <div class="p1 personRecord">{{p1}}</div>
+      <div class="middle">{{aScore}}-{{bScore}}<div class="del">DEL</div></div>
+      <div class="p2 personRecord">{{p2}}</div>
+      <div class="p3 personRecord">{{p3}}</div>
+    </div>
+  </script>
+  <div class="aistat" style="position: relative;overflow:hidden">  
+    <span>AI 裁判运行中</span>
+  </div>
+  <div class="match notready">
+    <div class="scoreRecord pending edit">
+      <div class="p0 personRecord">O</div>
+      <div class="p1 personRecord">O</div>
+      <div class="middle">12-8<div class="del">DEL</div></div>
+      <div class="p2 personRecord">O</div>
+      <div class="p3 personRecord">O</div>
+    </div>
+    <div class="scoreRecord edit">
+      <div class="p0 personRecord">O</div>
+      <div class="p1 personRecord">O</div>
+      <div class="middle">12-8</div>
+      <div class="p2 personRecord">O</div>
+      <div class="p3 personRecord">O</div>
+    </div>
+    <div class="scoreRecord">
+      <div class="p0 personRecord">O</div>
+      <div class="p1 personRecord">O</div>
+      <div class="middle">12-8</div>
+      <div class="p2 personRecord">O</div>
+      <div class="p3 personRecord">O</div>
+    </div>
+
+    <div class="scoreList scoreListLeft">
+    </div>
+    <div class="scoreList scoreListRight">
+      
+    </div>
+  </div>
+  <div class="qrcode"><div class="qrcodeImg"></div><div class="qrcodeTitle">KDALadder.top</div></div>
+  
+
+  <script type="module">
+    import * as App from './res/app.js'
+    import { LocalStorage } from './res/storage-localstorage.js'
+    import { Match } from './res/storage.js'
+    Object.assign(window, App);
+
+    const token = window.token = location.search.slice(1);
+
+    const BroadcastAnimateDisabled = true;
+
+    let memberCtrl = new MemberController();
+    let personThumbs = (()=>{
+      let thumbs = localStorage.getItem("__aiboard_person_thumb")
+      if(!thumbs)return []
+      return Object.entries(JSON.parse(thumbs))
+        .sort((a,b) => a[0] - b[0])
+        .map(i => i[1])
+        .map(i => {
+          let img = new Image()
+          img.src = "data:image/jpeg;base64," + i
+          return img
+        })
+
+    })()
+
+    let HideKDA = +localStorage.getItem("__hidekda")
+    let timeTmr;
+    let matchCtrl = new MatchController();
+    let connectCtrl = window.connectCtrl = new ConnectController(token, (data) => {
+      switch(data.action) {
+        case "connect": {
+          // SoundEffect.disabled = true;
+          break;
+        }
+        case "cooldown": {
+          SoundEffect.play("cooldown", 1);
+          break;
+        }
+        case "match": {
+          $sel(".close-pop-result").click();
+          matchCtrl.match = data.data;
+          refreshUI();
+          break;
+        }
+        case "sync-person": {
+          data.data.forEach((v,i)=>{
+            matchCtrl.changePerson(
+              matchCtrl.match.personGroup[i],
+              v
+            )
+          })
+          break;
+        }
+        case "sync-person-thumb": {
+          localStorage.setItem("__aiboard_person_thumb", JSON.stringify(data.data))
+          personThumbs = Object.entries(data.data)
+            .sort((a,b) => a[0] - b[0])
+            .map(i => i[1])
+            .map(i => {
+              let img = new Image()
+              img.src = "data:image/jpeg;base64," + i
+              return img
+            })
+          refreshUI()
+          break;
+        }
+        case "ai-predict": {
+          var person = +data.data.split("-")[0]
+          var goalOrLoss = !!+data.data.split("-")[1]
+          
+          person = matchCtrl.match.personGroup[person]
+
+          if(goalOrLoss) {
+            matchCtrl.goal(person)
+          } else {
+            matchCtrl.loss(person)
+          }
+          connectSync()
+          refreshUI();
+          break;
+        }
+        case "revert": {
+          matchCtrl.revert();
+          refreshUI();
+          if(!BroadcastAnimateDisabled){
+            $sel(".broadcast").classList.remove("active");
+            $sel(".broadcast").offsetHeight;
+          }
+      
+          break;
+        }
+        case "end": {
+          let beginTime = matchCtrl.match.beginTime;
+          let date = $dateString(new Date(beginTime));
+          new LocalStorage("current").delete();
+          matchCtrl.match = new Match();
+          refreshUI();
+          $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
+          $sel(".pop-result").classList.add('show')
+          break;
+        }
+        case "close-result": {
+          $sel(".pop-result").classList.remove('show')
+        }
+      }
+    })
+
+    matchCtrl.eventCallback = (e) => {
+      if(!e || !e.length)return;
+      e = e[0];
+      if(!BroadcastAnimateDisabled){
+        $sel(".broadcast .mark").innerHTML = `<small>${e.person}</small>${KDAEventCalc.NameToEN[e.name]}<small>${KDAEventCalc.NameToCN[e.name]}</small>`
+        $sel(".broadcast").classList.remove("active");
+        $sel(".broadcast").offsetHeight;
+        $sel(".broadcast").classList.add("active");
+      }
+    }
+
+    window.addEventListener("click", () => {
+			if(!window._nosleep){
+        window._nosleep = new NoSleep();
+        window._nosleep.enable();
+        $sel(".nosleep").classList.add("active")
+      }
+    })
+    window.addEventListener("touchend", () => {
+			if(!window._nosleep){
+        window._nosleep = new NoSleep();
+        window._nosleep.enable();
+        $sel(".nosleep").classList.add("active")
+      }
+    })
+
+    window.__personSort = JSON.parse(localStorage.getItem("__personSort")||"[]");
+    let personChooser = new ListChooser( async () => {
+      let result = [];
+      
+      { // current season
+        let ladder = await new LadderController(token).seasonLadder();
+        result = result.concat(ladder.ladder.map(p => ({
+          data: p.person,
+          subtitle: `赛季成绩：${p.score.toFixed(2)}`
+        })).filter(i => {
+          return !ladder.ladder.find(j => j.person == i.person)
+        }))
+      }
+      { // pre season
+        let preSeason = new Date();
+        preSeason.setMonth(preSeason.getMonth() - 3);
+        let ladder = await new LadderController(token).seasonLadder($seasonString(preSeason));
+        result = result.concat(ladder.ladder.map(p => ({
+          data: p.person,
+          subtitle: `上赛季成员`
+        })).filter(i => {
+          return !result.find(j => j.data == i.data)
+        }))
+      }
+      result.sort((a,b) => {
+        return window.__personSort.indexOf(b.data) - window.__personSort.indexOf(a.data)
+      })
+      return result;
+    }, true);
+    $sel("div.dataList .newItemBtn").addEventListener("click", async () => {
+      let newPerson = await $prompt("输入新成员名字");
+      personChooser.select(newPerson);
+    })
+
+    // sync match by ConnectController
+    function connectSync(action, data) {
+      if(action)
+        connectCtrl.send(action, data);
+      else
+        connectCtrl.send("match", matchCtrl.match);
+    }
+    
+    function refreshUI() {
+
+      if(!timeTmr && matchCtrl.match.scores.length) {
+
+        timeTmr = setInterval(()=>{
+          if(!matchCtrl.started) return;
+          let span = Math.floor((Date.now() - matchCtrl.match.beginTime)/1000);
+          let minutes = Math.floor(span / 60);
+          let seconds = span % 60;
+          $sel("div.time").innerHTML = `${minutes}:${seconds}`;
+        }, 1000);
+      }
+      matchCtrl.ready?
+        $sel("div.match").classList.remove("notready"): 
+        $sel("div.match").classList.add("notready");
+      (matchCtrl.aScore > 0 || matchCtrl.bScore > 0)?
+        $sel("div.match").classList.add("started"):
+        $sel("div.match").classList.remove("started");
+
+      // name
+      // $sel("div.aGroup1 .name").innerHTML = matchCtrl.aGroup[0] || "(选人)";
+      // $sel("div.aGroup2 .name").innerHTML = matchCtrl.aGroup[1] || "(选人)";
+      // $sel("div.bGroup1 .name").innerHTML = matchCtrl.bGroup[0] || "(选人)";
+      // $sel("div.bGroup2 .name").innerHTML = matchCtrl.bGroup[1] || "(选人)";
+      
+      // match score
+      if($sel(".aScore").innerHTML != matchCtrl.aScore)
+      {// active animate
+        $sel(".aScore").classList.add("puff-out-center-3");
+        $sel(".aScore").style.animation = 'none';
+        $sel(".aScore").offsetHeight; /* trigger reflow */
+        $sel(".aScore").style.animation = ''; 
+        $sel(".aScore").innerHTML = `${matchCtrl.aScore}`
+      }
+      if($sel(".bScore").innerHTML != matchCtrl.bScore)
+      {// active animate
+        $sel(".bScore").classList.add("puff-out-center-3");
+        $sel(".bScore").style.animation = 'none';
+        $sel(".bScore").offsetHeight; /* trigger reflow */
+        $sel(".bScore").style.animation = ''; 
+        $sel(".bScore").innerHTML = `${matchCtrl.bScore}`
+      }
+      if(personThumbs.length >= 4) {
+        $sels(".personGroup > .person > .thumb").forEach((v,idx) => {
+          v.innerHTML = ""
+          v.appendChild(personThumbs[idx])
+        })
+        personThumbs = []
+      }
+      
+      $sels(".personGroup > .person > .personName").forEach((v,idx) => {
+        v.innerText = matchCtrl.match.personGroup[idx]
+      })
+
+      $sels(".kdaGroup > .person").forEach((v,idx) => {
+        let kda = matchCtrl.kda(matchCtrl.match.personGroup[idx])
+        v.innerText = `${kda.kill}-${kda.death}`
+      })
+
+      // kda
+      let applyKDA = (person, target) => {
+        let kda = matchCtrl.kda(person);
+        $sel(target).innerHTML = `O`;
+        $sel(target).parentElement.dataset["kda_score"] = kda.score;
+      }
+
+      
+      // applyKDA(matchCtrl.aGroup[0], ".aGroup1 .kda");
+      // applyKDA(matchCtrl.aGroup[1], ".aGroup2 .kda");
+      // applyKDA(matchCtrl.bGroup[0], ".bGroup1 .kda");
+      // applyKDA(matchCtrl.bGroup[1], ".bGroup2 .kda");
+
+      var scoreTpl = $sel("#scoreTpl").innerHTML
+      $sel(".match").innerHTML = 
+        matchCtrl.match.scores
+          .map(i=>({
+            personIdx: matchCtrl.match.personGroup.indexOf(i.kill || i.death),
+            kda: i.kill? true: false,
+            extra: +("+"+i.extra)
+          }))
+          .reduce((pre,{personIdx, kda, extra},idx)=> {
+            if(personIdx == -1) personIdx = NaN
+            pre.a += (personIdx < 2 && kda) || (personIdx >= 2 && !kda) || extra < 2
+            pre.b += (personIdx >= 2 && kda) || (personIdx < 2 && !kda) || extra >= 2
+            let item = scoreTpl
+              .replace("{{aScore}}", pre.a)
+              .replace("{{bScore}}", pre.b)
+              .replace("{{idx}}", idx);
+            [0,1,2,3].forEach(i=>{
+              let v = personIdx == i?( kda? "O": "X") : ""
+              item = item.replace(`{{p${i}}}`, v)
+            })
+            pre.item = item + pre.item
+            return pre;
+          }, {a:0,b:0,item:""}).item
+
+      // mvp
+      let mvp = matchCtrl.mvp();
+      let loser = matchCtrl.loser();
+      
+      $sels("div.match .person").forEach(i => i.classList.remove("mvp"))
+      $sels("div.match .person").forEach(i => i.classList.remove("loser"))
+
+      // tag 
+      // if(matchCtrl.eventCalc.currentEvent) {
+      //   let event = matchCtrl.eventCalc.currentEvent[0];
+      //   if(event) {
+      //     let idx = matchCtrl.match.personGroup.indexOf(event.person);
+      //     let elm = [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"][idx]
+      //     $sel(elm + " .tag").innerHTML = KDAEventCalc.NameToEN[event.name];
+      //   }
+      // }
+      let personToTarget = (person) => {
+        let idx = matchCtrl.match.personGroup.map((i,idx)=>i==person? idx: null)
+          .filter(i=>i!==null)[0];
+        return [".aGroup1", ".aGroup2", ".bGroup1", ".bGroup2"][idx];
+      }
+      
+      // if(matchCtrl.started) {
+      //   $sel(personToTarget(mvp)).classList.add("mvp");
+      //   $sel(personToTarget(loser)).classList.add("loser");
+      // }
+
+      $sels(".subgroup").forEach(i=>i.innerHTML = connectCtrl.subgroup);
+
+      if(HideKDA) {
+        $sel(".kdaBtn").classList.add("disabled");
+        $sel("body").classList.add("score-only");
+      } else {
+        $sel(".kdaBtn").classList.remove("disabled");
+        $sel("body").classList.remove("score-only");
+      }
+
+      matchCtrl.save();
+    }
+    
+    let __socreRecordEditTmr = null;
+    let __scoreRecordEditTarget = null;
+    function setScoreEdit(found) {
+      if(found && found != __scoreRecordEditTarget) {
+        found.classList.add("edit")
+        __socreRecordEditTmr && clearTimeout(__socreRecordEditTmr)
+        __scoreRecordEditTarget && __scoreRecordEditTarget.classList.remove("edit")
+        __scoreRecordEditTarget = found
+        __socreRecordEditTmr = setTimeout(()=>{
+          found.classList.remove("edit");
+          __scoreRecordEditTarget = null
+        }, 5000)
+      }
+    }
+
+    $sel(".match").addEventListener("click", (e)=>{
+      let found = null
+      let parent = e.target;
+      while(parent) {
+        if(parent.classList.contains("scoreRecord")) {
+          found = parent;
+          break;
+        }
+        if(parent.classList.contains("match")) {
+          break;
+        }
+        parent = parent.parentElement
+      }
+      if(!found) return
+      if(found.classList.contains("edit")){ 
+        if(e.target.classList.contains("middle")) {
+          let idx = +found.dataset["idx"]
+          matchCtrl.match.scores.splice(idx, 1)
+          refreshUI()
+          connectSync()
+        };
+        [0,1,2,3].forEach(num => {
+          if(e.target.classList.contains("p"+num)) {
+            let idx = +found.dataset["idx"]
+            let score = matchCtrl.match.scores[idx]
+            let killOrDeath = num < 2?
+              matchCtrl.aGroup.indexOf(score.kill) >= 0 || matchCtrl.bGroup.indexOf(score.death) >= 0 || +("+"+score.extra) < 2:
+              matchCtrl.bGroup.indexOf(score.kill) >= 0 || matchCtrl.aGroup.indexOf(score.death) >= 0 || +("+"+score.extra) >= 2
+            if(killOrDeath) {
+              score.kill = matchCtrl.match.personGroup[num];
+              score.death = null
+              score.extra = ""
+            } else {
+              score.kill = null;
+              score.death = matchCtrl.match.personGroup[num]
+              score.extra = ""
+            }
+          
+            refreshUI()
+            connectSync()
+          }
+            
+        })
+      }
+
+      setScoreEdit(found)
+    });
+
+    
+    let __socreEditTmr = null;
+    let __scoreEditTarget = null;
+    $sel(".aScore").addEventListener("click", function() {
+      let target = this
+      if(!target.classList.contains("edit")) {
+        target.classList.add("edit")
+        __socreEditTmr && clearTimeout(__socreEditTmr)
+        __scoreEditTarget && __scoreEditTarget.classList.remove("edit")
+        __scoreEditTarget = target
+        __socreEditTmr = setTimeout(()=>{
+          target.classList.remove("edit");
+          __scoreEditTarget = null
+        }, 3000)
+        return
+      }
+
+      
+      target.classList.remove("edit")
+      __socreEditTmr && clearTimeout(__socreEditTmr)
+      __scoreEditTarget = null
+
+      matchCtrl.goal("0")
+      refreshUI()
+      connectSync()
+      setScoreEdit($sel(".scoreRecord"))
+    });
+    $sel(".bScore").addEventListener("click", function() {
+      let target = this
+      if(!target.classList.contains("edit")) {
+        target.classList.add("edit")
+        __socreEditTmr && clearTimeout(__socreEditTmr)
+        __scoreEditTarget && __scoreEditTarget.classList.remove("edit")
+        __scoreEditTarget = target
+        __socreEditTmr = setTimeout(()=>{
+          target.classList.remove("edit");
+          __scoreEditTarget = null
+        }, 3000)
+        return
+      }
+
+      
+      target.classList.remove("edit")
+      __socreEditTmr && clearTimeout(__socreEditTmr)
+      __scoreEditTarget = null
+
+      matchCtrl.goal("2")
+      refreshUI()
+      connectSync()
+      setScoreEdit($sel(".scoreRecord"))
+    });
+
+    ["div.aGroup1", "div.aGroup2", "div.bGroup1", "div.bGroup2"].forEach((i, idx) => {
+
+      // $sel(i + " .goalBtn").addEventListener("click", function(){
+      //   matchCtrl.goal(matchCtrl.match.personGroup[idx]);
+      //   this.classList.add("active")
+      //   $activeAnimate(this);
+      //   connectSync();
+      //   refreshUI();
+      // })
+
+      // $sel(i + " .lossBtn").addEventListener("click", function(){
+      //   matchCtrl.loss(matchCtrl.match.personGroup[idx]);
+      //   this.classList.add("active")
+      //   $activeAnimate(this);
+      //   connectSync();
+      //   refreshUI();
+      // })
+
+      // $sel(i + " .name").addEventListener("click", async function(){
+      //   let person = await personChooser.choose();
+      //   person && (matchCtrl.match.personGroup[idx] = person);
+      //   connectSync();
+      //   refreshUI();
+      // })
+
+    })
+
+    $sel(".revertBtn").addEventListener("click", () => {
+      if(!matchCtrl.match.scores.length){
+        $alert("对不起，办不到。");
+        return;
+      }
+      matchCtrl.revert();
+      if(!matchCtrl.match.scores.length && timeTmr) {
+        clearInterval(timeTmr)
+        timeTmr = null;
+      }
+      connectSync("revert");
+      refreshUI();
+      
+      if(!BroadcastAnimateDisabled){
+        $sel(".broadcast").classList.remove("active");
+      }
+    })
+
+    $sel(".endBtn").addEventListener("click", async () => {
+      if(!matchCtrl.started){
+        $alert("比赛都没开始，结束你个头。");
+        return;
+      }
+      if(!matchCtrl.readyToEnd) {
+        if(!await $confirm("比赛看似还没结束，确定？")) {
+          return;
+        }
+      }
+      let beginTime = matchCtrl.match.beginTime;
+      try{
+        let date = await matchCtrl.end(token);
+        refreshUI();
+        connectSync("end")
+        if(date) {
+          $sel(".pop-result iframe").src = `match-result.html?${date}-${beginTime}&embedded`
+          $sel(".pop-result").classList.add('show')
+        }
+      } catch(e) {
+        $alert("sync error " + e);
+        throw e;
+      }
+    });
+
+    $sel(".close-pop-result").addEventListener("click", () => {
+      if($sel('.pop-result').classList.contains('show')) {
+        $sel('.pop-result').classList.remove('show');
+        $popHistoryBack();
+        connectSync("close-result");
+      }
+    })
+
+
+    let channelChooser = new ListChooser( async () => {
+      return [1,2,3,4,5,6,7,8].map(p => ({
+        data: p,
+        active: p == connectCtrl.subgroup,
+        subtitle: `信道${p}`
+      }))
+    }, true);
+    $sel(".channelBtn").addEventListener("click", async () => {
+      $sel("div.dataList .newItemBtn").style.display = "none";
+      connectCtrl.subgroup = await channelChooser.choose() || connectCtrl.subgroup;
+      refreshUI();
+    })
+    $sel(".QRBtn").addEventListener("click", () => {
+      if(!window.__hasQrcode) {
+        window.__hasQrcode = true;
+        new QRCode($sel(".qrcode .qrcodeImg"), location.origin);
+      }
+      if($sel(".qrcode").style.display == "flex")
+        $sel(".qrcode").style.display = "none"
+      else
+        $sel(".qrcode").style.display = "flex"
+    })
+    $sel(".qrcode").addEventListener("click", () => {
+      $sel(".qrcode").style.display = "none"
+    })
+    
+    $sel(".kdaBtn").addEventListener("click", () => {
+      HideKDA = !HideKDA;
+      localStorage.setItem("__hidekda", HideKDA? 1: 0);
+      refreshUI();
+    })
+    
+    let popResult = (url) => {
+      $sel(".pop-result iframe").src = url
+      $sel(".pop-result").classList.add('show')
+      $pushHistoryBack(()=>{
+        $sel('.pop-result').classList.remove('show');
+      })
+    }
+    $sel(".connect").addEventListener("click", () => {
+      popResult("connect.html" + location.search)
+    })
+    
+    window.refreshUI = refreshUI;
+
+    let menu = new Menu();
+    matchCtrl.load();
+    refreshUI();
+
+  </script>
+</body>
+</html>

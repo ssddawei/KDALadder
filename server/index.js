@@ -21,6 +21,7 @@ wsRouter.get('/', async (ctx, next) => {
     // `ctx` is the regular koa context created from the `ws` onConnection `socket.upgradeReq` object.
     // the websocket is added to the context on `ctx.websocket`.
 
+    console.log("client connect")
     let userAgent = ctx.request.req.headers["user-agent"]
     let ip = ctx.ip
     groupCtrl.onClientConnect(ctx.websocket, userAgent, ip);
